@@ -55,24 +55,35 @@ export const dashboardConfig: DashboardConfig = {
   f1: {
     refreshInterval: 60000 * 60, 
   },
+  weather: {
+    lat: -34.576, // Colegiales, Buenos Aires, Argentina
+    lon: -58.455,
+    units: "metric",
+    refreshInterval: 60000 * 30, // 30 minutes
+  },
   monitoring: {
     refreshInterval: 60000, 
   },
   widgets: [
     {
+      id: "weather",
+      type: "weather",
+      colSpan: 2, // 2/6 = 33%
+    },
+    {
       id: "services",
       type: "service-monitor",
-      colSpan: 2, 
+      colSpan: 4, // 4/6 = 66%
     },
     {
       id: "f1-next-race",
       type: "f1",
-      colSpan: 1,
+      colSpan: 3, // 3/6 = 50%
     },
     {
       id: "football-matches",
       type: "football",
-      colSpan: 1,
+      colSpan: 3, // 3/6 = 50%
     },
   ],
 };

@@ -14,7 +14,7 @@ export interface ServiceConfig {
 
 export interface WidgetConfig {
   id: string;
-  type: "service-monitor" | "football" | "f1";
+  type: "service-monitor" | "football" | "f1" | "weather";
   config?: any; 
   colSpan?: number; 
 }
@@ -26,6 +26,12 @@ export interface DashboardConfig {
     refreshInterval: number;
   };
   f1: {
+    refreshInterval: number;
+  };
+  weather: {
+    lat: number;
+    lon: number;
+    units: "metric" | "imperial";
     refreshInterval: number;
   };
   monitoring: {
@@ -152,4 +158,19 @@ export interface F1ApiConstructorChampionshipResponse {
     season: number;
     total: number;
     constructors_championship: F1ApiConstructorChampionshipItem[];
+}
+
+export interface WeatherData {
+  current: {
+    temp: number;
+    condition: string;
+    icon: string;
+  };
+  forecast: Array<{
+    date: string;
+    temp_min: number;
+    temp_max: number;
+    condition: string;
+    icon: string;
+  }>;
 }

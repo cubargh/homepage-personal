@@ -14,7 +14,13 @@ import { ServiceConfig, ServiceStatus } from "@/types";
 import { dashboardConfig } from "@/config/dashboard";
 import { Activity, Globe } from "lucide-react";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+    const res = await fetch(url);
+    if (!res.ok) {
+        throw new Error('Failed to fetch service status');
+    }
+    return res.json();
+};
 
 interface ServiceItemProps {
   service: ServiceConfig;
@@ -114,7 +120,7 @@ export function ServiceWidget() {
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden p-0">
         <ScrollArea className="h-full px-6 pb-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
                 {dashboardConfig.services.map((service) => (
                 <ServiceItem key={service.url} service={service} />
                 ))}

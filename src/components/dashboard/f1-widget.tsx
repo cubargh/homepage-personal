@@ -20,7 +20,13 @@ import {
   F1ApiConstructorChampionshipResponse 
 } from "@/types";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+    const res = await fetch(url);
+    if (!res.ok) {
+        throw new Error('Failed to fetch F1 data');
+    }
+    return res.json();
+};
 
 export function F1Widget() {
   const { data: nextRaceResponse } = useSWR<F1ApiNextResponse>(

@@ -16,7 +16,13 @@ import {
 import { FootballResponse } from "@/types";
 import { Trophy } from "lucide-react";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+    const res = await fetch(url);
+    if (!res.ok) {
+        throw new Error('Failed to fetch football data');
+    }
+    return res.json();
+};
 
 const COMPETITIONS = [
   { code: "PL", name: "Premier League" },

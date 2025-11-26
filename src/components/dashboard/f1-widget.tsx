@@ -41,6 +41,12 @@ interface F1WidgetProps {
 export function F1Widget({ config }: F1WidgetProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  const toggleCollapse = () => {
+      if (window.innerWidth < 768) {
+          setIsCollapsed(!isCollapsed);
+      }
+  };
+
   const { data: nextRaceResponse } = useSWR<F1ApiNextResponse>(
     "/api/f1?path=current/next",
     fetcher,
@@ -104,10 +110,10 @@ export function F1Widget({ config }: F1WidgetProps) {
   : [];
 
   return (
-    <Card className={`h-full flex flex-col border-border/50 transition-all duration-300 ${isCollapsed ? 'h-auto min-h-0' : ''}`}>
+    <Card className={`flex flex-col border-border/50 transition-all duration-300 ${isCollapsed ? 'h-auto min-h-0' : 'h-full min-h-[33vh] lg:min-h-0'}`}>
       <CardHeader
          className="cursor-pointer md:cursor-default group"
-         onClick={() => setIsCollapsed(!isCollapsed)}
+         onClick={toggleCollapse}
       >
         <CardTitle className="flex items-center justify-between text-primary">
             <div className="flex items-center space-x-2">

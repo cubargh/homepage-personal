@@ -44,6 +44,12 @@ interface FootballWidgetProps {
 export function FootballWidget({ config }: FootballWidgetProps) {
   const [selectedLeague, setSelectedLeague] = useState("PL");
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const toggleCollapse = () => {
+      if (window.innerWidth < 768) {
+          setIsCollapsed(!isCollapsed);
+      }
+  };
   
   // Update SWR key to include the competition code in the query string
   const { data, error, isLoading } = useSWR<FootballResponse>(
@@ -103,11 +109,11 @@ export function FootballWidget({ config }: FootballWidgetProps) {
   };
 
   return (
-    <Card className={`h-full flex flex-col border-border/50 transition-all duration-300 ${isCollapsed ? 'h-auto min-h-0' : ''}`}>
+    <Card className={`flex flex-col border-border/50 transition-all duration-300 ${isCollapsed ? 'h-auto min-h-0' : 'h-full min-h-[33vh] lg:min-h-0'}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 px-4 pt-4">
         <div 
-            className="flex items-center space-x-2 text-primary cursor-pointer md:cursor-default group flex-1"
-            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="flex items-center space-x-2 text-primary cursor-pointer md:cursor-default group"
+            onClick={toggleCollapse}
         >
             <Trophy className="h-5 w-5" />
             <span>Matches</span>
@@ -115,7 +121,7 @@ export function FootballWidget({ config }: FootballWidgetProps) {
                 {isCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
             </div>
         </div>
-        <div onClick={(e) => e.stopPropagation()} className={`${isCollapsed ? 'hidden md:block' : 'block'}`}>
+        <div onClick={(e) => e.stopPropagation()} className={`ml-auto ${isCollapsed ? 'hidden md:block' : 'block'}`}>
             <Select value={selectedLeague} onValueChange={setSelectedLeague}>
                 <SelectTrigger className="w-[120px] md:w-[140px] h-8 text-xs">
                     <SelectValue placeholder="Select League" />

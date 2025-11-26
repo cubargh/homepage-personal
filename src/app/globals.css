@@ -48,13 +48,13 @@
   --radius: 0.75rem; /* Increased radius for smoother look */
   
   /* Spotify-like Dark Theme with Blue/Cyan Accent */
-  --background: oklch(0.10 0 0); /* Deeper black for background */
+  --background: oklch(0.05 0 0); /* Almost pure black for high contrast */
   --foreground: oklch(0.985 0 0); /* White */
   
-  --card: oklch(0.14 0 0); /* Slightly distinct card background */
+  --card: oklch(0.17 0 0); /* Lighter grey for cards to pop against black */
   --card-foreground: oklch(0.985 0 0);
   
-  --popover: oklch(0.14 0 0);
+  --popover: oklch(0.17 0 0);
   --popover-foreground: oklch(0.985 0 0);
   
   --primary: oklch(0.7 0.15 220); /* Cyan/Blue Accent */
@@ -93,11 +93,11 @@
 
 .dark {
   /* Same values as root for consistency */
-  --background: oklch(0.10 0 0);
+  --background: oklch(0.05 0 0);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.14 0 0);
+  --card: oklch(0.17 0 0);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.14 0 0);
+  --popover: oklch(0.17 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.7 0.15 220);
   --primary-foreground: oklch(0.12 0 0);

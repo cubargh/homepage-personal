@@ -68,11 +68,7 @@ export default function Home() {
           if (widget.id === "football-matches") positionClass = "lg:col-start-3 lg:row-start-1 lg:row-span-2";
 
           // Apply height classes: h-full to fill the grid cell on desktop
-          // On mobile, enforce min-h-[33vh] for non-weather widgets
           let heightClass = "h-full";
-          if (widget.type !== 'weather') {
-             heightClass += " min-h-[33vh] lg:min-h-0";
-          }
 
           return (
             <div key={widget.id} className={`${colClass} ${rowClass} ${positionClass} ${heightClass} min-h-0`}>

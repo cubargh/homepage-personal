@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import useSWR from "swr";
 import { format, parseISO, isSameDay } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,10 +52,21 @@ export function FootballWidget({ config }: FootballWidgetProps) {
 
   const matches = data?.matches || [];
   
-  // Filter matches based on selection
-  const filteredMatches = matches.filter(
-      (match) => match.competition.code === selectedLeague
-  );
+  // Filter and sort matches
+  const filteredMatches = useMemo(() => {
+      const filtered = matches.filter(
+          (match) => match.competition.code === selectedLeague
+      );
+
+      return filtered.sort((a, b) => {
+          // 1. Sort by Date (Time)
+          const dateDiff = new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime();
+          if (dateDiff !== 0) return dateDiff;
+
+          // 2. Sort by Home Team Name (Deterministic Tie-breaker)
+          return a.homeTeam.name.localeCompare(b.homeTeam.name);
+      });
+  }, [matches, selectedLeague]);
 
   const renderScoreOrTime = (match: any) => {
       const isLive = ["IN_PLAY", "PAUSED"].includes(match.status);
@@ -145,8 +156,6 @@ export function FootballWidget({ config }: FootballWidgetProps) {
                                     <div className="flex flex-col space-y-2 border border-border/30 rounded-lg p-3 hover:bg-white/5 transition-colors mb-3 last:mb-0">
                                         <div className="flex items-center justify-between text-xs text-muted-foreground uppercase tracking-wide">
                                             <span className="text-primary/80 font-semibold truncate max-w-[60%]">{match.competition.name}</span>
-                                            {/* Date is now shown in header, keeping time mostly relevant context or if header is far away, but header is per day so it's fine. Keeping formatted date/time or just time could work. Let's keep simple date for context if header scrolled out, or just remove it? The user asked for division, usually implies removing redundant date info. But let's keep day for now or maybe just time if desired. Let's stick to previous format but maybe simpler. */}
-                                            <span>{format(matchDate, "HH:mm")}</span>
                                         </div>
                                         <div className="flex items-center justify-between pt-1">
                                             <div className="flex items-center space-x-3 w-[40%]">

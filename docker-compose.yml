@@ -1,0 +1,13 @@
+services:
+  dashboard:
+    # Pulls the image directly from GitHub Container Registry
+    # You don't need the Dockerfile locally to run this, just this file and .env
+    image: ghcr.io/cubargh/homepage-personal:latest
+    container_name: personal-dashboard
+    restart: unless-stopped
+    ports:
+      - "4444:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production

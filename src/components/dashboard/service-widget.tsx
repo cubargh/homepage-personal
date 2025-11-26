@@ -138,7 +138,7 @@ export function ServiceWidget({ services, config }: ServiceWidgetProps) {
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden p-0">
         <ScrollArea className="h-full px-4 pb-4">
-            <div className="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {services.map((service) => (
                 <ServiceItem 
                   key={service.url} 

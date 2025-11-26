@@ -5,6 +5,9 @@ import { WeatherWidget } from "@/components/dashboard/weather-widget";
 import { getDashboardConfig } from "@/config/dashboard";
 import { WidgetConfig } from "@/types";
 
+// Force dynamic rendering to ensure environment variables are read at runtime in Docker
+export const dynamic = 'force-dynamic';
+
 // This is a Server Component by default
 export default function Home() {
   // Fetch config at request time on the server
@@ -60,6 +63,12 @@ export default function Home() {
                 case 4: colSpanClass = "md:col-span-4"; break;
                 case 5: colSpanClass = "md:col-span-5"; break;
                 case 6: colSpanClass = "md:col-span-6"; break;
+                case 7: colSpanClass = "md:col-span-7"; break;
+                case 8: colSpanClass = "md:col-span-8"; break;
+                case 9: colSpanClass = "md:col-span-9"; break;
+                case 10: colSpanClass = "md:col-span-10"; break;
+                case 11: colSpanClass = "md:col-span-11"; break;
+                case 12: colSpanClass = "md:col-span-12"; break;
                 default: colSpanClass = `md:col-span-${widget.colSpan}`;
             }
           }

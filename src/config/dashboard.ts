@@ -80,22 +80,26 @@ export const getDashboardConfig = (): DashboardConfig => {
       {
         id: "weather",
         type: "weather",
-        colSpan: 2, // 2/6 = 33%
+        colSpan: 1,
+        rowSpan: 1,
       },
       {
         id: "services",
         type: "service-monitor",
-        colSpan: 4, // 4/6 = 66%
+        colSpan: 1,
+        rowSpan: 1,
       },
       {
         id: "f1-next-race",
         type: "f1",
-        colSpan: 3, // 3/6 = 50%
+        colSpan: 1, 
+        rowSpan: 2,
       },
       {
         id: "football-matches",
         type: "football",
-        colSpan: 3, // 3/6 = 50%
+        colSpan: 1,
+        rowSpan: 2,
       },
     ],
   };

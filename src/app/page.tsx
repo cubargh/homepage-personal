@@ -14,77 +14,64 @@ export default function Home() {
   const dashboardConfig = getDashboardConfig();
 
   return (
-    <main className="min-h-screen bg-background p-8">
-      <header className="mb-8 flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Neolab</h1>
-      </header>
-      
+    <main className="min-h-screen bg-background p-4 md:p-8 h-screen overflow-hidden flex flex-col">
       {/* 
-         We use a 6-column grid to allow for flexible layouts.
-         Note: We removed auto-rows-[600px] to allow individual items to specify their height via classNames or style if needed,
-         or we can apply classes dynamically.
-         However, CSS Grid auto-rows applies to ALL implicit rows.
-         To have mixed heights in a single grid without subgrids or complex span logic is tricky if we rely solely on auto-rows.
-         Better approach:
-         - Use auto-rows-auto or a base size.
-         - Apply explicit heights to the widget containers based on their type.
+         3-column grid layout optimized for 1080p screens.
+         Col 1: Weather (Top) + Services (Bottom)
+         Col 2: F1 (Full Height)
+         Col 3: Football (Full Height)
       */}
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-6 auto-rows-auto">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-3 lg:grid-rows-[250px_1fr] flex-1 min-h-0">
         {dashboardConfig.widgets.map((widget: WidgetConfig) => {
           let Component: any; // Explicitly type as any to avoid complex TS union mismatches in map
           let props = {};
-          let heightClass = "h-[600px]"; // Default height for F1/Football
 
           switch (widget.type) {
             case "service-monitor":
               Component = ServiceWidget;
               props = { services: dashboardConfig.services, config: dashboardConfig.monitoring };
-              heightClass = "h-[400px]"; // Specific height for Services
               break;
             case "f1":
               Component = F1Widget;
               props = { config: { ...dashboardConfig.f1, timezone: dashboardConfig.timezone } };
-              heightClass = "h-[600px]";
               break;
             case "football":
               Component = FootballWidget;
               props = { config: { ...dashboardConfig.football, timezone: dashboardConfig.timezone } };
-              heightClass = "h-[600px]";
               break;
             case "weather":
               Component = WeatherWidget;
               props = { config: { ...dashboardConfig.weather, timezone: dashboardConfig.timezone } };
-              heightClass = "h-auto md:h-[400px]"; // Mobile handles its own height, Desktop 400px
               break;
             default:
               return null;
           }
 
-          // Map colSpan (based on 6-col grid) to Tailwind classes
-          let colSpanClass = "md:col-span-1";
+          // Column Span logic (Default to 1)
+          let colClass = "lg:col-span-1";
           if (widget.colSpan) {
-            switch (widget.colSpan) {
-                case 1: colSpanClass = "md:col-span-1"; break;
-                case 2: colSpanClass = "md:col-span-2"; break;
-                case 3: colSpanClass = "md:col-span-3"; break;
-                case 4: colSpanClass = "md:col-span-4"; break;
-                case 5: colSpanClass = "md:col-span-5"; break;
-                case 6: colSpanClass = "md:col-span-6"; break;
-                case 7: colSpanClass = "md:col-span-7"; break;
-                case 8: colSpanClass = "md:col-span-8"; break;
-                case 9: colSpanClass = "md:col-span-9"; break;
-                case 10: colSpanClass = "md:col-span-10"; break;
-                case 11: colSpanClass = "md:col-span-11"; break;
-                case 12: colSpanClass = "md:col-span-12"; break;
-                default: colSpanClass = `md:col-span-${widget.colSpan}`;
-            }
+             if (widget.colSpan === 2) colClass = "lg:col-span-2";
+             else if (widget.colSpan === 3) colClass = "lg:col-span-3";
           }
 
+          // Row Span logic
+          let rowClass = "lg:row-span-1";
+          if (widget.rowSpan) {
+             if (widget.rowSpan === 2) rowClass = "lg:row-span-2";
+          }
+
+          // Specific positioning override based on ID to ensure correct layout
+          let positionClass = "";
+          if (widget.id === "weather") positionClass = "lg:col-start-1 lg:row-start-1";
+          if (widget.id === "services") positionClass = "lg:col-start-1 lg:row-start-2";
+          if (widget.id === "f1-next-race") positionClass = "lg:col-start-2 lg:row-start-1 lg:row-span-2";
+          if (widget.id === "football-matches") positionClass = "lg:col-start-3 lg:row-start-1 lg:row-span-2";
+
+          // Apply height classes: h-full to fill the grid cell
+          const heightClass = "h-full";
+
           return (
-            // Apply the explicit height class to the container on desktop (md:). 
-            // On mobile, we generally want auto or specific mobile heights (handled by widget internal or default behavior).
-            // We'll apply the height class mainly for desktop structure.
-            <div key={widget.id} className={`${colSpanClass} row-span-1 md:${heightClass}`}>
+            <div key={widget.id} className={`${colClass} ${rowClass} ${positionClass} ${heightClass} min-h-0`}>
               <Component {...props} />
             </div>
           );

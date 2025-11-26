@@ -2,12 +2,9 @@
 
 import useSWR from "swr";
 import { format, parseISO } from "date-fns";
-import { dashboardConfig } from "@/config/dashboard";
 import { WeatherData } from "@/types";
 import { CloudSun, Loader2, AlertTriangle, CloudRain, Sun, Cloud, Snowflake } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 const fetcher = async (url: string) => {
     const res = await fetch(url);
@@ -17,23 +14,20 @@ const fetcher = async (url: string) => {
     return res.json();
 };
 
-export function WeatherWidget() {
+interface WeatherWidgetProps {
+  config: {
+    refreshInterval: number;
+  };
+}
+
+export function WeatherWidget({ config }: WeatherWidgetProps) {
   const { data, error, isLoading } = useSWR<WeatherData>(
     "/api/weather",
     fetcher,
     {
-      refreshInterval: dashboardConfig.weather.refreshInterval,
+      refreshInterval: config.refreshInterval,
     }
   );
-
-  const getIcon = (condition: string) => {
-      // Fallback icons if image load fails or just for decorative purposes in header
-      const lower = condition.toLowerCase();
-      if (lower.includes("rain")) return <CloudRain className="h-5 w-5" />;
-      if (lower.includes("sun") || lower.includes("clear")) return <Sun className="h-5 w-5" />;
-      if (lower.includes("snow")) return <Snowflake className="h-5 w-5" />;
-      return <Cloud className="h-5 w-5" />;
-  };
 
   return (
     <Card className="h-full flex flex-col">

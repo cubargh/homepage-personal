@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { dashboardConfig } from "@/config/dashboard";
+import { getDashboardConfig } from "@/config/dashboard";
 import { format, addDays, isSameDay, parseISO } from "date-fns";
 
 const API_KEY = process.env.OPENWEATHER_API_KEY;
@@ -10,6 +10,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "API Configuration Missing" }, { status: 500 });
   }
 
+  // Get config dynamically to pick up runtime env vars if needed (though weather lat/lon are likely static, this keeps it consistent)
+  const dashboardConfig = getDashboardConfig();
   const lat = dashboardConfig.weather.lat;
   const lon = dashboardConfig.weather.lon;
   const units = dashboardConfig.weather.units;
@@ -82,4 +84,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
   }
 }
-

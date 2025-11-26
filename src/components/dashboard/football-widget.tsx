@@ -33,13 +33,20 @@ const COMPETITIONS = [
   { code: "EL", name: "Europa League" },
 ];
 
-export function FootballWidget() {
+interface FootballWidgetProps {
+  config: {
+    leagues: string[];
+    refreshInterval: number;
+  };
+}
+
+export function FootballWidget({ config }: FootballWidgetProps) {
   const [selectedLeague, setSelectedLeague] = useState("PL");
   const { data, error, isLoading } = useSWR<FootballResponse>(
     "/api/football?endpoint=matches",
     fetcher,
     {
-       refreshInterval: 60000 * 1, // 1 minute for live scores
+       refreshInterval: config.refreshInterval, 
     }
   );
 

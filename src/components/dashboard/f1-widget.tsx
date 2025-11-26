@@ -28,20 +28,35 @@ const fetcher = async (url: string) => {
     return res.json();
 };
 
-export function F1Widget() {
+interface F1WidgetProps {
+  config: {
+    refreshInterval: number;
+  };
+}
+
+export function F1Widget({ config }: F1WidgetProps) {
   const { data: nextRaceResponse } = useSWR<F1ApiNextResponse>(
     "/api/f1?path=current/next",
-    fetcher
+    fetcher,
+    {
+      refreshInterval: config.refreshInterval,
+    }
   );
   
   const { data: driverData } = useSWR<F1ApiDriverChampionshipResponse>(
     "/api/f1?path=current/drivers-championship",
-    fetcher
+    fetcher,
+    {
+      refreshInterval: config.refreshInterval,
+    }
   );
   
   const { data: constructorData } = useSWR<F1ApiConstructorChampionshipResponse>(
     "/api/f1?path=current/constructors-championship",
-    fetcher
+    fetcher,
+    {
+      refreshInterval: config.refreshInterval,
+    }
   );
 
   const nextRace = nextRaceResponse?.race?.[0];

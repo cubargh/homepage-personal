@@ -11,7 +11,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ServiceConfig, ServiceStatus } from "@/types";
-import { dashboardConfig } from "@/config/dashboard";
 import { Activity, Globe } from "lucide-react";
 
 const fetcher = async (url: string) => {
@@ -24,23 +23,21 @@ const fetcher = async (url: string) => {
 
 interface ServiceItemProps {
   service: ServiceConfig;
+  refreshInterval: number;
 }
 
-function ServiceItem({ service }: ServiceItemProps) {
+function ServiceItem({ service, refreshInterval }: ServiceItemProps) {
   const { data, error, isLoading } = useSWR<ServiceStatus>(
     `/api/status?url=${encodeURIComponent(service.url)}`,
     fetcher,
     {
-      refreshInterval: dashboardConfig.monitoring.refreshInterval,
+      refreshInterval: refreshInterval,
     }
   );
 
   const isUp = data?.status === "UP";
   
   // Logic to determine icon URL
-  // If the icon config starts with http/https, use it directly (custom URL)
-  // If it's "vert", use the specific selfhst CDN path
-  // Otherwise use the walkxcode CDN default path
   let iconUrl: string | null = null;
   
   if (service.icon) {
@@ -109,7 +106,14 @@ function ServiceItem({ service }: ServiceItemProps) {
   );
 }
 
-export function ServiceWidget() {
+interface ServiceWidgetProps {
+  services: ServiceConfig[];
+  config: {
+    refreshInterval: number;
+  };
+}
+
+export function ServiceWidget({ services, config }: ServiceWidgetProps) {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
@@ -121,8 +125,12 @@ export function ServiceWidget() {
       <CardContent className="flex-1 overflow-hidden p-0">
         <ScrollArea className="h-full px-6 pb-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-                {dashboardConfig.services.map((service) => (
-                <ServiceItem key={service.url} service={service} />
+                {services.map((service) => (
+                <ServiceItem 
+                  key={service.url} 
+                  service={service} 
+                  refreshInterval={config.refreshInterval} 
+                />
                 ))}
             </div>
         </ScrollArea>

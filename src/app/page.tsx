@@ -2,10 +2,14 @@ import { ServiceWidget } from "@/components/dashboard/service-widget";
 import { FootballWidget } from "@/components/dashboard/football-widget";
 import { F1Widget } from "@/components/dashboard/f1-widget";
 import { WeatherWidget } from "@/components/dashboard/weather-widget";
-import { dashboardConfig } from "@/config/dashboard";
+import { getDashboardConfig } from "@/config/dashboard";
 import { WidgetConfig } from "@/types";
 
+// This is a Server Component by default
 export default function Home() {
+  // Fetch config at request time on the server
+  const dashboardConfig = getDashboardConfig();
+
   return (
     <main className="min-h-screen bg-background p-8">
       <header className="mb-8 flex items-center justify-between">
@@ -21,19 +25,26 @@ export default function Home() {
       */}
       <div className="grid gap-6 grid-cols-1 md:grid-cols-6 auto-rows-[400px]">
         {dashboardConfig.widgets.map((widget: WidgetConfig) => {
-          let Component;
+          let Component: any; // Explicitly type as any to avoid complex TS union mismatches in map
+          let props = {};
+
           switch (widget.type) {
             case "service-monitor":
               Component = ServiceWidget;
+              // Pass specific services config
+              props = { services: dashboardConfig.services, config: dashboardConfig.monitoring };
               break;
             case "f1":
               Component = F1Widget;
+              props = { config: dashboardConfig.f1 };
               break;
             case "football":
               Component = FootballWidget;
+              props = { config: dashboardConfig.football };
               break;
             case "weather":
               Component = WeatherWidget;
+              props = { config: dashboardConfig.weather };
               break;
             default:
               return null;
@@ -55,7 +66,7 @@ export default function Home() {
 
           return (
             <div key={widget.id} className={`${colSpanClass} row-span-1`}>
-              <Component />
+              <Component {...props} />
             </div>
           );
         })}

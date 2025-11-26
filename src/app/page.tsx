@@ -21,7 +21,7 @@ export default function Home() {
          Col 2: F1 (Full Height)
          Col 3: Football (Full Height)
       */}
-      <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-3 lg:grid-rows-[300px_1fr] flex-1 min-h-0">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-3 lg:grid-rows-[300px_1fr] flex-1 min-h-0 content-start">
         {dashboardConfig.widgets.map((widget: WidgetConfig) => {
           let Component: any; // Explicitly type as any to avoid complex TS union mismatches in map
           let props = {};

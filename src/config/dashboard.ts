@@ -61,7 +61,7 @@ export const getDashboardConfig = (): DashboardConfig => {
       },
     ],
     football: {
-      leagues: ["PL", "PD", "BL1", "SA", "CL", "EL"],
+      leagues: ["PL", "PD", "BL1", "SA", "CL"],
       refreshInterval: 60000, 
     },
     f1: {

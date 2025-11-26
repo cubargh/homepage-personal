@@ -20,34 +20,41 @@ export default function Home() {
       </header>
       
       {/* 
-         We use a 6-column grid to allow for flexible layouts:
-         - 33% = 2 cols
-         - 66% = 4 cols
-         - 50% = 3 cols
-         - 100% = 6 cols
+         We use a 6-column grid to allow for flexible layouts.
+         Note: We removed auto-rows-[600px] to allow individual items to specify their height via classNames or style if needed,
+         or we can apply classes dynamically.
+         However, CSS Grid auto-rows applies to ALL implicit rows.
+         To have mixed heights in a single grid without subgrids or complex span logic is tricky if we rely solely on auto-rows.
+         Better approach:
+         - Use auto-rows-auto or a base size.
+         - Apply explicit heights to the widget containers based on their type.
       */}
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-6 auto-rows-auto md:auto-rows-[400px]">
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-6 auto-rows-auto">
         {dashboardConfig.widgets.map((widget: WidgetConfig) => {
           let Component: any; // Explicitly type as any to avoid complex TS union mismatches in map
           let props = {};
+          let heightClass = "h-[600px]"; // Default height for F1/Football
 
           switch (widget.type) {
             case "service-monitor":
               Component = ServiceWidget;
-              // Pass specific services config
               props = { services: dashboardConfig.services, config: dashboardConfig.monitoring };
+              heightClass = "h-[400px]"; // Specific height for Services
               break;
             case "f1":
               Component = F1Widget;
               props = { config: { ...dashboardConfig.f1, timezone: dashboardConfig.timezone } };
+              heightClass = "h-[600px]";
               break;
             case "football":
               Component = FootballWidget;
               props = { config: { ...dashboardConfig.football, timezone: dashboardConfig.timezone } };
+              heightClass = "h-[600px]";
               break;
             case "weather":
               Component = WeatherWidget;
               props = { config: { ...dashboardConfig.weather, timezone: dashboardConfig.timezone } };
+              heightClass = "h-auto md:h-[400px]"; // Mobile handles its own height, Desktop 400px
               break;
             default:
               return null;
@@ -74,7 +81,10 @@ export default function Home() {
           }
 
           return (
-            <div key={widget.id} className={`${colSpanClass} row-span-1`}>
+            // Apply the explicit height class to the container on desktop (md:). 
+            // On mobile, we generally want auto or specific mobile heights (handled by widget internal or default behavior).
+            // We'll apply the height class mainly for desktop structure.
+            <div key={widget.id} className={`${colSpanClass} row-span-1 md:${heightClass}`}>
               <Component {...props} />
             </div>
           );

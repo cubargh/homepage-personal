@@ -31,7 +31,6 @@ const COMPETITIONS = [
   { code: "BL1", name: "Bundesliga" },
   { code: "SA", name: "Serie A" },
   { code: "CL", name: "Champions League" },
-  { code: "EL", name: "Europa League" },
 ];
 
 interface FootballWidgetProps {
@@ -44,8 +43,10 @@ interface FootballWidgetProps {
 
 export function FootballWidget({ config }: FootballWidgetProps) {
   const [selectedLeague, setSelectedLeague] = useState("PL");
+  
+  // Update SWR key to include the competition code in the query string
   const { data, error, isLoading } = useSWR<FootballResponse>(
-    "/api/football?endpoint=matches",
+    `/api/football?endpoint=matches&competition=${selectedLeague}`,
     fetcher,
     {
        refreshInterval: config.refreshInterval, 
@@ -54,13 +55,9 @@ export function FootballWidget({ config }: FootballWidgetProps) {
 
   const matches = data?.matches || [];
   
-  // Filter and sort matches
+  // Since the API now returns filtered matches, we can just sort them
   const filteredMatches = useMemo(() => {
-      const filtered = matches.filter(
-          (match) => match.competition.code === selectedLeague
-      );
-
-      return filtered.sort((a, b) => {
+      return matches.sort((a, b) => {
           // 1. Sort by Date (Time)
           const dateDiff = new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime();
           if (dateDiff !== 0) return dateDiff;
@@ -68,7 +65,7 @@ export function FootballWidget({ config }: FootballWidgetProps) {
           // 2. Sort by Home Team Name (Deterministic Tie-breaker)
           return a.homeTeam.name.localeCompare(b.homeTeam.name);
       });
-  }, [matches, selectedLeague]);
+  }, [matches]);
 
   const renderScoreOrTime = (match: any) => {
       const isLive = ["IN_PLAY", "PAUSED"].includes(match.status);

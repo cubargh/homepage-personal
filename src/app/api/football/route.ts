@@ -13,7 +13,12 @@ export async function GET(request: NextRequest) {
 
   // If the frontend requests matches, we enforce our specific filters for security/simplicity
   if (endpoint === "matches") {
-      const competitions = "PL,PD,BL1,SA,CL,EL"; 
+      // Default set of competitions if none specified
+      const defaultCompetitions = "PL,PD,BL1,SA,CL,EL"; 
+      // Allow filtering by specific competition if provided in query
+      const requestedCompetition = searchParams.get("competition");
+      const competitions = requestedCompetition || defaultCompetitions;
+
       // Use dateFrom and dateTo to get a wider range of matches instead of just "SCHEDULED" which defaults to a short window
       const today = new Date();
       const nextWeek = new Date();
@@ -22,7 +27,8 @@ export async function GET(request: NextRequest) {
       const dateFrom = today.toISOString().split('T')[0];
       const dateTo = nextWeek.toISOString().split('T')[0];
 
-      const url = `${BASE_URL}/matches?competitions=${competitions}&dateFrom=${dateFrom}&dateTo=${dateTo}&limit=20`;
+      // Removed limit=20 to avoid cutting off matches if there are many scheduled
+      const url = `${BASE_URL}/matches?competitions=${competitions}&dateFrom=${dateFrom}&dateTo=${dateTo}`;
       
       try {
         const response = await fetch(url, {

@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Flag, Calendar, Clock } from "lucide-react";
+import { TrackMap } from "@/components/dashboard/track-map";
 import { 
   F1ApiNextResponse, 
   F1ApiDriverChampionshipResponse, 
@@ -129,6 +130,12 @@ export function F1Widget({ config }: F1WidgetProps) {
                                 {nextRace.circuit.circuitName}
                             </p>
                         </div>
+
+                        <TrackMap 
+                            circuitName={nextRace.circuit.circuitName} 
+                            city={nextRace.circuit.city} 
+                            country={nextRace.circuit.country}
+                        />
                         
                         <div className="grid gap-2">
                             {scheduleItems.map((session) => (

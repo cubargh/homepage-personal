@@ -26,6 +26,7 @@ const fetcher = async (url: string) => {
 };
 
 const COMPETITIONS = [
+  { code: "TODAY", name: "Today's Matches" },
   { code: "PL", name: "Premier League" },
   { code: "PD", name: "La Liga" },
   { code: "BL1", name: "Bundesliga" },
@@ -42,7 +43,7 @@ interface FootballWidgetProps {
 }
 
 export function FootballWidget({ config }: FootballWidgetProps) {
-  const [selectedLeague, setSelectedLeague] = useState("PL");
+  const [selectedLeague, setSelectedLeague] = useState("TODAY");
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const toggleCollapse = () => {
@@ -64,7 +65,19 @@ export function FootballWidget({ config }: FootballWidgetProps) {
   
   // Since the API now returns filtered matches, we can just sort them
   const filteredMatches = useMemo(() => {
-      return matches.sort((a, b) => {
+      // Filter out finished matches from yesterday if we are in TODAY mode
+      // This happens because we widened the window to catch all global timezones
+      let matchesToDisplay = matches;
+      
+      if (selectedLeague === 'TODAY') {
+          const todayStr = formatTime(new Date(), "yyyy-MM-dd", config.timezone);
+          matchesToDisplay = matches.filter(m => {
+              const matchDateStr = formatTime(parseISO(m.utcDate), "yyyy-MM-dd", config.timezone);
+              return matchDateStr === todayStr;
+          });
+      }
+
+      return matchesToDisplay.sort((a, b) => {
           // 1. Sort by Date (Time)
           const dateDiff = new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime();
           if (dateDiff !== 0) return dateDiff;
@@ -72,7 +85,7 @@ export function FootballWidget({ config }: FootballWidgetProps) {
           // 2. Sort by Home Team Name (Deterministic Tie-breaker)
           return a.homeTeam.name.localeCompare(b.homeTeam.name);
       });
-  }, [matches]);
+  }, [matches, selectedLeague, config.timezone]);
 
   const renderScoreOrTime = (match: any) => {
       const isLive = ["IN_PLAY", "PAUSED"].includes(match.status);
@@ -110,30 +123,32 @@ export function FootballWidget({ config }: FootballWidgetProps) {
 
   return (
     <Card className={`flex flex-col border-border/50 transition-all duration-300 ${isCollapsed ? 'h-auto min-h-0' : 'h-full min-h-[33vh] lg:min-h-0'}`}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 px-4 pt-4">
-        <div 
-            className="flex items-center space-x-2 text-primary cursor-pointer md:cursor-default group"
-            onClick={toggleCollapse}
-        >
+      <CardHeader 
+        className="flex flex-row items-center justify-between space-y-0 pb-4 px-4 pt-4 cursor-pointer md:cursor-default" 
+        onClick={toggleCollapse}
+      >
+        <div className="flex items-center space-x-2 text-primary group">
             <Trophy className="h-5 w-5" />
             <span>Matches</span>
-            <div className="md:hidden text-muted-foreground ml-2">
+        </div>
+        <div className="flex items-center gap-2 ml-auto">
+            <div onClick={(e) => e.stopPropagation()} className={isCollapsed ? 'hidden md:block' : 'block'}>
+                <Select value={selectedLeague} onValueChange={setSelectedLeague}>
+                    <SelectTrigger className="w-[160px] md:w-[200px] h-8 text-xs">
+                        <SelectValue placeholder="Select League" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {COMPETITIONS.map((comp) => (
+                            <SelectItem key={comp.code} value={comp.code} className="text-xs">
+                                {comp.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="md:hidden text-muted-foreground">
                 {isCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
             </div>
-        </div>
-        <div onClick={(e) => e.stopPropagation()} className={`ml-auto ${isCollapsed ? 'hidden md:block' : 'block'}`}>
-            <Select value={selectedLeague} onValueChange={setSelectedLeague}>
-                <SelectTrigger className="w-[120px] md:w-[140px] h-8 text-xs">
-                    <SelectValue placeholder="Select League" />
-                </SelectTrigger>
-                <SelectContent>
-                    {COMPETITIONS.map((comp) => (
-                        <SelectItem key={comp.code} value={comp.code} className="text-xs">
-                            {comp.name}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
         </div>
       </CardHeader>
       <CardContent className={`flex-1 overflow-hidden p-0 ${isCollapsed ? 'hidden md:block' : 'block'}`}>
@@ -150,7 +165,8 @@ export function FootballWidget({ config }: FootballWidgetProps) {
                 <div className="space-y-2">
                     {filteredMatches.length === 0 ? (
                         <p className="text-muted-foreground text-center py-8 text-sm">
-                            No matches found for {COMPETITIONS.find(c => c.code === selectedLeague)?.name} in the next 6 days.
+                            No matches found for {COMPETITIONS.find(c => c.code === selectedLeague)?.name} {selectedLeague === 'TODAY' ? 'today' : 'in the next 6 days'}.
+                            {selectedLeague === 'TODAY' && <span className="block text-xs mt-2 text-muted-foreground/50">(UTC Date: {new Date().toISOString().split('T')[0]})</span>}
                         </p>
                     ) : (
                         filteredMatches.map((match, index) => {
@@ -176,6 +192,13 @@ export function FootballWidget({ config }: FootballWidgetProps) {
                                     )}
                                     <div className="flex flex-col border border-border/30 rounded-lg p-2 md:p-3 hover:bg-white/5 transition-colors mb-2 last:mb-0 bg-card/40">
                                         <div className="flex items-center justify-between">
+                                            {/* Competition Name (Only for Today's Matches) */}
+                                            {selectedLeague === 'TODAY' && match.competition && (
+                                                <div className="absolute top-0 left-2 text-[9px] text-muted-foreground/70 font-mono tracking-tighter uppercase">
+                                                    {match.competition.code || match.competition.name}
+                                                </div>
+                                            )}
+
                                             {/* Home Team */}
                                             <div className="flex items-center space-x-2 w-[38%] overflow-hidden">
                                                  {/* eslint-disable-next-line @next/next/no-img-element */}

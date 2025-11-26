@@ -1,50 +1,52 @@
 import { DashboardConfig } from "@/types";
 
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "localhost";
+
 export const dashboardConfig: DashboardConfig = {
   services: [
     {
       name: "Jellyfin",
-      url: "https://tv.falopa.org",
+      url: `https://tv.${ROOT_DOMAIN}`,
       icon: "jellyfin",
     },
     {
       name: "Navidrome",
-      url: "https://navidrome.falopa.org",
+      url: `https://navidrome.${ROOT_DOMAIN}`,
       icon: "navidrome",
     },
     {
       name: "Immich",
-      url: "https://photos.falopa.org",
-      icon: "immich", // Assuming Immich based on typical self-hosted photo apps, or fallback to generic
+      url: `https://photos.${ROOT_DOMAIN}`,
+      icon: "immich",
     },
     {
       name: "Jellyseerr",
-      url: "https://tvsearch.falopa.org",
-      icon: "overseerr", // Assumption: TV Search often refers to Overseerr/Jellyseerr
+      url: `https://tvsearch.${ROOT_DOMAIN}`,
+      icon: "overseerr",
     },
     {
       name: "n8n",
-      url: "https://n8n.falopa.org",
+      url: `https://n8n.${ROOT_DOMAIN}`,
       icon: "n8n",
     },
     {
       name: "IT-Tools",
-      url: "https://ittools.falopa.org",
+      url: `https://ittools.${ROOT_DOMAIN}`,
       icon: "it-tools",
     },
     {
       name: "VERT.sh",
-      url: "https://convert.falopa.org",
-      icon: "vert", // Assuming 'vert' icon exists in selfh.st collection, otherwise fallback/generic will apply
+      url: `https://convert.${ROOT_DOMAIN}`,
+      icon: "vert",
     },
     {
       name: "FileBrowser",
-      url: "https://storage.falopa.org",
-      icon: "filebrowser", // Common storage browser
+      url: `https://storage.${ROOT_DOMAIN}`,
+      icon: "filebrowser",
     },
     {
       name: "ntfy",
-      url: "https://ntfy.falopa.org",
+      url: `https://ntfy.${ROOT_DOMAIN}`,
       icon: "ntfy",
     },
   ],

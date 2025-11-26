@@ -1,11 +1,23 @@
 import { SignJWT, jwtVerify } from "jose";
 
-// Use a default key if AUTH_PASSPHRASE is not set (e.g. during build), but warn.
-// In production, AUTH_PASSPHRASE must be set.
-const secretKey = process.env.AUTH_PASSPHRASE || "default-insecure-secret";
-const key = new TextEncoder().encode(secretKey);
+// Define your session payload type
+export interface SessionPayload {
+  user: string;
+  expires: Date;
+  [key: string]: unknown; // Allow extensibility
+}
 
-export async function encrypt(payload: any) {
+const secretKey = process.env.AUTH_PASSPHRASE;
+if (!secretKey) {
+  // Only log this warning in development or if explicitly checked
+  if (process.env.NODE_ENV === 'development') {
+    console.warn("⚠️  AUTH_PASSPHRASE is not set. Using insecure default key.");
+  }
+}
+
+const key = new TextEncoder().encode(secretKey || "default-insecure-secret");
+
+export async function encrypt(payload: SessionPayload) {
   const days = parseInt(process.env.AUTH_SESSION_DAYS || "7", 10);
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
@@ -14,14 +26,15 @@ export async function encrypt(payload: any) {
     .sign(key);
 }
 
-export async function decrypt(input: string): Promise<any> {
+export async function decrypt(input: string): Promise<SessionPayload | null> {
   try {
     const { payload } = await jwtVerify(input, key, {
       algorithms: ["HS256"],
     });
-    return payload;
+    return payload as SessionPayload;
   } catch (error) {
     return null;
   }
 }
+
 

@@ -4,6 +4,15 @@ import { F1Widget } from "@/components/dashboard/f1-widget";
 import { WeatherWidget } from "@/components/dashboard/weather-widget";
 import { getDashboardConfig } from "@/config/dashboard";
 import { WidgetConfig } from "@/types";
+import { cn } from "@/lib/utils";
+
+// Map widget types to their components
+const WIDGET_COMPONENTS = {
+  "service-monitor": ServiceWidget,
+  "f1": F1Widget,
+  "football": FootballWidget,
+  "weather": WeatherWidget,
+} as const;
 
 // Force dynamic rendering to ensure environment variables are read at runtime in Docker
 export const dynamic = 'force-dynamic';
@@ -23,56 +32,35 @@ export default function Home() {
       */}
       <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-3 lg:grid-rows-[300px_1fr] flex-1 min-h-0 content-start">
         {dashboardConfig.widgets.map((widget: WidgetConfig) => {
-          let Component: any; // Explicitly type as any to avoid complex TS union mismatches in map
+          const WidgetComponent = WIDGET_COMPONENTS[widget.type as keyof typeof WIDGET_COMPONENTS];
+          
+          if (!WidgetComponent) return null;
+
+          // Resolve props based on widget type
           let props = {};
-
-          switch (widget.type) {
-            case "service-monitor":
-              Component = ServiceWidget;
-              props = { services: dashboardConfig.services, config: dashboardConfig.monitoring };
-              break;
-            case "f1":
-              Component = F1Widget;
-              props = { config: { ...dashboardConfig.f1, timezone: dashboardConfig.timezone } };
-              break;
-            case "football":
-              Component = FootballWidget;
-              props = { config: { ...dashboardConfig.football, timezone: dashboardConfig.timezone } };
-              break;
-            case "weather":
-              Component = WeatherWidget;
-              props = { config: { ...dashboardConfig.weather, timezone: dashboardConfig.timezone } };
-              break;
-            default:
-              return null;
+          if (widget.type === "service-monitor") {
+            props = { services: dashboardConfig.services, config: dashboardConfig.monitoring };
+          } else {
+            // Dynamic prop mapping is tricky, but safe here due to config structure
+            props = { config: { ...dashboardConfig[widget.type], timezone: dashboardConfig.timezone } };
           }
 
-          // Column Span logic (Default to 1)
-          let colClass = "lg:col-span-1";
-          if (widget.colSpan) {
-             if (widget.colSpan === 2) colClass = "lg:col-span-2";
-             else if (widget.colSpan === 3) colClass = "lg:col-span-3";
-          }
-
-          // Row Span logic
-          let rowClass = "lg:row-span-1";
-          if (widget.rowSpan) {
-             if (widget.rowSpan === 2) rowClass = "lg:row-span-2";
-          }
-
-          // Specific positioning override based on ID to ensure correct layout
-          let positionClass = "";
-          if (widget.id === "weather") positionClass = "lg:col-start-1 lg:row-start-1";
-          if (widget.id === "services") positionClass = "lg:col-start-1 lg:row-start-2";
-          if (widget.id === "f1-next-race") positionClass = "lg:col-start-2 lg:row-start-1 lg:row-span-2";
-          if (widget.id === "football-matches") positionClass = "lg:col-start-3 lg:row-start-1 lg:row-span-2";
-
-          // Apply height classes: h-full to fill the grid cell on desktop
-          let heightClass = "h-full";
+          // Grid positioning classes
+          const gridClasses = cn(
+            "h-full min-h-0", // Default
+            widget.colSpan === 2 && "lg:col-span-2",
+            widget.colSpan === 3 && "lg:col-span-3",
+            widget.rowSpan === 2 && "lg:row-span-2",
+            // Specific positioning can be moved to config or kept here if exceptional
+            widget.id === "weather" && "lg:col-start-1 lg:row-start-1",
+            widget.id === "services" && "lg:col-start-1 lg:row-start-2",
+            widget.id === "f1-next-race" && "lg:col-start-2 lg:row-start-1",
+            widget.id === "football-matches" && "lg:col-start-3 lg:row-start-1"
+          );
 
           return (
-            <div key={widget.id} className={`${colClass} ${rowClass} ${positionClass} ${heightClass} min-h-0`}>
-              <Component {...props} />
+            <div key={widget.id} className={gridClasses}>
+              <WidgetComponent {...props as any} />
             </div>
           );
         })}

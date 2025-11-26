@@ -12,10 +12,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid passphrase" }, { status: 401 });
     }
 
-    // Create session
-    const session = await encrypt({ authenticated: true });
     const days = parseInt(process.env.AUTH_SESSION_DAYS || "7", 10);
     const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+
+    // Create session
+    const session = await encrypt({ 
+      user: "admin", 
+      expires, 
+      authenticated: true 
+    });
 
     const response = NextResponse.json({ success: true });
     
@@ -32,4 +37,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
 

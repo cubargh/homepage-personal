@@ -26,7 +26,7 @@ export default function Home() {
          - 50% = 3 cols
          - 100% = 6 cols
       */}
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-6 auto-rows-[400px]">
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-6 auto-rows-auto md:auto-rows-[400px]">
         {dashboardConfig.widgets.map((widget: WidgetConfig) => {
           let Component: any; // Explicitly type as any to avoid complex TS union mismatches in map
           let props = {};

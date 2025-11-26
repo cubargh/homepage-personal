@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import useSWR from "swr";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +12,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ServiceConfig, ServiceStatus } from "@/types";
-import { Activity, Globe, CheckCircle2, XCircle } from "lucide-react";
+import { Activity, Globe, ChevronDown, ChevronUp } from "lucide-react";
 
 const fetcher = async (url: string) => {
     const res = await fetch(url);
@@ -128,15 +129,27 @@ interface ServiceWidgetProps {
 }
 
 export function ServiceWidget({ services, config }: ServiceWidgetProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
   return (
-    <Card className="h-full flex flex-col border-border/50 overflow-hidden">
-      <CardHeader className="pb-3 bg-gradient-to-b from-secondary/10 to-transparent">
-        <CardTitle className="flex items-center space-x-2 text-primary">
-            <Activity className="h-5 w-5" />
-            <span>Service Status</span>
+    <Card className={`h-full flex flex-col border-border/50 overflow-hidden transition-all duration-300 ${isCollapsed ? 'h-auto min-h-0' : ''}`}>
+      <CardHeader 
+        className="pb-3 bg-gradient-to-b from-secondary/10 to-transparent cursor-pointer md:cursor-default group"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        <CardTitle className="flex items-center justify-between text-primary">
+            <div className="flex items-center space-x-2">
+                <Activity className="h-5 w-5" />
+                <span>Service Status</span>
+            </div>
+            {/* Show chevron only on mobile */}
+            <div className="md:hidden text-muted-foreground">
+                {isCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
+            </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden p-0">
+      {/* On mobile: hide if collapsed. On desktop: always flex/visible regardless of state */}
+      <CardContent className={`flex-1 overflow-hidden p-0 ${isCollapsed ? 'hidden md:block' : 'block'}`}>
         <ScrollArea className="h-full px-4 pb-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {services.map((service) => (

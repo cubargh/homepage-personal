@@ -14,7 +14,7 @@ export default function Home() {
   const dashboardConfig = getDashboardConfig();
 
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8 h-screen overflow-hidden flex flex-col">
+    <main className="min-h-screen bg-background p-4 md:p-8 lg:h-screen lg:overflow-hidden flex flex-col">
       {/* 
          3-column grid layout optimized for 1080p screens.
          Col 1: Weather (Top) + Services (Bottom)
@@ -67,8 +67,12 @@ export default function Home() {
           if (widget.id === "f1-next-race") positionClass = "lg:col-start-2 lg:row-start-1 lg:row-span-2";
           if (widget.id === "football-matches") positionClass = "lg:col-start-3 lg:row-start-1 lg:row-span-2";
 
-          // Apply height classes: h-full to fill the grid cell
-          const heightClass = "h-full";
+          // Apply height classes: h-full to fill the grid cell on desktop
+          // On mobile, enforce min-h-[33vh] for non-weather widgets
+          let heightClass = "h-full";
+          if (widget.type !== 'weather') {
+             heightClass += " min-h-[33vh] lg:min-h-0";
+          }
 
           return (
             <div key={widget.id} className={`${colClass} ${rowClass} ${positionClass} ${heightClass} min-h-0`}>

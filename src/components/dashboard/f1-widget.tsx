@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import useSWR from "swr";
 import { parseISO } from "date-fns";
 import { formatTime } from "@/lib/utils";
@@ -14,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Flag, Calendar, Clock } from "lucide-react";
+import { Flag, Calendar, Clock, ChevronDown, ChevronUp } from "lucide-react";
 import { TrackMap } from "@/components/dashboard/track-map";
 import { 
   F1ApiNextResponse, 
@@ -38,6 +39,8 @@ interface F1WidgetProps {
 }
 
 export function F1Widget({ config }: F1WidgetProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
   const { data: nextRaceResponse } = useSWR<F1ApiNextResponse>(
     "/api/f1?path=current/next",
     fetcher,
@@ -101,14 +104,22 @@ export function F1Widget({ config }: F1WidgetProps) {
   : [];
 
   return (
-    <Card className="h-full flex flex-col border-border/50">
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2 text-primary">
-          <Flag className="h-5 w-5" />
-          <span>Formula 1</span>
+    <Card className={`h-full flex flex-col border-border/50 transition-all duration-300 ${isCollapsed ? 'h-auto min-h-0' : ''}`}>
+      <CardHeader
+         className="cursor-pointer md:cursor-default group"
+         onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        <CardTitle className="flex items-center justify-between text-primary">
+            <div className="flex items-center space-x-2">
+                <Flag className="h-5 w-5" />
+                <span>Formula 1</span>
+            </div>
+            <div className="md:hidden text-muted-foreground">
+                {isCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
+            </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden p-0">
+      <CardContent className={`flex-1 overflow-hidden p-0 ${isCollapsed ? 'hidden md:block' : 'block'}`}>
         <Tabs defaultValue="next" className="h-full flex flex-col">
           <div className="px-6">
             <TabsList className="grid w-full grid-cols-3 bg-secondary/30">

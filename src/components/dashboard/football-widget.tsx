@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FootballResponse } from "@/types";
-import { Trophy } from "lucide-react";
+import { Trophy, ChevronDown, ChevronUp } from "lucide-react";
 
 const fetcher = async (url: string) => {
     const res = await fetch(url);
@@ -43,6 +43,7 @@ interface FootballWidgetProps {
 
 export function FootballWidget({ config }: FootballWidgetProps) {
   const [selectedLeague, setSelectedLeague] = useState("PL");
+  const [isCollapsed, setIsCollapsed] = useState(false);
   
   // Update SWR key to include the competition code in the query string
   const { data, error, isLoading } = useSWR<FootballResponse>(
@@ -102,26 +103,34 @@ export function FootballWidget({ config }: FootballWidgetProps) {
   };
 
   return (
-    <Card className="h-full flex flex-col border-border/50">
+    <Card className={`h-full flex flex-col border-border/50 transition-all duration-300 ${isCollapsed ? 'h-auto min-h-0' : ''}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 px-4 pt-4">
-        <CardTitle className="flex items-center space-x-2 text-primary">
+        <div 
+            className="flex items-center space-x-2 text-primary cursor-pointer md:cursor-default group flex-1"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+        >
             <Trophy className="h-5 w-5" />
             <span>Matches</span>
-        </CardTitle>
-        <Select value={selectedLeague} onValueChange={setSelectedLeague}>
-            <SelectTrigger className="w-[120px] md:w-[140px] h-8 text-xs">
-                <SelectValue placeholder="Select League" />
-            </SelectTrigger>
-            <SelectContent>
-                {COMPETITIONS.map((comp) => (
-                    <SelectItem key={comp.code} value={comp.code} className="text-xs">
-                        {comp.name}
-                    </SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+            <div className="md:hidden text-muted-foreground ml-2">
+                {isCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
+            </div>
+        </div>
+        <div onClick={(e) => e.stopPropagation()} className={`${isCollapsed ? 'hidden md:block' : 'block'}`}>
+            <Select value={selectedLeague} onValueChange={setSelectedLeague}>
+                <SelectTrigger className="w-[120px] md:w-[140px] h-8 text-xs">
+                    <SelectValue placeholder="Select League" />
+                </SelectTrigger>
+                <SelectContent>
+                    {COMPETITIONS.map((comp) => (
+                        <SelectItem key={comp.code} value={comp.code} className="text-xs">
+                            {comp.name}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden p-0">
+      <CardContent className={`flex-1 overflow-hidden p-0 ${isCollapsed ? 'hidden md:block' : 'block'}`}>
         <ScrollArea className="h-full px-4 pb-4">
             {isLoading ? (
                  <div className="space-y-2">
@@ -160,8 +169,6 @@ export function FootballWidget({ config }: FootballWidgetProps) {
                                         </div>
                                     )}
                                     <div className="flex flex-col border border-border/30 rounded-lg p-2 md:p-3 hover:bg-white/5 transition-colors mb-2 last:mb-0 bg-card/40">
-                                        {/* Competition Name removed as it's redundant with the filter */}
-                                        
                                         <div className="flex items-center justify-between">
                                             {/* Home Team */}
                                             <div className="flex items-center space-x-2 w-[38%] overflow-hidden">

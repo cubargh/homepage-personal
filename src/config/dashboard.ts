@@ -3,7 +3,12 @@ import { DashboardConfig } from "@/types";
 export const getDashboardConfig = (): DashboardConfig => {
   // In Next.js, process.env is available at runtime on the server.
   // When this is called from a Server Component, it will see the runtime env var.
-  const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "localhost";
+  // Force user to provide NEXT_PUBLIC_ROOT_DOMAIN, no fallback to localhost.
+  const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
+
+  if (!ROOT_DOMAIN) {
+      console.warn("NEXT_PUBLIC_ROOT_DOMAIN is not set. Services URLs will be invalid.");
+  }
 
   return {
     services: [

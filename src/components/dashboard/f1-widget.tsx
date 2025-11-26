@@ -1,7 +1,8 @@
 "use client";
 
 import useSWR from "swr";
-import { format, parseISO } from "date-fns";
+import { parseISO } from "date-fns";
+import { formatTime } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -13,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Flag, Calendar } from "lucide-react";
+import { Flag, Calendar, Clock } from "lucide-react";
 import { 
   F1ApiNextResponse, 
   F1ApiDriverChampionshipResponse, 
@@ -31,6 +32,7 @@ const fetcher = async (url: string) => {
 interface F1WidgetProps {
   config: {
     refreshInterval: number;
+    timezone: string;
   };
 }
 
@@ -63,6 +65,40 @@ export function F1Widget({ config }: F1WidgetProps) {
   const driverStandings = driverData?.drivers_championship || [];
   const constructorStandings = constructorData?.constructors_championship || [];
 
+  const getScheduleItem = (name: string, dateTime?: { date: string; time: string }) => {
+    // Only create item if BOTH date and time exist and are valid strings
+    if (!dateTime || !dateTime.date || !dateTime.time) return null;
+    
+    try {
+        // Ensure we treat the time as UTC by appending Z if missing, assuming API returns UTC
+        const timeString = dateTime.time.endsWith('Z') ? dateTime.time : `${dateTime.time}Z`;
+        const date = parseISO(`${dateTime.date}T${timeString}`);
+        
+        // Check if date is valid
+        if (isNaN(date.getTime())) return null;
+        
+        return {
+            name,
+            date,
+        };
+    } catch (e) {
+        console.error(`Invalid date for session ${name}:`, dateTime);
+        return null;
+    }
+  };
+
+  const scheduleItems = nextRace ? [
+    getScheduleItem("Practice 1", nextRace.schedule.fp1),
+    getScheduleItem("Practice 2", nextRace.schedule.fp2),
+    getScheduleItem("Practice 3", nextRace.schedule.fp3),
+    getScheduleItem("Sprint Qualy", nextRace.schedule.sprintQualy),
+    getScheduleItem("Sprint", nextRace.schedule.sprintRace),
+    getScheduleItem("Qualifying", nextRace.schedule.qualy),
+    getScheduleItem("Race", nextRace.schedule.race),
+  ].filter((item): item is { name: string; date: Date } => Boolean(item))
+   .sort((a, b) => a.date.getTime() - b.date.getTime())
+  : [];
+
   return (
     <Card className="h-full flex flex-col border-border/50">
       <CardHeader>
@@ -83,27 +119,34 @@ export function F1Widget({ config }: F1WidgetProps) {
 
           <TabsContent value="next" className="flex-1 overflow-hidden p-0">
             <ScrollArea className="h-full">
-                <div className="p-6 space-y-4">
+                <div className="p-4 md:p-6 space-y-4 md:space-y-6">
                     {nextRace ? (
-                    <div className="space-y-6">
+                    <div className="space-y-4 md:space-y-6">
                         <div className="space-y-1 text-center">
-                            <p className="text-xs text-muted-foreground uppercase tracking-widest">{nextRaceResponse?.season} Season • Round {nextRace.round}</p>
-                            <h3 className="text-2xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">{nextRace.raceName}</h3>
+                            <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-widest">{nextRaceResponse?.season} Season • Round {nextRace.round}</p>
+                            <h3 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">{nextRace.raceName}</h3>
+                            <p className="text-xs text-muted-foreground">
+                                {nextRace.circuit.circuitName}
+                            </p>
                         </div>
                         
-                        <div className="flex flex-col items-center justify-center p-4 bg-secondary/20 rounded-xl border border-white/5 space-y-2">
-                            <div className="flex items-center space-x-2 text-primary mb-1">
-                                <Calendar className="h-5 w-5" />
-                                <span className="text-lg font-medium">
-                                    {format(parseISO(`${nextRace.schedule.race.date}T${nextRace.schedule.race.time}`), "MMMM d, HH:mm")}
-                                </span>
-                            </div>
-                            <div className="text-center">
-                                <p className="font-semibold text-foreground/90">{nextRace.circuit.circuitName}</p>
-                                <p className="text-xs text-muted-foreground">
-                                    {nextRace.circuit.city}, {nextRace.circuit.country}
-                                </p>
-                            </div>
+                        <div className="grid gap-2">
+                            {scheduleItems.map((session) => (
+                                <div key={session.name} className={`flex items-center justify-between p-2 md:p-3 rounded-lg border ${session.name === 'Race' ? 'bg-primary/10 border-primary/20' : 'bg-secondary/10 border-white/5'}`}>
+                                    <div className="flex items-center space-x-3">
+                                        {session.name === 'Race' ? <Flag className="h-4 w-4 text-primary" /> : <Clock className="h-4 w-4 text-muted-foreground" />}
+                                        <span className={`text-sm font-medium ${session.name === 'Race' ? 'text-primary' : 'text-foreground/80'}`}>{session.name}</span>
+                                    </div>
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-xs font-medium text-foreground">
+                                            {formatTime(session.date, "EEE, MMM d", config.timezone)}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                            {formatTime(session.date, "HH:mm", config.timezone)}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                     ) : (

@@ -5,12 +5,14 @@ export const getDashboardConfig = (): DashboardConfig => {
   // When this is called from a Server Component, it will see the runtime env var.
   // Force user to provide NEXT_PUBLIC_ROOT_DOMAIN, no fallback to localhost.
   const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
+  const TIMEZONE = process.env.NEXT_PUBLIC_TIMEZONE || "UTC";
 
   if (!ROOT_DOMAIN) {
       console.warn("NEXT_PUBLIC_ROOT_DOMAIN is not set. Services URLs will be invalid.");
   }
 
   return {
+    timezone: TIMEZONE,
     services: [
       {
         name: "Jellyfin",

@@ -20,6 +20,7 @@ export interface WidgetConfig {
 }
 
 export interface DashboardConfig {
+  timezone: string; // Added
   services: ServiceConfig[];
   football: {
     leagues: string[];
@@ -53,11 +54,15 @@ export interface FootballMatch {
   homeTeam: {
     id: number;
     name: string;
+    shortName: string;
+    tla: string;
     crest: string;
   };
   awayTeam: {
     id: number;
     name: string;
+    shortName: string;
+    tla: string;
     crest: string;
   };
   score: {

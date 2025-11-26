@@ -39,15 +39,15 @@ export default function Home() {
               break;
             case "f1":
               Component = F1Widget;
-              props = { config: dashboardConfig.f1 };
+              props = { config: { ...dashboardConfig.f1, timezone: dashboardConfig.timezone } };
               break;
             case "football":
               Component = FootballWidget;
-              props = { config: dashboardConfig.football };
+              props = { config: { ...dashboardConfig.football, timezone: dashboardConfig.timezone } };
               break;
             case "weather":
               Component = WeatherWidget;
-              props = { config: dashboardConfig.weather };
+              props = { config: { ...dashboardConfig.weather, timezone: dashboardConfig.timezone } };
               break;
             default:
               return null;

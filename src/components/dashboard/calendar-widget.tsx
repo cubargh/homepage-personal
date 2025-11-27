@@ -22,6 +22,12 @@ import { CalendarEvent } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MapPin, List, LayoutGrid, Columns, Rows } from "lucide-react";
 import { cn, formatTime } from "@/lib/utils";
 
@@ -144,15 +150,28 @@ export function CalendarWidget({ config }: CalendarWidgetProps) {
             </span>
             <div className="flex flex-col gap-0.5 w-full px-0.5">
                 {dayEvents.slice(0, 3).map((e, idx) => (
-                    <div 
-                        key={e.id + idx} 
-                        className={cn(
-                            "text-[8px] truncate w-full px-1 rounded-sm hidden md:block text-foreground",
-                            CALENDAR_COLORS[e.calendarIndex % CALENDAR_COLORS.length].replace("border-", "") // Use bg color only
-                        )}
-                    >
-                        {e.summary}
-                    </div>
+                    <Tooltip key={e.id + idx}>
+                        <TooltipTrigger asChild>
+                            <div 
+                                className={cn(
+                                    "text-[8px] truncate w-full px-1 rounded-sm hidden md:block text-foreground cursor-default",
+                                    CALENDAR_COLORS[e.calendarIndex % CALENDAR_COLORS.length].replace("border-", "") // Use bg color only
+                                )}
+                            >
+                                {e.summary}
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" align="center" className="max-w-[200px]">
+                            <div className="flex flex-col gap-1">
+                                <p className="font-semibold text-xs break-words">{e.summary}</p>
+                                <div className="text-[10px] text-muted-foreground">
+                                    {e.allDay ? "All Day" : `${formatInTz(e.start, "HH:mm")} - ${formatInTz(e.end, "HH:mm")}`}
+                                </div>
+                                {e.description && <p className="text-[10px] text-muted-foreground/80 line-clamp-3 break-words">{e.description}</p>}
+                                {e.location && <div className="flex items-center text-[10px] text-muted-foreground"><MapPin className="h-3 w-3 mr-1" />{e.location}</div>}
+                            </div>
+                        </TooltipContent>
+                    </Tooltip>
                 ))}
                 {/* Mobile Dot indicator */}
                 {dayEvents.length > 0 && (
@@ -209,17 +228,29 @@ export function CalendarWidget({ config }: CalendarWidgetProps) {
                         <ScrollArea className="flex-1 p-1">
                             <div className="flex flex-col gap-1">
                                 {dayEvents.map(e => (
-                                    <div 
-                                        key={e.id} 
-                                        className={cn(
-                                            "text-[9px] p-1 bg-secondary/30 rounded border-l-2 truncate",
-                                            CALENDAR_COLORS[e.calendarIndex % CALENDAR_COLORS.length].split(" ")[1] // Use border color
-                                        )} 
-                                        title={`${e.summary} (${formatInTz(e.start, 'HH:mm')})`}
-                                    >
-                                        <div className="font-medium truncate">{e.summary}</div>
-                                        {!e.allDay && <div className="text-muted-foreground">{formatInTz(e.start, 'HH:mm')}</div>}
-                                    </div>
+                                    <Tooltip key={e.id}>
+                                        <TooltipTrigger asChild>
+                                            <div 
+                                                className={cn(
+                                                    "text-[9px] p-1 bg-secondary/30 rounded border-l-2 truncate cursor-default",
+                                                    CALENDAR_COLORS[e.calendarIndex % CALENDAR_COLORS.length].split(" ")[1] // Use border color
+                                                )} 
+                                            >
+                                                <div className="font-medium truncate">{e.summary}</div>
+                                                {!e.allDay && <div className="text-muted-foreground">{formatInTz(e.start, 'HH:mm')}</div>}
+                                            </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" align="center" className="max-w-[200px]">
+                                            <div className="flex flex-col gap-1">
+                                                <p className="font-semibold text-xs break-words">{e.summary}</p>
+                                                <div className="text-[10px] text-muted-foreground">
+                                                    {e.allDay ? "All Day" : `${formatInTz(e.start, "HH:mm")} - ${formatInTz(e.end, "HH:mm")}`}
+                                                </div>
+                                                {e.description && <p className="text-[10px] text-muted-foreground/80 line-clamp-3 break-words">{e.description}</p>}
+                                                {e.location && <div className="flex items-center text-[10px] text-muted-foreground"><MapPin className="h-3 w-3 mr-1" />{e.location}</div>}
+                                            </div>
+                                        </TooltipContent>
+                                    </Tooltip>
                                 ))}
                             </div>
                         </ScrollArea>

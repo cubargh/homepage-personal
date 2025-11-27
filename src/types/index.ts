@@ -17,7 +17,9 @@ export interface WidgetConfig {
   type: "service-monitor" | "football" | "f1" | "weather" | "sports" | "calendar";
   config?: any; 
   colSpan?: number; 
-  rowSpan?: number; // Added
+  rowSpan?: number;
+  x?: number; // Added for grid layout
+  y?: number; // Added for grid layout
 }
 
 export interface DashboardConfig {

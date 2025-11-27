@@ -74,22 +74,13 @@ export function F1Content({ config }: F1WidgetProps) {
     <Tabs defaultValue="next" className="h-full flex flex-col">
       <div className="px-6">
         <TabsList className="grid w-full grid-cols-3 bg-secondary/30">
-          <TabsTrigger
-            value="next"
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
-          >
+          <TabsTrigger value="next">
             Next Race
           </TabsTrigger>
-          <TabsTrigger
-            value="drivers"
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
-          >
+          <TabsTrigger value="drivers">
             Drivers
           </TabsTrigger>
-          <TabsTrigger
-            value="constructors"
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
-          >
+          <TabsTrigger value="constructors">
             Teams
           </TabsTrigger>
         </TabsList>

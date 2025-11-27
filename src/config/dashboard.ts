@@ -6,6 +6,8 @@ export const getDashboardConfig = (): DashboardConfig => {
   // Force user to provide NEXT_PUBLIC_ROOT_DOMAIN, no fallback to localhost.
   const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
   const TIMEZONE = process.env.NEXT_PUBLIC_TIMEZONE || "UTC";
+  const LAT = parseFloat(process.env.NEXT_PUBLIC_WEATHER_LAT || "-34.576");
+  const LON = parseFloat(process.env.NEXT_PUBLIC_WEATHER_LON || "-58.455");
 
   if (!ROOT_DOMAIN) {
       console.warn("NEXT_PUBLIC_ROOT_DOMAIN is not set. Services URLs will be invalid.");
@@ -68,8 +70,8 @@ export const getDashboardConfig = (): DashboardConfig => {
       refreshInterval: 60000 * 60, 
     },
     weather: {
-      lat: -34.576, // Colegiales, Buenos Aires, Argentina
-      lon: -58.455,
+      lat: LAT,
+      lon: LON,
       units: "metric",
       refreshInterval: 60000 * 30, // 30 minutes
     },

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDashboardConfig } from "@/config/dashboard";
-import { format, addDays, isSameDay, parseISO } from "date-fns";
+import { addDays, isSameDay, parseISO } from "date-fns";
 
 const API_KEY = process.env.OPENWEATHER_API_KEY;
 const BASE_URL = "https://api.openweathermap.org/data/2.5";
@@ -29,12 +29,12 @@ export async function GET(request: NextRequest) {
     const currentData = await currentRes.json();
     const forecastData = await forecastRes.json();
 
-    // Process forecast to get next 3 days (1 data point per day, e.g., noon)
+    // Process forecast to get next 5 days (1 data point per day, e.g., noon)
     const dailyForecast: any[] = [];
     const today = new Date();
     
-    // Simple logic: pick the forecast item closest to 12:00 PM for the next 3 days
-    for (let i = 1; i <= 3; i++) {
+    // Simple logic: pick the forecast item closest to 12:00 PM for the next 5 days
+    for (let i = 1; i <= 5; i++) {
         const targetDate = addDays(today, i);
         const dayForecasts = forecastData.list.filter((item: any) => 
             isSameDay(parseISO(item.dt_txt), targetDate)
@@ -72,9 +72,16 @@ export async function GET(request: NextRequest) {
     }));
 
     return NextResponse.json({
+        location: {
+            city: currentData.name,
+            country: currentData.sys.country
+        },
         current: {
             temp: currentData.main.temp,
+            humidity: currentData.main.humidity,
+            windSpeed: currentData.wind.speed,
             condition: currentData.weather[0].main,
+            description: currentData.weather[0].description,
             icon: currentData.weather[0].icon,
         },
         forecast: processedForecast

@@ -167,9 +167,16 @@ export interface F1ApiConstructorChampionshipResponse {
 }
 
 export interface WeatherData {
+  location: {
+    city: string;
+    country: string;
+  };
   current: {
     temp: number;
+    humidity: number;
+    windSpeed: number;
     condition: string;
+    description: string;
     icon: string;
   };
   forecast: Array<{

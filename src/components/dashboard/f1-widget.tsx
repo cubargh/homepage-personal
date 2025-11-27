@@ -25,17 +25,9 @@ interface F1WidgetProps {
   };
 }
 
-export function F1Widget({ config }: F1WidgetProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+export function F1Content({ config }: F1WidgetProps) {
   const { nextRace, season, driverStandings, constructorStandings, isLoading } =
     useF1Data(config.refreshInterval);
-
-  const toggleCollapse = () => {
-    // Small screen only check remains valid for interaction
-    if (window.innerWidth < 768) {
-      setIsCollapsed(!isCollapsed);
-    }
-  };
 
   const getScheduleItem = (
     name: string,
@@ -79,6 +71,214 @@ export function F1Widget({ config }: F1WidgetProps) {
     : [];
 
   return (
+    <Tabs defaultValue="next" className="h-full flex flex-col">
+      <div className="px-6">
+        <TabsList className="grid w-full grid-cols-3 bg-secondary/30">
+          <TabsTrigger
+            value="next"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
+          >
+            Next Race
+          </TabsTrigger>
+          <TabsTrigger
+            value="drivers"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
+          >
+            Drivers
+          </TabsTrigger>
+          <TabsTrigger
+            value="constructors"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
+          >
+            Teams
+          </TabsTrigger>
+        </TabsList>
+      </div>
+
+      <TabsContent value="next" className="flex-1 overflow-hidden p-0">
+        <ScrollArea className="h-full">
+          <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+            {nextRace ? (
+              <div className="space-y-4 md:space-y-6">
+                <div className="space-y-1 text-center">
+                  <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-widest">
+                    {season} Season • Round {nextRace.round}
+                  </p>
+                  <h3 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+                    {nextRace.raceName}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    {nextRace.circuit.circuitName}
+                  </p>
+                </div>
+
+                <TrackMap
+                  circuitName={nextRace.circuit.circuitName}
+                  city={nextRace.circuit.city}
+                  country={nextRace.circuit.country}
+                />
+
+                <div className="grid gap-2">
+                  {scheduleItems.map((session) => (
+                    <div
+                      key={session.name}
+                      className={`flex items-center justify-between p-2 md:p-3 rounded-lg border ${
+                        session.name === "Race"
+                          ? "bg-primary/10 border-primary/20"
+                          : "bg-secondary/10 border-white/5"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        {session.name === "Race" ? (
+                          <Flag className="h-4 w-4 text-primary" />
+                        ) : (
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                        )}
+                        <span
+                          className={`text-sm font-medium ${
+                            session.name === "Race"
+                              ? "text-primary"
+                              : "text-foreground/80"
+                          }`}
+                        >
+                          {session.name}
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-xs font-medium text-foreground">
+                          {formatTime(
+                            session.date,
+                            "EEE, MMM d",
+                            config.timezone
+                          )}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatTime(
+                            session.date,
+                            "HH:mm",
+                            config.timezone
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="h-full flex items-center justify-center text-muted-foreground py-10">
+                {isLoading
+                  ? "Loading race data..."
+                  : "Failed to load race data."}
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </TabsContent>
+
+      <TabsContent value="drivers" className="flex-1 overflow-hidden p-0">
+        <ScrollArea className="h-full">
+          <div className="px-2 pb-2">
+            <Table>
+              <TableHeader className="bg-transparent border-b border-border/40">
+                <TableRow className="hover:bg-transparent border-border/40">
+                  <TableHead className="w-[40px] text-muted-foreground/70">
+                    #
+                  </TableHead>
+                  <TableHead className="text-muted-foreground/70">
+                    Driver
+                  </TableHead>
+                  <TableHead className="text-right text-muted-foreground/70">
+                    Pts
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {driverStandings.map((driver) => (
+                  <TableRow
+                    key={driver.position}
+                    className="border-border/20 hover:bg-white/5"
+                  >
+                    <TableCell className="font-medium text-muted-foreground">
+                      {driver.position}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium">
+                          {driver.driver.name} {driver.driver.surname}
+                        </span>
+                        <span className="text-xs text-primary/80">
+                          {driver.team.teamName}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-foreground/80">
+                      {driver.points}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </ScrollArea>
+      </TabsContent>
+
+      <TabsContent
+        value="constructors"
+        className="flex-1 overflow-hidden p-0"
+      >
+        <ScrollArea className="h-full">
+          <div className="px-2 pb-2">
+            <Table>
+              <TableHeader className="bg-transparent border-b border-border/40">
+                <TableRow className="hover:bg-transparent border-border/40">
+                  <TableHead className="w-[40px] text-muted-foreground/70">
+                    #
+                  </TableHead>
+                  <TableHead className="text-muted-foreground/70">
+                    Team
+                  </TableHead>
+                  <TableHead className="text-right text-muted-foreground/70">
+                    Pts
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {constructorStandings.map((team) => (
+                  <TableRow
+                    key={team.position}
+                    className="border-border/20 hover:bg-white/5"
+                  >
+                    <TableCell className="font-medium text-muted-foreground">
+                      {team.position}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {team.team.teamName}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-foreground/80">
+                      {team.points}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </ScrollArea>
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+export function F1Widget({ config }: F1WidgetProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const toggleCollapse = () => {
+    // Small screen only check remains valid for interaction
+    if (window.innerWidth < 768) {
+      setIsCollapsed(!isCollapsed);
+    }
+  };
+
+  return (
     <Card
       className={`flex flex-col border-border/50 transition-all duration-300 ${
         isCollapsed ? "h-auto min-h-0" : "h-full min-h-[33vh] lg:min-h-0"
@@ -107,200 +307,7 @@ export function F1Widget({ config }: F1WidgetProps) {
           isCollapsed ? "hidden md:block" : "block"
         }`}
       >
-        <Tabs defaultValue="next" className="h-full flex flex-col">
-          <div className="px-6">
-            <TabsList className="grid w-full grid-cols-3 bg-secondary/30">
-              <TabsTrigger
-                value="next"
-                className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
-              >
-                Next Race
-              </TabsTrigger>
-              <TabsTrigger
-                value="drivers"
-                className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
-              >
-                Drivers
-              </TabsTrigger>
-              <TabsTrigger
-                value="constructors"
-                className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
-              >
-                Teams
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="next" className="flex-1 overflow-hidden p-0">
-            <ScrollArea className="h-full">
-              <div className="p-4 md:p-6 space-y-4 md:space-y-6">
-                {nextRace ? (
-                  <div className="space-y-4 md:space-y-6">
-                    <div className="space-y-1 text-center">
-                      <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-widest">
-                        {season} Season • Round {nextRace.round}
-                      </p>
-                      <h3 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
-                        {nextRace.raceName}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        {nextRace.circuit.circuitName}
-                      </p>
-                    </div>
-
-                    <TrackMap
-                      circuitName={nextRace.circuit.circuitName}
-                      city={nextRace.circuit.city}
-                      country={nextRace.circuit.country}
-                    />
-
-                    <div className="grid gap-2">
-                      {scheduleItems.map((session) => (
-                        <div
-                          key={session.name}
-                          className={`flex items-center justify-between p-2 md:p-3 rounded-lg border ${
-                            session.name === "Race"
-                              ? "bg-primary/10 border-primary/20"
-                              : "bg-secondary/10 border-white/5"
-                          }`}
-                        >
-                          <div className="flex items-center space-x-3">
-                            {session.name === "Race" ? (
-                              <Flag className="h-4 w-4 text-primary" />
-                            ) : (
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                            )}
-                            <span
-                              className={`text-sm font-medium ${
-                                session.name === "Race"
-                                  ? "text-primary"
-                                  : "text-foreground/80"
-                              }`}
-                            >
-                              {session.name}
-                            </span>
-                          </div>
-                          <div className="flex flex-col items-end">
-                            <span className="text-xs font-medium text-foreground">
-                              {formatTime(
-                                session.date,
-                                "EEE, MMM d",
-                                config.timezone
-                              )}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {formatTime(
-                                session.date,
-                                "HH:mm",
-                                config.timezone
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="h-full flex items-center justify-center text-muted-foreground py-10">
-                    {isLoading
-                      ? "Loading race data..."
-                      : "Failed to load race data."}
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-
-          <TabsContent value="drivers" className="flex-1 overflow-hidden p-0">
-            <ScrollArea className="h-full">
-              <div className="px-2 pb-2">
-                <Table>
-                  <TableHeader className="bg-transparent border-b border-border/40">
-                    <TableRow className="hover:bg-transparent border-border/40">
-                      <TableHead className="w-[40px] text-muted-foreground/70">
-                        #
-                      </TableHead>
-                      <TableHead className="text-muted-foreground/70">
-                        Driver
-                      </TableHead>
-                      <TableHead className="text-right text-muted-foreground/70">
-                        Pts
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {driverStandings.map((driver) => (
-                      <TableRow
-                        key={driver.position}
-                        className="border-border/20 hover:bg-white/5"
-                      >
-                        <TableCell className="font-medium text-muted-foreground">
-                          {driver.position}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              {driver.driver.name} {driver.driver.surname}
-                            </span>
-                            <span className="text-xs text-primary/80">
-                              {driver.team.teamName}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-foreground/80">
-                          {driver.points}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </ScrollArea>
-          </TabsContent>
-
-          <TabsContent
-            value="constructors"
-            className="flex-1 overflow-hidden p-0"
-          >
-            <ScrollArea className="h-full">
-              <div className="px-2 pb-2">
-                <Table>
-                  <TableHeader className="bg-transparent border-b border-border/40">
-                    <TableRow className="hover:bg-transparent border-border/40">
-                      <TableHead className="w-[40px] text-muted-foreground/70">
-                        #
-                      </TableHead>
-                      <TableHead className="text-muted-foreground/70">
-                        Team
-                      </TableHead>
-                      <TableHead className="text-right text-muted-foreground/70">
-                        Pts
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {constructorStandings.map((team) => (
-                      <TableRow
-                        key={team.position}
-                        className="border-border/20 hover:bg-white/5"
-                      >
-                        <TableCell className="font-medium text-muted-foreground">
-                          {team.position}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {team.team.teamName}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-foreground/80">
-                          {team.points}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </ScrollArea>
-          </TabsContent>
-        </Tabs>
+        <F1Content config={config} />
       </CardContent>
     </Card>
   );

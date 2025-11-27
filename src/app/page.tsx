@@ -2,6 +2,7 @@ import { ServiceWidget } from "@/components/dashboard/service-widget";
 import { FootballWidget } from "@/components/dashboard/football-widget";
 import { F1Widget } from "@/components/dashboard/f1-widget";
 import { WeatherWidget } from "@/components/dashboard/weather-widget";
+import { SportsWidget } from "@/components/dashboard/sports-widget";
 import { getDashboardConfig } from "@/config/dashboard";
 import { WidgetConfig } from "@/types";
 import { cn } from "@/lib/utils";
@@ -12,6 +13,7 @@ const WIDGET_COMPONENTS = {
   "f1": F1Widget,
   "football": FootballWidget,
   "weather": WeatherWidget,
+  "sports": SportsWidget,
 } as const;
 
 // Force dynamic rendering to ensure environment variables are read at runtime in Docker
@@ -40,9 +42,17 @@ export default function Home() {
           let props = {};
           if (widget.type === "service-monitor") {
             props = { services: dashboardConfig.services, config: dashboardConfig.monitoring };
-          } else {
-            // Dynamic prop mapping is tricky, but safe here due to config structure
-            props = { config: { ...dashboardConfig[widget.type], timezone: dashboardConfig.timezone } };
+          } else if (widget.type === "sports") {
+            props = { 
+               f1Config: { ...dashboardConfig.f1, timezone: dashboardConfig.timezone },
+               footballConfig: { ...dashboardConfig.football, timezone: dashboardConfig.timezone }
+             };
+          } else if (widget.type === "weather") {
+            props = { config: { ...dashboardConfig.weather, timezone: dashboardConfig.timezone } };
+          } else if (widget.type === "f1") {
+            props = { config: { ...dashboardConfig.f1, timezone: dashboardConfig.timezone } };
+          } else if (widget.type === "football") {
+            props = { config: { ...dashboardConfig.football, timezone: dashboardConfig.timezone } };
           }
 
           // Grid positioning classes
@@ -55,7 +65,8 @@ export default function Home() {
             widget.id === "weather" && "lg:col-start-1 lg:row-start-1",
             widget.id === "services" && "lg:col-start-1 lg:row-start-2",
             widget.id === "f1-next-race" && "lg:col-start-2 lg:row-start-1",
-            widget.id === "football-matches" && "lg:col-start-3 lg:row-start-1"
+            widget.id === "football-matches" && "lg:col-start-3 lg:row-start-1",
+            widget.id === "sports-combined" && "lg:col-start-2 lg:row-start-1"
           );
 
           return (

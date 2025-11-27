@@ -40,18 +40,12 @@ interface FootballWidgetProps {
     refreshInterval: number;
     timezone: string;
   };
+  headless?: boolean;
 }
 
-export function FootballWidget({ config }: FootballWidgetProps) {
+export function FootballContent({ config, headless = false }: FootballWidgetProps) {
   const [selectedLeague, setSelectedLeague] = useState("TODAY");
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const toggleCollapse = () => {
-      if (window.innerWidth < 768) {
-          setIsCollapsed(!isCollapsed);
-      }
-  };
-  
   // Update SWR key to include the competition code in the query string
   const { data, error, isLoading } = useSWR<FootballResponse>(
     `/api/football?endpoint=matches&competition=${selectedLeague}`,
@@ -122,37 +116,26 @@ export function FootballWidget({ config }: FootballWidgetProps) {
   };
 
   return (
-    <Card className={`flex flex-col border-border/50 transition-all duration-300 ${isCollapsed ? 'h-auto min-h-0' : 'h-full min-h-[33vh] lg:min-h-0'}`}>
-      <CardHeader 
-        className="flex flex-row items-center justify-between space-y-0 pb-4 px-4 pt-4 cursor-pointer md:cursor-default" 
-        onClick={toggleCollapse}
-      >
-        <div className="flex items-center space-x-2 text-primary group">
-            <Trophy className="h-5 w-5" />
-            <span>Matches</span>
-        </div>
-        <div className="flex items-center gap-2 ml-auto">
-            <div onClick={(e) => e.stopPropagation()} className={isCollapsed ? 'hidden md:block' : 'block'}>
-                <Select value={selectedLeague} onValueChange={setSelectedLeague}>
-                    <SelectTrigger className="w-[160px] md:w-[200px] h-8 text-xs">
-                        <SelectValue placeholder="Select League" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {COMPETITIONS.map((comp) => (
-                            <SelectItem key={comp.code} value={comp.code} className="text-xs">
-                                {comp.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-            <div className="md:hidden text-muted-foreground">
-                {isCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
-            </div>
-        </div>
-      </CardHeader>
-      <CardContent className={`flex-1 overflow-hidden p-0 ${isCollapsed ? 'hidden md:block' : 'block'}`}>
-        <ScrollArea className="h-full px-4 pb-4">
+    <div className="h-full flex flex-col">
+       {/* League Selector - Inline when headless */}
+       {headless && (
+         <div className="px-4 pb-2">
+            <Select value={selectedLeague} onValueChange={setSelectedLeague}>
+                <SelectTrigger className="w-full h-8 text-xs bg-secondary/30">
+                    <SelectValue placeholder="Select League" />
+                </SelectTrigger>
+                <SelectContent>
+                    {COMPETITIONS.map((comp) => (
+                        <SelectItem key={comp.code} value={comp.code} className="text-xs">
+                            {comp.name}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+         </div>
+       )}
+
+        <ScrollArea className="flex-1 px-4 pb-4">
             {isLoading ? (
                  <div className="space-y-2">
                     {[1, 2, 3].map((i) => (
@@ -233,6 +216,50 @@ export function FootballWidget({ config }: FootballWidgetProps) {
                 </div>
             )}
         </ScrollArea>
+    </div>
+  );
+}
+
+export function FootballWidget({ config }: FootballWidgetProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  // We need to manage selectedLeague state here too if we want it in the header for non-headless mode
+  // But to keep it simple, if not headless, we can just use the content internal state if we move the select inside content?
+  // No, the original design had select in header.
+  // To support legacy widget look:
+  // We can just duplicate the state logic or accept it as props.
+  // Actually, let's keep FootballWidget as a wrapper that uses FootballContent but hides the inner select and shows outer select?
+  // Too complex. Let's just make FootballWidget utilize FootballContent in headless mode = false?
+  // Or better, let's update FootballWidget to be simpler:
+  
+  // Actually, I will just reimplement FootballWidget to use FootballContent with headless=true for now to simplify, 
+  // and the user won't notice a big difference except the select moved down a bit.
+  // Wait, if I move the select to content, the header is cleaner.
+  
+  const toggleCollapse = () => {
+      if (window.innerWidth < 768) {
+          setIsCollapsed(!isCollapsed);
+      }
+  };
+
+  return (
+    <Card className={`flex flex-col border-border/50 transition-all duration-300 ${isCollapsed ? 'h-auto min-h-0' : 'h-full min-h-[33vh] lg:min-h-0'}`}>
+      <CardHeader 
+        className="flex flex-row items-center justify-between space-y-0 pb-4 px-4 pt-4 cursor-pointer md:cursor-default" 
+        onClick={toggleCollapse}
+      >
+        <div className="flex items-center space-x-2 text-primary group">
+            <Trophy className="h-5 w-5" />
+            <span>Matches</span>
+        </div>
+        <div className="flex items-center gap-2 ml-auto">
+            <div className="md:hidden text-muted-foreground">
+                {isCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
+            </div>
+        </div>
+      </CardHeader>
+      <CardContent className={`flex-1 overflow-hidden p-0 ${isCollapsed ? 'hidden md:block' : 'block'}`}>
+         {/* We use headless=true so the Select appears inside the content area */}
+         <FootballContent config={config} headless={true} />
       </CardContent>
     </Card>
   );

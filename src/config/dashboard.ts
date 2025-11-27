@@ -90,15 +90,9 @@ export const getDashboardConfig = (): DashboardConfig => {
         rowSpan: 1,
       },
       {
-        id: "f1-next-race",
-        type: "f1",
-        colSpan: 1, 
-        rowSpan: 2,
-      },
-      {
-        id: "football-matches",
-        type: "football",
-        colSpan: 1,
+        id: "sports-combined",
+        type: "sports",
+        colSpan: 2, 
         rowSpan: 2,
       },
     ],

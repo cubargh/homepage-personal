@@ -8,6 +8,7 @@ export const getDashboardConfig = (): DashboardConfig => {
   const TIMEZONE = process.env.NEXT_PUBLIC_TIMEZONE || "UTC";
   const LAT = parseFloat(process.env.NEXT_PUBLIC_WEATHER_LAT || "-34.576");
   const LON = parseFloat(process.env.NEXT_PUBLIC_WEATHER_LON || "-58.455");
+  const CALENDAR_ICS = process.env.NEXT_PUBLIC_CALENDAR_ICS || "";
 
   if (!ROOT_DOMAIN) {
       console.warn("NEXT_PUBLIC_ROOT_DOMAIN is not set. Services URLs will be invalid.");
@@ -75,6 +76,10 @@ export const getDashboardConfig = (): DashboardConfig => {
       units: "metric",
       refreshInterval: 60000 * 30, // 30 minutes
     },
+    calendar: {
+      icsUrl: CALENDAR_ICS,
+      refreshInterval: 60000 * 15, // 15 minutes
+    },
     monitoring: {
       refreshInterval: 60000, 
     },
@@ -92,9 +97,15 @@ export const getDashboardConfig = (): DashboardConfig => {
         rowSpan: 1,
       },
       {
+        id: "calendar",
+        type: "calendar",
+        colSpan: 1,
+        rowSpan: 2,
+      },
+      {
         id: "sports-combined",
         type: "sports",
-        colSpan: 2, 
+        colSpan: 1, 
         rowSpan: 2,
       },
     ],

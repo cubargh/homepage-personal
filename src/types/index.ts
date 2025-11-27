@@ -14,7 +14,7 @@ export interface ServiceConfig {
 
 export interface WidgetConfig {
   id: string;
-  type: "service-monitor" | "football" | "f1" | "weather" | "sports";
+  type: "service-monitor" | "football" | "f1" | "weather" | "sports" | "calendar";
   config?: any; 
   colSpan?: number; 
   rowSpan?: number; // Added
@@ -34,6 +34,10 @@ export interface DashboardConfig {
     lat: number;
     lon: number;
     units: "metric" | "imperial";
+    refreshInterval: number;
+  };
+  calendar: {
+    icsUrl: string;
     refreshInterval: number;
   };
   monitoring: {
@@ -186,4 +190,14 @@ export interface WeatherData {
     condition: string;
     icon: string;
   }>;
+}
+
+export interface CalendarEvent {
+  id: string;
+  summary: string;
+  description?: string;
+  location?: string;
+  start: string;
+  end: string;
+  allDay: boolean;
 }

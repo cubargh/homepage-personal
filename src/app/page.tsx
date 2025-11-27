@@ -3,6 +3,7 @@ import { FootballWidget } from "@/components/dashboard/football-widget";
 import { F1Widget } from "@/components/dashboard/f1-widget";
 import { WeatherWidget } from "@/components/dashboard/weather-widget";
 import { SportsWidget } from "@/components/dashboard/sports-widget";
+import { CalendarWidget } from "@/components/dashboard/calendar-widget";
 import { getDashboardConfig } from "@/config/dashboard";
 import { WidgetConfig } from "@/types";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,7 @@ const WIDGET_COMPONENTS = {
   "football": FootballWidget,
   "weather": WeatherWidget,
   "sports": SportsWidget,
+  "calendar": CalendarWidget,
 } as const;
 
 // Force dynamic rendering to ensure environment variables are read at runtime in Docker
@@ -29,8 +31,8 @@ export default function Home() {
       {/* 
          3-column grid layout optimized for 1080p screens.
          Col 1: Weather (Top) + Services (Bottom)
-         Col 2: F1 (Full Height)
-         Col 3: Football (Full Height)
+         Col 2: Calendar (Full Height)
+         Col 3: Sports (Full Height)
       */}
       <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-3 lg:grid-rows-[300px_1fr] flex-1 min-h-0 content-start">
         {dashboardConfig.widgets.map((widget: WidgetConfig) => {
@@ -49,6 +51,8 @@ export default function Home() {
              };
           } else if (widget.type === "weather") {
             props = { config: { ...dashboardConfig.weather, timezone: dashboardConfig.timezone } };
+          } else if (widget.type === "calendar") {
+            props = { config: { ...dashboardConfig.calendar, timezone: dashboardConfig.timezone } };
           } else if (widget.type === "f1") {
             props = { config: { ...dashboardConfig.f1, timezone: dashboardConfig.timezone } };
           } else if (widget.type === "football") {
@@ -64,9 +68,8 @@ export default function Home() {
             // Specific positioning can be moved to config or kept here if exceptional
             widget.id === "weather" && "lg:col-start-1 lg:row-start-1",
             widget.id === "services" && "lg:col-start-1 lg:row-start-2",
-            widget.id === "f1-next-race" && "lg:col-start-2 lg:row-start-1",
-            widget.id === "football-matches" && "lg:col-start-3 lg:row-start-1",
-            widget.id === "sports-combined" && "lg:col-start-2 lg:row-start-1"
+            widget.id === "calendar" && "lg:col-start-2 lg:row-start-1",
+            widget.id === "sports-combined" && "lg:col-start-3 lg:row-start-1"
           );
 
           return (

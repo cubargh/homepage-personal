@@ -21,3 +21,10 @@ widgets:
     enabled: true
     ics_urls:
       - "https://calendar.google.com/calendar/ical/..."
+
+  service_status:
+    enabled: true
+    services:
+      - name: Jellyfin
+        url: "https://tv.example.com"
+        icon: "jellyfin"

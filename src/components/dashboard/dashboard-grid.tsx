@@ -482,68 +482,6 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
               // Always Draggable/Resizable
               isDraggable={true}
               isResizable={true}
-              draggableCancel=".no-drag"
-              // Add a small delay (100ms) before drag starts to allow for clicks on child elements
-              // like links or buttons without initiating a drag immediately.
-              // This is a specific prop supported by the underlying draggablecore used by RGL (via props passing)
-              // Note: RGL types might not explicitly list it but it often passes through or we might need a custom approach if it fails.
-              // However, react-draggable supports `delay` or `pressDelay`.
-              // react-grid-layout passes props to DraggableCore.
-              // Let's try passing it. If strict types fail, we might need a workaround or just cast.
-              // Actually, looking at docs, standard RGL doesn't expose 'delay' easily on the Grid item.
-
-              // ALTERNATIVE: Use a handle class if we wanted explicit handles.
-              // BUT user asked for delay.
-              // Let's try `useCSSTransforms={true}` which is already there.
-
-              // Wait, 'isDraggable' is just a boolean.
-              // RGL doesn't support 'delay' prop on the main Responsive element directly in v1.3.4 types typically.
-              // But let's check if we can pass it via `draggableProps`? No.
-
-              // Workaround: We can't easily add a native "delay" to RGL without a custom fork or handle.
-              // HOWEVER, the user's issue is likely that clicking buttons triggers drag.
-              // The best fix for "click something inside" is actually `draggableCancel`.
-              // If we ensure interactive elements have class "no-drag", they won't trigger drag.
-
-              // If the user specifically wants a TIME delay for the WHOLE widget:
-              // We might be limited.
-
-              // Let's re-read the request: "add a delay to when I can drag the widget"
-              // If I assume they mean "press and hold to drag", RGL is tricky with that out of the box.
-              // But 'draggableCancel' is the standard way to fix "I clicked something inside".
-
-              // Let's double check if we can pass `draggableOpts`? No.
-
-              // Let's try adding `className="no-drag"` to specific inner elements if possible,
-              // OR try to pass `delay: 200` if it falls through (it might not).
-
-              // Another approach: Using a drag handle. "Only drag by title bar".
-              // But user asked for delay.
-
-              // If we can't do delay, maybe we instruct user to add no-drag?
-              // Or we add a global style or script? No.
-
-              // Let's try to assume RGL passes unknown props to Draggable?
-              // ...
-
-              // Actually, checking RGL source, it doesn't pass arbitrary props to Draggable.
-              // But it does support `draggableCancel`.
-              // Maybe the User just needs better cancellation?
-
-              // Wait, we can use `draggableCancel=".no-drag"` which we have.
-              // If the user means "clicking ANYWHERE resets it", a delay is nicer.
-
-              // Let's try to add `useCSSTransforms` which is there.
-
-              // If we really need delay, we might need a custom Draggable wrapper, but RGL manages that.
-
-              // Let's try adding `pressDelay` property if it exists in the types/library? Not in standard types.
-              // Let's try adding the class `cancel` to interactive elements.
-
-              // Let's try to add `draggableCancel` to exclude common interactive elements?
-              // draggableCancel=".no-drag, button, a, input, [role='button']"
-
-              // This is usually what people want when they ask for this—they want to be able to click buttons.
               draggableCancel=".no-drag, button, a, input, textarea, select, [role='button']"
               // Visuals
               margin={GRID_MARGIN}

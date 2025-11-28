@@ -1,17 +1,17 @@
 import { DashboardConfig } from "@/types";
+import { loadConfig } from "@/lib/config";
 
 export const getDashboardConfig = (): DashboardConfig => {
-  // In Next.js, process.env is available at runtime on the server.
-  // When this is called from a Server Component, it will see the runtime env var.
-  // Force user to provide NEXT_PUBLIC_ROOT_DOMAIN, no fallback to localhost.
-  const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
-  const TIMEZONE = process.env.NEXT_PUBLIC_TIMEZONE || "UTC";
-  const LAT = parseFloat(process.env.NEXT_PUBLIC_WEATHER_LAT || "-34.576");
-  const LON = parseFloat(process.env.NEXT_PUBLIC_WEATHER_LON || "-58.455");
-  const CALENDAR_ICS = process.env.NEXT_PUBLIC_CALENDAR_ICS || "";
+  const config = loadConfig();
+  
+  const ROOT_DOMAIN = config.server.root_domain;
+  const TIMEZONE = config.server.timezone;
+  const LAT = config.widgets.weather.lat;
+  const LON = config.widgets.weather.lon;
+  const CALENDAR_ICS = config.widgets.calendar.ics_urls.join(',');
 
   if (!ROOT_DOMAIN) {
-      console.warn("NEXT_PUBLIC_ROOT_DOMAIN is not set. Services URLs will be invalid.");
+      console.warn("server.root_domain is not set in config. Services URLs will be invalid.");
   }
 
   // NOTE: The grid is now 20 columns wide (previously 10).
@@ -78,7 +78,7 @@ export const getDashboardConfig = (): DashboardConfig => {
     weather: {
       lat: LAT,
       lon: LON,
-      units: "metric",
+      units: config.widgets.weather.units as "metric" | "imperial",
       refreshInterval: 60000 * 30, // 30 minutes
     },
     calendar: {

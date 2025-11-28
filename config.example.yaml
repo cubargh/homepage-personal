@@ -1,0 +1,23 @@
+server:
+  root_domain: "example.com"
+  timezone: "UTC"
+  auth:
+    passphrase: "secret-passphrase-change-me"
+    session_days: 7
+
+widgets:
+  weather:
+    enabled: true
+    lat: -34.576
+    lon: -58.455
+    api_key: "your-openweather-api-key"
+    units: "metric"
+
+  football:
+    enabled: true
+    api_key: "your-football-data-api-key"
+
+  calendar:
+    enabled: true
+    ics_urls:
+      - "https://calendar.google.com/calendar/ical/..."

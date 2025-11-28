@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import ical from "node-ical";
+import { loadConfig } from "@/lib/config";
 
 export async function GET() {
-  const icsUrls = process.env.NEXT_PUBLIC_CALENDAR_ICS;
+  const config = loadConfig();
+  const icsUrlsConfig = config.widgets.calendar.ics_urls;
 
-  if (!icsUrls) {
+  if (!icsUrlsConfig || icsUrlsConfig.length === 0) {
     return NextResponse.json({ error: "Calendar ICS URL not configured" }, { status: 500 });
   }
 
   try {
     // Handle webcal:// protocol by replacing with https://
-    const urls = icsUrls.split(',').map(url => {
+    const urls = icsUrlsConfig.map(url => {
         let cleanUrl = url.trim();
         if (cleanUrl.startsWith('webcal://')) {
             cleanUrl = 'https://' + cleanUrl.substring(9);

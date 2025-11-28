@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { loadConfig } from "@/lib/config";
 
-const API_KEY = process.env.FOOTBALL_DATA_API_KEY;
 const BASE_URL = "https://api.football-data.org/v4";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const endpoint = searchParams.get("endpoint") || "matches";
+  
+  const config = loadConfig();
+  const API_KEY = config.widgets.football.api_key;
   
   if (!API_KEY) {
      return NextResponse.json({ error: "API Configuration Missing" }, { status: 500 });

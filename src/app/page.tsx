@@ -10,7 +10,7 @@ export default function Home() {
   const dashboardConfig = getDashboardConfig();
 
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8 flex flex-col">
+    <main className="min-h-screen bg-background flex flex-col w-full max-w-full overflow-x-hidden">
       <DashboardGrid dashboardConfig={dashboardConfig} />
     </main>
   );

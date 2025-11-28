@@ -14,6 +14,11 @@ export const getDashboardConfig = (): DashboardConfig => {
       console.warn("NEXT_PUBLIC_ROOT_DOMAIN is not set. Services URLs will be invalid.");
   }
 
+  // NOTE: The grid is now 20 columns wide (previously 10).
+  // Coordinates and spans below are based on the 10-column system and 
+  // are automatically scaled x2 in `layout-utils.ts`. 
+  // Use explicit x2 values here if you want fine-grained control on the 20-col grid.
+  
   return {
     timezone: TIMEZONE,
     services: [
@@ -87,26 +92,34 @@ export const getDashboardConfig = (): DashboardConfig => {
       {
         id: "weather",
         type: "weather",
-        colSpan: 1,
-        rowSpan: 1,
+        x: 0,
+        y: 0,
+        colSpan: 3,
+        rowSpan: 2,
       },
       {
         id: "services",
         type: "service-monitor",
-        colSpan: 1,
-        rowSpan: 1,
+        x: 0,
+        y: 2,
+        colSpan: 3,
+        rowSpan: 2,
       },
       {
         id: "calendar",
         type: "calendar",
-        colSpan: 1,
-        rowSpan: 2,
+        x: 3,
+        y: 0,
+        colSpan: 4,
+        rowSpan: 4,
       },
       {
         id: "sports-combined",
         type: "sports",
-        colSpan: 1, 
-        rowSpan: 2,
+        x: 7,
+        y: 0,
+        colSpan: 3,
+        rowSpan: 4,
       },
     ],
   };

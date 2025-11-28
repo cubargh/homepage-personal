@@ -1,236 +1,275 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { Responsive, Layout } from "react-grid-layout";
-import { DashboardConfig, WidgetConfig } from "@/types";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { Responsive, Layout, Layouts } from "react-grid-layout";
+import { DashboardConfig, WidgetConfig, WidgetType } from "@/types";
 import { ServiceWidget } from "@/components/dashboard/service-widget";
 import { FootballWidget } from "@/components/dashboard/football-widget";
 import { F1Widget } from "@/components/dashboard/f1-widget";
 import { WeatherWidget } from "@/components/dashboard/weather-widget";
 import { SportsWidget } from "@/components/dashboard/sports-widget";
 import { CalendarWidget } from "@/components/dashboard/calendar-widget";
+import { GridBackground } from "@/components/dashboard/grid-background";
+import { WidgetWrapper } from "@/components/dashboard/widget-wrapper";
+import { WidgetErrorBoundary } from "@/components/dashboard/error-boundary";
+import { GridSkeleton } from "@/components/dashboard/grid-skeleton";
+import { generateLayouts } from "@/lib/layout-utils";
+import { GRID_BREAKPOINTS, GRID_COLS, GRID_MARGIN } from "@/config/grid";
 
-// Map widget types to their components
-const WIDGET_COMPONENTS = {
+const WIDGET_COMPONENTS: Record<WidgetType, React.ComponentType<any>> = {
   "service-monitor": ServiceWidget,
   "f1": F1Widget,
   "football": FootballWidget,
   "weather": WeatherWidget,
   "sports": SportsWidget,
   "calendar": CalendarWidget,
-} as const;
+};
 
 interface DashboardGridProps {
   dashboardConfig: DashboardConfig;
 }
+
+// Container padding to match Skeleton
+const CONTAINER_PADDING: [number, number] = [10, 10];
 
 export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const [width, setWidth] = useState(1200);
   const [rowHeight, setRowHeight] = useState(100);
-  const [gridCols, setGridCols] = useState(10);
-  const [colWidth, setColWidth] = useState(100); // Added explicit state for colWidth
-  const [isDragging, setIsDragging] = useState(false);
-  const [layouts, setLayouts] = useState<{ [key: string]: Layout[] }>({
-    lg: [],
-    md: [],
-    sm: [],
-    xs: [],
-    xxs: [],
-  });
+  const [currentBreakpoint, setCurrentBreakpoint] = useState<string>("lg");
+  const [gridCols, setGridCols] = useState(GRID_COLS.lg);
+  const [colWidth, setColWidth] = useState(100);
+  
+  // Track active interactions
+  const [isGridActive, setIsGridActive] = useState(false); // Dragging or Resizing anything (for background)
+  const [activeWidgetId, setActiveWidgetId] = useState<string | null>(null); // Specific widget being interacted with
+  const [isResizing, setIsResizing] = useState(false); // Specific state for resizing action
 
-  // Calculate dynamic row height and width using ResizeObserver
-  useEffect(() => {
-    if (!containerRef.current) return;
+  // Memoize initial layouts based on config
+  const defaultLayouts = useMemo(() => generateLayouts(dashboardConfig), [dashboardConfig]);
+  
+  const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
 
-    const handleResize = (entries: ResizeObserverEntry[]) => {
-      for (const entry of entries) {
-        const newWidth = entry.contentRect.width;
-        setWidth(newWidth);
-      }
-    };
-
-    const resizeObserver = new ResizeObserver(handleResize);
-    resizeObserver.observe(containerRef.current);
-
-    return () => resizeObserver.disconnect();
-  }, []);
-
-  // Update row height and col width whenever width or gridCols changes
-  useEffect(() => {
-    const margin = 10;
-    const cols = gridCols;
-    // RGL Width Formula: (containerWidth - (margin * (cols - 1))) / cols
-    const cellWidth = (width - (margin * (cols - 1))) / cols;
-    
-    setColWidth(cellWidth);
-    setRowHeight(cellWidth); // Keep it square
-  }, [width, gridCols]);
-
-  const onBreakpointChange = (breakpoint: string, cols: number) => {
-    setGridCols(cols);
-  };
-
-  // Load layout from local storage or generate default
+  // Initialize and Load Layouts
   useEffect(() => {
     setMounted(true);
+    // Initialize width immediately if ref is available
+    if (containerRef.current) {
+      setWidth(Math.floor(containerRef.current.offsetWidth));
+    }
+
     const savedLayouts = localStorage.getItem("dashboard-layouts");
     if (savedLayouts) {
       try {
         const parsedLayouts = JSON.parse(savedLayouts);
         if (parsedLayouts && typeof parsedLayouts === 'object') {
-           setLayouts(parsedLayouts);
-           return;
+           // Migration logic
+           if (parsedLayouts.desktop) {
+               parsedLayouts.lg = parsedLayouts.desktop;
+               delete parsedLayouts.desktop;
+           }
+           if (parsedLayouts.mobile) {
+               parsedLayouts.sm = parsedLayouts.mobile;
+               delete parsedLayouts.mobile;
+           }
+           
+           const lgItems = parsedLayouts.lg || [];
+           const maxRight = Math.max(...lgItems.map((l: any) => (l.x || 0) + (l.w || 0)), 0);
+           
+           if (maxRight <= 10 && lgItems.length > 0) {
+               console.log("Detected old 10-col layout, migrating to 20-col...");
+               const migratedLayouts: Layouts = {};
+               for (const bp in parsedLayouts) {
+                   migratedLayouts[bp] = parsedLayouts[bp].map((l: any) => ({
+                       ...l,
+                       x: l.x * 2,
+                       y: l.y * 2,
+                       w: l.w * 2,
+                       h: l.h * 2
+                   }));
+               }
+               setLayouts(migratedLayouts);
+           } else {
+               setLayouts(parsedLayouts);
+           }
         }
       } catch (e) {
         console.error("Failed to parse saved layout", e);
       }
     }
+  }, []);
 
-    // Generate default layout based on config if no saved layout
-    const defaultLayout = dashboardConfig.widgets.map((widget) => {
-      let x = 0;
-      let y = 0;
-      let w = 3;
-      let h = widget.rowSpan ?? 2;
+  // Calculate dynamic dimensions
+  useEffect(() => {
+    if (!containerRef.current) return;
 
-      if (widget.id === "weather") { x = 0; y = 0; w = 3; h = 2; }
-      else if (widget.id === "services") { x = 0; y = 2; w = 3; h = 2; }
-      else if (widget.id === "calendar") { x = 3; y = 0; w = 4; h = 4; }
-      else if (widget.id === "sports-combined") { x = 7; y = 0; w = 3; h = 4; }
-      else {
-          w = widget.colSpan ? Math.round(widget.colSpan * 3.33) : 3;
-          h = widget.rowSpan ?? 2;
-          x = (widget.x ?? 0);
-          y = widget.y ?? 0;
+    const measure = () => {
+      if (containerRef.current) {
+         setWidth(Math.floor(containerRef.current.offsetWidth));
       }
+    };
 
-      return {
-        i: widget.id,
-        x,
-        y,
-        w,
-        h,
-      };
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setWidth(Math.floor(entry.contentRect.width));
+      }
     });
 
-    setLayouts({
-      lg: defaultLayout,
-      md: defaultLayout.map(l => ({ ...l, w: Math.min(l.w, 6) })), 
-      sm: defaultLayout.map(l => ({ ...l, w: 4, x: 0 })), 
-      xs: defaultLayout.map(l => ({ ...l, w: 4, x: 0 })),
-      xxs: defaultLayout.map(l => ({ ...l, w: 4, x: 0 })),
-    });
-  }, [dashboardConfig.widgets]);
+    resizeObserver.observe(containerRef.current);
+    measure();
+    window.addEventListener('resize', measure);
 
-  const onLayoutChange = (currentLayout: Layout[], allLayouts: { [key: string]: Layout[] }) => {
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, []);
+
+  // Update metrics when width or breakpoint changes
+  useEffect(() => {
+    const margin = GRID_MARGIN[0];
+    const cols = GRID_COLS[currentBreakpoint as keyof typeof GRID_COLS] || GRID_COLS.lg;
+    const paddingX = CONTAINER_PADDING[0] * 2; 
+
+    // RGL Width Formula with container padding
+    const cellWidth = (width - paddingX - (margin * (cols - 1))) / cols;
+    
+    setGridCols(cols);
+    setColWidth(cellWidth);
+    setRowHeight(cellWidth); // Keep it square-ish
+  }, [width, currentBreakpoint]);
+
+  const onBreakpointChange = useCallback((breakpoint: string, cols: number) => {
+    setCurrentBreakpoint(breakpoint);
+    setGridCols(cols);
+  }, []);
+
+  const onLayoutChange = useCallback((currentLayout: Layout[], allLayouts: Layouts) => {
     setLayouts(allLayouts);
     localStorage.setItem("dashboard-layouts", JSON.stringify(allLayouts));
-  };
+  }, []);
 
-  const handleDragStart = () => setIsDragging(true);
-  const handleDragStop = () => setIsDragging(false);
-  const handleResizeStart = () => setIsDragging(true);
-  const handleResizeStop = () => setIsDragging(false);
+  // RGL Event Handlers
+  const onDragStart = useCallback((layout: Layout[], oldItem: Layout, newItem: Layout, placeholder: Layout, e: MouseEvent, element: HTMLElement) => {
+    setIsGridActive(true);
+    setActiveWidgetId(newItem.i);
+  }, []);
+
+  const onDragStop = useCallback(() => {
+    setIsGridActive(false);
+    setActiveWidgetId(null);
+  }, []);
+
+  const onResizeStart = useCallback((layout: Layout[], oldItem: Layout, newItem: Layout, placeholder: Layout, e: MouseEvent, element: HTMLElement) => {
+    setIsGridActive(true);
+    setActiveWidgetId(newItem.i);
+    setIsResizing(true);
+  }, []);
+
+  const onResizeStop = useCallback(() => {
+    setIsGridActive(false);
+    setActiveWidgetId(null);
+    setIsResizing(false);
+  }, []);
+
+  // Widget Props Factory
+  const getWidgetProps = useCallback((widget: WidgetConfig) => {
+    const common = { timezone: dashboardConfig.timezone };
+    
+    switch (widget.type) {
+      case "service-monitor":
+        return { services: dashboardConfig.services, config: dashboardConfig.monitoring };
+      case "sports":
+        return {
+          f1Config: { ...dashboardConfig.f1, ...common },
+          footballConfig: { ...dashboardConfig.football, ...common },
+        };
+      case "weather":
+        return { config: { ...dashboardConfig.weather, ...common } };
+      case "calendar":
+        return { config: { ...dashboardConfig.calendar, ...common } };
+      case "f1":
+        return { config: { ...dashboardConfig.f1, ...common } };
+      case "football":
+        return { config: { ...dashboardConfig.football, ...common } };
+      default:
+        return {};
+    }
+  }, [dashboardConfig]);
 
   if (!mounted) {
-    return null; // Avoid hydration mismatch
+    return <GridSkeleton config={dashboardConfig} />;
   }
 
-  // Render background grid cells explicitly
-  const renderGridBackground = () => {
-    const margin = 10;
-    const cols = gridCols;
-    // Use state colWidth for rendering background
-    
-    // Create an array for columns
-    const colElements = [];
-    for (let i = 0; i < cols; i++) {
-       colElements.push(
-          <div 
-            key={i}
-            className="h-full bg-white/5"
-            style={{
-               position: 'absolute',
-               top: 0,
-               bottom: 0,
-               left: `${i * (colWidth + margin)}px`,
-               width: `${colWidth}px`
-            }}
-          />
-       );
-    }
-
-    return (
-       <div className={`absolute inset-0 pointer-events-none z-0 transition-opacity duration-300 ease-in-out ${isDragging ? 'opacity-100' : 'opacity-0'}`}>
-           {/* Columns */}
-           {colElements}
-           
-           {/* Rows - using gradient for infinite height support */}
-           <div 
-             className="absolute inset-0"
-             style={{
-                backgroundImage: `linear-gradient(to bottom, transparent ${rowHeight}px, rgba(255,255,255,0.1) ${rowHeight}px, rgba(255,255,255,0.1) ${rowHeight + margin}px, transparent ${rowHeight + margin}px)`,
-                backgroundSize: `100% ${rowHeight + margin}px`
-             }}
-           />
-       </div>
-    );
-  };
-
   return (
-    <div ref={containerRef} className={`relative min-h-screen ${isDragging ? 'grid-active' : ''}`}>
-      {renderGridBackground()}
-      <Responsive
-        className="layout z-10"
-        layouts={layouts}
-        breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-        cols={{ lg: 10, md: 8, sm: 4, xs: 4, xxs: 4 }}
-        rowHeight={rowHeight}
-        width={width}
-        onLayoutChange={onLayoutChange}
-        onBreakpointChange={onBreakpointChange}
-        onDragStart={handleDragStart}
-        onDragStop={handleDragStop}
-        onResizeStart={handleResizeStart}
-        onResizeStop={handleResizeStop}
-        isDraggable={true}
-        isResizable={true}
-        margin={[10, 10]}
-        containerPadding={{ lg: [0, 0], md: [0, 0], sm: [0, 0], xs: [0, 0], xxs: [0, 0] }}
-      >
-        {dashboardConfig.widgets.map((widget) => {
-          const WidgetComponent = WIDGET_COMPONENTS[widget.type as keyof typeof WIDGET_COMPONENTS];
-          if (!WidgetComponent) return null;
+    <div className="flex flex-col gap-4 w-full h-full">
+      <div ref={containerRef} className="relative min-h-screen w-full">
+        {/* Render Skeleton if not mounted or loading, but keep it in the same container context */}
+        {!mounted ? (
+           <GridSkeleton config={dashboardConfig} />
+        ) : (
+          <>
+            <GridBackground 
+              cols={gridCols}
+              colWidth={colWidth}
+              rowHeight={rowHeight}
+              show={isGridActive}
+              padding={CONTAINER_PADDING}
+            />
+            
+            <Responsive
+              className="layout z-10"
+              layouts={layouts}
+              breakpoints={GRID_BREAKPOINTS}
+              cols={GRID_COLS}
+              rowHeight={rowHeight}
+              width={width}
+              onLayoutChange={onLayoutChange}
+              onBreakpointChange={onBreakpointChange}
+              
+              // Drag/Resize Handlers
+              onDragStart={onDragStart}
+              onDragStop={onDragStop}
+              onResizeStart={onResizeStart}
+              onResizeStop={onResizeStop}
+              
+              // Always Draggable/Resizable
+              isDraggable={true}
+              isResizable={true}
+              draggableCancel=".no-drag"
+              
+              // Visuals
+              margin={GRID_MARGIN}
+              containerPadding={{ 
+                 lg: CONTAINER_PADDING,
+                 sm: CONTAINER_PADDING
+              }}
+              useCSSTransforms={true}
+            >
+              {dashboardConfig.widgets.map((widget) => {
+                const WidgetComponent = WIDGET_COMPONENTS[widget.type];
+                if (!WidgetComponent) return null;
 
-          let props = {};
-          if (widget.type === "service-monitor") {
-            props = { services: dashboardConfig.services, config: dashboardConfig.monitoring };
-          } else if (widget.type === "sports") {
-            props = {
-              f1Config: { ...dashboardConfig.f1, timezone: dashboardConfig.timezone },
-              footballConfig: { ...dashboardConfig.football, timezone: dashboardConfig.timezone },
-            };
-          } else if (widget.type === "weather") {
-            props = { config: { ...dashboardConfig.weather, timezone: dashboardConfig.timezone } };
-          } else if (widget.type === "calendar") {
-            props = { config: { ...dashboardConfig.calendar, timezone: dashboardConfig.timezone } };
-          } else if (widget.type === "f1") {
-            props = { config: { ...dashboardConfig.f1, timezone: dashboardConfig.timezone } };
-          } else if (widget.type === "football") {
-            props = { config: { ...dashboardConfig.football, timezone: dashboardConfig.timezone } };
-          }
+                const isActive = widget.id === activeWidgetId;
 
-          return (
-            <div key={widget.id} className="relative h-full w-full overflow-hidden rounded-lg bg-card text-card-foreground shadow-sm border border-border">
-              <div className="h-full w-full select-none">
-                  <WidgetComponent {...props as any} />
-              </div>
-            </div>
-          );
-        })}
-      </Responsive>
+                return (
+                  <WidgetWrapper 
+                    key={widget.id} 
+                    isActive={isActive}
+                    isResizing={isActive && isResizing}
+                    className="pointer-events-auto" 
+                  >
+                    <WidgetErrorBoundary>
+                      <WidgetComponent {...getWidgetProps(widget)} />
+                    </WidgetErrorBoundary>
+                  </WidgetWrapper>
+                );
+              })}
+            </Responsive>
+          </>
+        )}
+      </div>
     </div>
   );
 }

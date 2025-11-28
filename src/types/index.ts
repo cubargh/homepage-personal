@@ -12,16 +12,51 @@ export interface ServiceConfig {
   icon?: string; // Icon name from selfh.st/icons (e.g., "jellyfin", "navidrome")
 }
 
-export interface WidgetConfig {
+export type WidgetType = "service-monitor" | "football" | "f1" | "weather" | "sports" | "calendar";
+
+export interface BaseWidgetConfig {
   id: string;
-  type: "service-monitor" | "football" | "f1" | "weather" | "sports" | "calendar";
-  config?: any; 
+  type: WidgetType;
   colSpan?: number; 
-  rowSpan?: number; // Added
+  rowSpan?: number;
+  x?: number; // Added for grid layout
+  y?: number; // Added for grid layout
 }
 
+export interface ServiceWidgetConfig extends BaseWidgetConfig {
+  type: "service-monitor";
+}
+
+export interface FootballWidgetConfig extends BaseWidgetConfig {
+  type: "football";
+}
+
+export interface F1WidgetConfig extends BaseWidgetConfig {
+  type: "f1";
+}
+
+export interface WeatherWidgetConfig extends BaseWidgetConfig {
+  type: "weather";
+}
+
+export interface SportsWidgetConfig extends BaseWidgetConfig {
+  type: "sports";
+}
+
+export interface CalendarWidgetConfig extends BaseWidgetConfig {
+  type: "calendar";
+}
+
+export type WidgetConfig = 
+  | ServiceWidgetConfig 
+  | FootballWidgetConfig 
+  | F1WidgetConfig 
+  | WeatherWidgetConfig 
+  | SportsWidgetConfig 
+  | CalendarWidgetConfig;
+
 export interface DashboardConfig {
-  timezone: string; // Added
+  timezone: string;
   services: ServiceConfig[];
   football: {
     leagues: string[];
@@ -44,6 +79,33 @@ export interface DashboardConfig {
     refreshInterval: number;
   };
   widgets: WidgetConfig[];
+}
+
+// Widget Component Props Interfaces
+export interface ServiceWidgetProps {
+  services: ServiceConfig[];
+  config: { refreshInterval: number };
+}
+
+export interface FootballWidgetProps {
+  config: { leagues: string[]; refreshInterval: number; timezone: string };
+}
+
+export interface F1WidgetProps {
+  config: { refreshInterval: number; timezone: string };
+}
+
+export interface WeatherWidgetProps {
+  config: { lat: number; lon: number; units: "metric" | "imperial"; refreshInterval: number; timezone: string };
+}
+
+export interface CalendarWidgetProps {
+  config: { icsUrl: string; refreshInterval: number; timezone: string };
+}
+
+export interface SportsWidgetProps {
+  f1Config: { refreshInterval: number; timezone: string };
+  footballConfig: { leagues: string[]; refreshInterval: number; timezone: string };
 }
 
 export interface FootballMatch {

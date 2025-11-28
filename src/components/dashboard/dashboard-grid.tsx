@@ -57,7 +57,9 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
     setMounted(true);
     // Initialize width immediately if ref is available
     if (containerRef.current) {
-      setWidth(Math.floor(containerRef.current.offsetWidth));
+      setWidth(Math.floor(containerRef.current.getBoundingClientRect().width));
+    } else if (typeof window !== 'undefined') {
+      setWidth(window.innerWidth);
     }
 
     const savedLayouts = localStorage.getItem("dashboard-layouts");
@@ -107,13 +109,22 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
 
     const measure = () => {
       if (containerRef.current) {
-         setWidth(Math.floor(containerRef.current.offsetWidth));
+         let newWidth = Math.floor(containerRef.current.getBoundingClientRect().width);
+         // Fallback to window width if container width is 0 (can happen on initial mount)
+         if (newWidth === 0 && typeof window !== 'undefined') {
+             newWidth = window.innerWidth;
+         }
+         setWidth(newWidth);
       }
     };
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        setWidth(Math.floor(entry.contentRect.width));
+        // Use contentRect for ResizeObserver, but verify it's not 0
+        const entryWidth = Math.floor(entry.contentRect.width);
+        if (entryWidth > 0) {
+            setWidth(entryWidth);
+        }
       }
     });
 
@@ -137,7 +148,8 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
     let lgCols = GRID_COLS.lg;
     
     // Logic: If width allows, calculate how many TARGET_CELL_WIDTH columns fit
-    if (width >= GRID_BREAKPOINTS.lg) {
+    // We consider 'lg' to be anything larger than sm, but we want dynamic columns everywhere above sm
+    if (width >= GRID_BREAKPOINTS.lg || width > 768) {
         const availableWidth = width - paddingX;
         // Formula: cols = (available + margin) / (cellWidth + margin)
         lgCols = Math.floor((availableWidth + margin) / (TARGET_CELL_WIDTH + margin));
@@ -289,6 +301,13 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
                 );
               })}
             </Responsive>
+            
+            {/* Debug Overlay */}
+            <div className="fixed bottom-4 right-4 bg-black/80 text-white p-4 rounded-md z-50 font-mono text-sm pointer-events-none border border-white/20">
+               <div>Width: {width}px</div>
+               <div>Cols: {gridCols} (Target: {Math.floor((width - 20) / 70)})</div>
+               <div>Breakpoint: {currentBreakpoint}</div>
+            </div>
           </>
         )}
       </div>

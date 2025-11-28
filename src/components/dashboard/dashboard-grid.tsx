@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Responsive, Layout, Layouts } from "react-grid-layout";
+import { Menu } from "lucide-react";
 import { DashboardConfig, WidgetConfig, WidgetType } from "@/types";
 import { ServiceWidget } from "@/components/dashboard/service-widget";
 import { FootballWidget } from "@/components/dashboard/football-widget";
@@ -13,6 +14,8 @@ import { GridBackground } from "@/components/dashboard/grid-background";
 import { WidgetWrapper } from "@/components/dashboard/widget-wrapper";
 import { WidgetErrorBoundary } from "@/components/dashboard/error-boundary";
 import { GridSkeleton } from "@/components/dashboard/grid-skeleton";
+import { SettingsSidebar } from "@/components/dashboard/settings-sidebar";
+import { Button } from "@/components/ui/button";
 import { generateLayouts } from "@/lib/layout-utils";
 import { GRID_BREAKPOINTS, GRID_COLS, GRID_MARGIN, TARGET_CELL_WIDTH } from "@/config/grid";
 
@@ -47,12 +50,17 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
   const [activeWidgetId, setActiveWidgetId] = useState<string | null>(null); // Specific widget being interacted with
   const [isResizing, setIsResizing] = useState(false); // Specific state for resizing action
 
+  // Settings & Visibility State
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showDebug, setShowDebug] = useState(true);
+  const [visibleWidgetIds, setVisibleWidgetIds] = useState<string[]>([]);
+
   // Memoize initial layouts based on config
   const defaultLayouts = useMemo(() => generateLayouts(dashboardConfig), [dashboardConfig]);
   
   const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
 
-  // Initialize and Load Layouts
+  // Initialize and Load Layouts & Settings
   useEffect(() => {
     setMounted(true);
     // Initialize width immediately if ref is available
@@ -60,6 +68,31 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
       setWidth(Math.floor(containerRef.current.getBoundingClientRect().width));
     } else if (typeof window !== 'undefined') {
       setWidth(window.innerWidth);
+    }
+    
+    // Load Settings
+    const savedShowDebug = localStorage.getItem("dashboard-show-debug");
+    if (savedShowDebug !== null) {
+      setShowDebug(savedShowDebug === "true");
+    }
+
+    const savedVisibleWidgets = localStorage.getItem("dashboard-visible-widgets");
+    if (savedVisibleWidgets) {
+      try {
+        const parsed = JSON.parse(savedVisibleWidgets);
+        if (Array.isArray(parsed)) {
+          setVisibleWidgetIds(parsed);
+        } else {
+          // Fallback if invalid
+          setVisibleWidgetIds(dashboardConfig.widgets.map(w => w.id));
+        }
+      } catch (e) {
+        console.error("Failed to parse visible widgets", e);
+        setVisibleWidgetIds(dashboardConfig.widgets.map(w => w.id));
+      }
+    } else {
+      // Default to all visible
+      setVisibleWidgetIds(dashboardConfig.widgets.map(w => w.id));
     }
 
     const savedLayouts = localStorage.getItem("dashboard-layouts");
@@ -180,8 +213,85 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
   }, []);
 
   const onLayoutChange = useCallback((currentLayout: Layout[], allLayouts: Layouts) => {
-    setLayouts(allLayouts);
-    localStorage.setItem("dashboard-layouts", JSON.stringify(allLayouts));
+    // Check if any visible widgets are missing from currentLayout (which happens when they are hidden and re-added)
+    // If a widget was hidden and is now visible, it might be added at (0,0) by RGL if not in layout.
+    // We should try to preserve its last known position from `layouts` if possible, 
+    // or let RGL handle it but ensure we save the state correctly.
+    
+    // Merge new positions into state
+    setLayouts(prevLayouts => {
+       const newLayouts = { ...prevLayouts, ...allLayouts };
+       // Also persist to localStorage
+       localStorage.setItem("dashboard-layouts", JSON.stringify(newLayouts));
+       return newLayouts;
+    });
+  }, []);
+
+  // Settings Handlers
+  const toggleWidget = useCallback((id: string) => {
+    setVisibleWidgetIds(prev => {
+      const isVisible = prev.includes(id);
+      if (isVisible) {
+        // Hiding: just remove from visible list
+        const next = prev.filter(wId => wId !== id);
+        localStorage.setItem("dashboard-visible-widgets", JSON.stringify(next));
+        return next;
+      } else {
+        // Showing: Add to visible list.
+        // Important: RGL needs to know where to put it. 
+        // If it's in `layouts` state, it will use that. 
+        // If not, it defaults to 0,0 1x1.
+        // We ensure `layouts` state has the default config for this widget if missing.
+        
+        setLayouts(currentLayouts => {
+          const widgetConfig = dashboardConfig.widgets.find(w => w.id === id);
+          if (!widgetConfig) return currentLayouts;
+
+          // Check if we already have a layout for this widget in current breakpoint
+          const currentBpLayout = currentLayouts[currentBreakpoint] || [];
+          const existingLayoutItem = currentBpLayout.find(l => l.i === id);
+
+          if (existingLayoutItem) {
+             // Already has a position, no need to touch layouts
+             return currentLayouts;
+          }
+
+          // No position found (maybe never rendered or cleared), generate default
+          // We use the same logic as generateLayouts but just for this one widget
+          // The scale multiplier is 2 as per layout-utils (assuming 10-col base config)
+          const multiplier = 2;
+          const defaultW = (widgetConfig.colSpan ?? 4) * multiplier; // Default 4x4 (scaled) if undefined
+          const defaultH = (widgetConfig.rowSpan ?? 4) * multiplier;
+          const defaultX = (widgetConfig.x ?? 0) * multiplier;
+          const defaultY = (widgetConfig.y ?? 0) * multiplier;
+
+          const newLayoutItem: Layout = {
+            i: id,
+            x: defaultX,
+            y: defaultY,
+            w: defaultW,
+            h: defaultH
+          };
+          
+          return {
+            ...currentLayouts,
+            [currentBreakpoint]: [...currentBpLayout, newLayoutItem]
+          };
+        });
+
+        const next = [...prev, id];
+        localStorage.setItem("dashboard-visible-widgets", JSON.stringify(next));
+        return next;
+      }
+    });
+  }, [dashboardConfig, currentBreakpoint]);
+
+  const toggleDebug = useCallback(() => {
+    setShowDebug(prev => {
+      const next = !prev;
+      localStorage.setItem("dashboard-show-debug", String(next));
+      return next;
+    });
   }, []);
 
   // RGL Event Handlers
@@ -236,8 +346,34 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
     return <GridSkeleton config={dashboardConfig} />;
   }
 
+  // Filter widgets based on visibility
+  const visibleWidgets = dashboardConfig.widgets.filter(w => visibleWidgetIds.includes(w.id));
+
   return (
     <div className="flex flex-col gap-4 w-full h-full">
+      {/* Settings Sidebar */}
+      <SettingsSidebar 
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        widgets={dashboardConfig.widgets}
+        visibleWidgetIds={visibleWidgetIds}
+        onToggleWidget={toggleWidget}
+        showDebug={showDebug}
+        onToggleDebug={toggleDebug}
+      />
+
+      {/* Burger Button */}
+      <div className="fixed top-4 left-4 z-40">
+        <Button 
+          variant="outline" 
+          size="icon" 
+          onClick={() => setIsSettingsOpen(true)}
+          className="bg-background/80 backdrop-blur-sm shadow-md"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      </div>
+
       <div ref={containerRef} className="relative min-h-screen w-full">
         {/* Render Skeleton if not mounted or loading, but keep it in the same container context */}
         {!mounted ? (
@@ -281,7 +417,7 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
               }}
               useCSSTransforms={true}
             >
-              {dashboardConfig.widgets.map((widget) => {
+              {visibleWidgets.map((widget) => {
                 const WidgetComponent = WIDGET_COMPONENTS[widget.type];
                 if (!WidgetComponent) return null;
 
@@ -303,11 +439,13 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
             </Responsive>
             
             {/* Debug Overlay */}
-            <div className="fixed bottom-4 right-4 bg-black/80 text-white p-4 rounded-md z-50 font-mono text-sm pointer-events-none border border-white/20">
-               <div>Width: {width}px</div>
-               <div>Cols: {gridCols} (Target: {Math.floor((width - 20) / 70)})</div>
-               <div>Breakpoint: {currentBreakpoint}</div>
-            </div>
+            {showDebug && (
+              <div className="fixed bottom-4 right-4 bg-black/80 text-white p-4 rounded-md z-50 font-mono text-sm pointer-events-none border border-white/20">
+                 <div>Width: {width}px</div>
+                 <div>Cols: {gridCols} (Target: {Math.floor((width - 20) / 70)})</div>
+                 <div>Breakpoint: {currentBreakpoint}</div>
+              </div>
+            )}
           </>
         )}
       </div>

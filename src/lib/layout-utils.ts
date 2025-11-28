@@ -16,8 +16,8 @@ export function generateLayouts(config: DashboardConfig): Layouts {
       i: widget.id,
       x: (widget.x ?? 0) * multiplier,
       y: (widget.y ?? 0) * multiplier,
-      w: (widget.colSpan ?? 3) * multiplier, 
-      h: (widget.rowSpan ?? 2) * multiplier,
+      w: (widget.colSpan ?? 4) * multiplier, 
+      h: (widget.rowSpan ?? 4) * multiplier,
     };
   });
 

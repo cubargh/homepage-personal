@@ -8,7 +8,7 @@ import React, {
   useCallback,
 } from "react";
 import { Responsive, Layout, Layouts } from "react-grid-layout";
-import { Menu } from "lucide-react";
+import { Menu, ChevronRight } from "lucide-react";
 import { DashboardConfig, WidgetConfig, WidgetType } from "@/types";
 import { ServiceWidget } from "@/components/dashboard/service-widget";
 import { FootballWidget } from "@/components/dashboard/football-widget";
@@ -439,16 +439,16 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
         onToggleDebug={toggleDebug}
       />
 
-      {/* Burger Button */}
-      <div className="fixed top-4 left-4 z-40">
-        <Button
-          variant="outline"
-          size="icon"
+      {/* Settings Trigger */}
+      <div className="fixed top-0 left-0 z-40 group">
+        <div
+          className="p-4 cursor-pointer transition-opacity opacity-50 group-hover:opacity-100"
           onClick={() => setIsSettingsOpen(true)}
-          className="bg-background/80 backdrop-blur-sm shadow-md"
+          role="button"
+          aria-label="Open Settings"
         >
-          <Menu className="h-5 w-5" />
-        </Button>
+          <ChevronRight className="w-6 h-6 text-foreground transform rotate-45" />
+        </div>
       </div>
 
       <div ref={containerRef} className="relative min-h-screen w-full">

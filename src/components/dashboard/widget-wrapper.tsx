@@ -34,7 +34,15 @@ export const WidgetWrapper = forwardRef<HTMLDivElement, WidgetWrapperProps>(
         {...props}
       >
         {/* Inner container to handle select-none and full height */}
-        <div className="h-full w-full select-none">{children}</div>
+        <div 
+          className="h-full w-full select-none"
+          onMouseDown={(e) => {
+             // Stop propagation if clicking on interactive elements
+             // This is a backup for draggableCancel but good for select-none handling
+          }}
+        >
+          {children}
+        </div>
       </div>
     );
   }

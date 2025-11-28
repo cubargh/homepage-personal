@@ -14,7 +14,7 @@ import { WidgetWrapper } from "@/components/dashboard/widget-wrapper";
 import { WidgetErrorBoundary } from "@/components/dashboard/error-boundary";
 import { GridSkeleton } from "@/components/dashboard/grid-skeleton";
 import { generateLayouts } from "@/lib/layout-utils";
-import { GRID_BREAKPOINTS, GRID_COLS, GRID_MARGIN } from "@/config/grid";
+import { GRID_BREAKPOINTS, GRID_COLS, GRID_MARGIN, TARGET_CELL_WIDTH } from "@/config/grid";
 
 const WIDGET_COMPONENTS: Record<WidgetType, React.ComponentType<any>> = {
   "service-monitor": ServiceWidget,
@@ -39,6 +39,7 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
   const [rowHeight, setRowHeight] = useState(100);
   const [currentBreakpoint, setCurrentBreakpoint] = useState<string>("lg");
   const [gridCols, setGridCols] = useState(GRID_COLS.lg);
+  const [responsiveCols, setResponsiveCols] = useState(GRID_COLS);
   const [colWidth, setColWidth] = useState(100);
   
   // Track active interactions
@@ -129,13 +130,34 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
   // Update metrics when width or breakpoint changes
   useEffect(() => {
     const margin = GRID_MARGIN[0];
-    const cols = GRID_COLS[currentBreakpoint as keyof typeof GRID_COLS] || GRID_COLS.lg;
-    const paddingX = CONTAINER_PADDING[0] * 2; 
+    const paddingX = CONTAINER_PADDING[0] * 2;
 
-    // RGL Width Formula with container padding
-    const cellWidth = (width - paddingX - (margin * (cols - 1))) / cols;
+    // Calculate dynamic columns based on width and target cell size
+    // We only apply dynamic columns for the 'lg' (desktop) breakpoint
+    let lgCols = GRID_COLS.lg;
     
-    setGridCols(cols);
+    // Logic: If width allows, calculate how many TARGET_CELL_WIDTH columns fit
+    if (width >= GRID_BREAKPOINTS.lg) {
+        const availableWidth = width - paddingX;
+        // Formula: cols = (available + margin) / (cellWidth + margin)
+        lgCols = Math.floor((availableWidth + margin) / (TARGET_CELL_WIDTH + margin));
+        // Ensure we don't go below a reasonable desktop minimum (e.g. 10)
+        lgCols = Math.max(10, lgCols);
+    }
+
+    const newResponsiveCols = {
+        lg: lgCols,
+        sm: GRID_COLS.sm
+    };
+    
+    // Determine active columns based on current breakpoint
+    const activeCols = newResponsiveCols[currentBreakpoint as 'lg' | 'sm'] || lgCols;
+
+    // Recalculate cell width to fill space exactly
+    const cellWidth = (width - paddingX - (margin * (activeCols - 1))) / activeCols;
+    
+    setResponsiveCols(newResponsiveCols);
+    setGridCols(activeCols);
     setColWidth(cellWidth);
     setRowHeight(cellWidth); // Keep it square-ish
   }, [width, currentBreakpoint]);
@@ -222,7 +244,7 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
               className="layout z-10"
               layouts={layouts}
               breakpoints={GRID_BREAKPOINTS}
-              cols={GRID_COLS}
+              cols={responsiveCols}
               rowHeight={rowHeight}
               width={width}
               onLayoutChange={onLayoutChange}

@@ -8,7 +8,6 @@ import React, {
   useCallback,
 } from "react";
 import { Responsive, Layout, Layouts } from "react-grid-layout";
-import { Menu, ChevronRight } from "lucide-react";
 import { DashboardConfig, WidgetConfig, WidgetType } from "@/types";
 import { ServiceWidget } from "@/components/dashboard/service-widget";
 import { FootballWidget } from "@/components/dashboard/football-widget";
@@ -20,8 +19,6 @@ import { GridBackground } from "@/components/dashboard/grid-background";
 import { WidgetWrapper } from "@/components/dashboard/widget-wrapper";
 import { WidgetErrorBoundary } from "@/components/dashboard/error-boundary";
 import { GridSkeleton } from "@/components/dashboard/grid-skeleton";
-import { SettingsSidebar } from "@/components/dashboard/settings-sidebar";
-import { Button } from "@/components/ui/button";
 import { generateLayouts } from "@/lib/layout-utils";
 import {
   GRID_BREAKPOINTS,
@@ -92,17 +89,13 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
     setRowHeight(colWidth);
   }, [colWidth]);
 
-  const [colWidthState, setColWidthState] = useState(colWidth); // Keeping state for smooth updates if needed? No, use calculated.
-
   // Track active interactions
   const [isGridActive, setIsGridActive] = useState(false); // Dragging or Resizing anything (for background)
   const [activeWidgetId, setActiveWidgetId] = useState<string | null>(null); // Specific widget being interacted with
   const [isResizing, setIsResizing] = useState(false); // Specific state for resizing action
 
   // Settings & Visibility State
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [showDebug, setShowDebug] = useState(true);
-  const [visibleWidgetIds, setVisibleWidgetIds] = useState<string[]>([]);
+  const showDebug = dashboardConfig.debug || false;
 
   // Memoize initial layouts based on config
   const defaultLayouts = useMemo(
@@ -126,31 +119,7 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
     setWidth(initialWidth);
 
     // Load Settings
-    const savedShowDebug = localStorage.getItem("dashboard-show-debug");
-    if (savedShowDebug !== null) {
-      setShowDebug(savedShowDebug === "true");
-    }
-
-    const savedVisibleWidgets = localStorage.getItem(
-      "dashboard-visible-widgets"
-    );
-    if (savedVisibleWidgets) {
-      try {
-        const parsed = JSON.parse(savedVisibleWidgets);
-        if (Array.isArray(parsed)) {
-          setVisibleWidgetIds(parsed);
-        } else {
-          // Fallback if invalid
-          setVisibleWidgetIds(dashboardConfig.widgets.map((w) => w.id));
-        }
-      } catch (e) {
-        console.error("Failed to parse visible widgets", e);
-        setVisibleWidgetIds(dashboardConfig.widgets.map((w) => w.id));
-      }
-    } else {
-      // Default to all visible
-      setVisibleWidgetIds(dashboardConfig.widgets.map((w) => w.id));
-    }
+    // (Removed local storage logic for debug/visibility as it is now config-driven)
 
     const savedLayouts = localStorage.getItem("dashboard-layouts");
     if (savedLayouts) {
@@ -242,7 +211,7 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
 
   // Update metrics when width or breakpoint changes -> MOVED TO USEMEMO ABOVE
 
-  const onBreakpointChange = useCallback((breakpoint: string, cols: number) => {
+  const onBreakpointChange = useCallback((breakpoint: string) => {
     setCurrentBreakpoint(breakpoint);
     // setGridCols(cols); -> Derived now
   }, []);
@@ -266,92 +235,17 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
   );
 
   // Settings Handlers
-  const toggleWidget = useCallback(
-    (id: string) => {
-      setVisibleWidgetIds((prev) => {
-        const isVisible = prev.includes(id);
-        if (isVisible) {
-          // Hiding: just remove from visible list
-          const next = prev.filter((wId) => wId !== id);
-          localStorage.setItem(
-            "dashboard-visible-widgets",
-            JSON.stringify(next)
-          );
-          return next;
-        } else {
-          // Showing: Add to visible list.
-          // Important: RGL needs to know where to put it.
-          // If it's in `layouts` state, it will use that.
-          // If not, it defaults to 0,0 1x1.
-          // We ensure `layouts` state has the default config for this widget if missing.
-
-          setLayouts((currentLayouts) => {
-            const widgetConfig = dashboardConfig.widgets.find(
-              (w) => w.id === id
-            );
-            if (!widgetConfig) return currentLayouts;
-
-            // Check if we already have a layout for this widget in current breakpoint
-            const currentBpLayout = currentLayouts[currentBreakpoint] || [];
-            const existingLayoutItem = currentBpLayout.find((l) => l.i === id);
-
-            if (existingLayoutItem) {
-              // Already has a position, no need to touch layouts
-              return currentLayouts;
-            }
-
-            // No position found (maybe never rendered or cleared), generate default
-            // We use the same logic as generateLayouts but just for this one widget
-            // The scale multiplier is 2 as per layout-utils (assuming 10-col base config)
-            const multiplier = 2;
-            const defaultW = (widgetConfig.colSpan ?? 4) * multiplier; // Default 4x4 (scaled) if undefined
-            const defaultH = (widgetConfig.rowSpan ?? 4) * multiplier;
-            const defaultX = (widgetConfig.x ?? 0) * multiplier;
-            const defaultY = (widgetConfig.y ?? 0) * multiplier;
-
-            const newLayoutItem: Layout = {
-              i: id,
-              x: defaultX,
-              y: defaultY,
-              w: defaultW,
-              h: defaultH,
-            };
-
-            return {
-              ...currentLayouts,
-              [currentBreakpoint]: [...currentBpLayout, newLayoutItem],
-            };
-          });
-
-          const next = [...prev, id];
-          localStorage.setItem(
-            "dashboard-visible-widgets",
-            JSON.stringify(next)
-          );
-          return next;
-        }
-      });
-    },
-    [dashboardConfig, currentBreakpoint]
-  );
-
-  const toggleDebug = useCallback(() => {
-    setShowDebug((prev) => {
-      const next = !prev;
-      localStorage.setItem("dashboard-show-debug", String(next));
-      return next;
-    });
-  }, []);
+  // (Removed toggleWidget and toggleDebug as they are no longer used)
 
   // RGL Event Handlers
   const onDragStart = useCallback(
     (
-      layout: Layout[],
-      oldItem: Layout,
+      _layout: Layout[],
+      _oldItem: Layout,
       newItem: Layout,
-      placeholder: Layout,
-      e: MouseEvent,
-      element: HTMLElement
+      _placeholder: Layout,
+      _e: MouseEvent,
+      _element: HTMLElement
     ) => {
       setIsGridActive(true);
       setActiveWidgetId(newItem.i);
@@ -366,12 +260,12 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
 
   const onResizeStart = useCallback(
     (
-      layout: Layout[],
-      oldItem: Layout,
+      _layout: Layout[],
+      _oldItem: Layout,
       newItem: Layout,
-      placeholder: Layout,
-      e: MouseEvent,
-      element: HTMLElement
+      _placeholder: Layout,
+      _e: MouseEvent,
+      _element: HTMLElement
     ) => {
       setIsGridActive(true);
       setActiveWidgetId(newItem.i);
@@ -421,36 +315,8 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
     return <GridSkeleton config={dashboardConfig} />;
   }
 
-  // Filter widgets based on visibility
-  const visibleWidgets = dashboardConfig.widgets.filter((w) =>
-    visibleWidgetIds.includes(w.id)
-  );
-
   return (
     <div className="flex flex-col gap-4 w-full h-full">
-      {/* Settings Sidebar */}
-      <SettingsSidebar
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        widgets={dashboardConfig.widgets}
-        visibleWidgetIds={visibleWidgetIds}
-        onToggleWidget={toggleWidget}
-        showDebug={showDebug}
-        onToggleDebug={toggleDebug}
-      />
-
-      {/* Settings Trigger */}
-      <div className="fixed top-0 left-0 z-40 group">
-        <div
-          className="p-4 cursor-pointer transition-opacity opacity-50 group-hover:opacity-100"
-          onClick={() => setIsSettingsOpen(true)}
-          role="button"
-          aria-label="Open Settings"
-        >
-          <ChevronRight className="w-6 h-6 text-foreground transform rotate-45" />
-        </div>
-      </div>
-
       <div ref={containerRef} className="relative min-h-screen w-full">
         {/* Render Skeleton if not mounted or loading, but keep it in the same container context */}
         {!mounted ? (
@@ -491,7 +357,7 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
               }}
               useCSSTransforms={true}
             >
-              {visibleWidgets.map((widget) => {
+              {dashboardConfig.widgets.map((widget) => {
                 const WidgetComponent = WIDGET_COMPONENTS[widget.type];
                 if (!WidgetComponent) return null;
 

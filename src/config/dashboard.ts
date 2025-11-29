@@ -28,14 +28,68 @@ export const getDashboardConfig = (): DashboardConfig => {
   // are automatically scaled x2 in `layout-utils.ts`.
   // Use explicit x2 values here if you want fine-grained control on the 20-col grid.
 
+  const enabledWidgets: any[] = [];
+
+  if (config.widgets.weather.enabled) {
+    console.log("Weather widget enabled");
+    enabledWidgets.push({
+      id: "weather",
+      type: "weather",
+      x: 0,
+      y: 0,
+      colSpan: 3,
+      rowSpan: 2,
+    });
+  } else {
+    console.log("Weather widget disabled");
+  }
+
+  if (config.widgets.service_status?.enabled) {
+    console.log("Service Status widget enabled");
+    enabledWidgets.push({
+      id: "services",
+      type: "service-monitor",
+      x: 0,
+      y: 2,
+      colSpan: 3,
+      rowSpan: 2,
+    });
+  }
+
+  if (config.widgets.calendar.enabled) {
+    enabledWidgets.push({
+      id: "calendar",
+      type: "calendar",
+      x: 3,
+      y: 0,
+      colSpan: 4,
+      rowSpan: 4,
+    });
+  }
+
+  if (config.widgets.football.enabled || config.widgets.f1?.enabled) {
+    // Use "sports-combined" if either is enabled.
+    // The SportsWidget will handle displaying only the enabled tabs.
+    enabledWidgets.push({
+      id: "sports-combined",
+      type: "sports",
+      x: 7,
+      y: 0,
+      colSpan: 3,
+      rowSpan: 4,
+    });
+  }
+
   return {
     timezone: TIMEZONE,
     services: services,
     football: {
+      enabled: config.widgets.football.enabled,
       leagues: ["PL", "PD", "BL1", "SA", "CL"],
       refreshInterval: 60000,
     },
     f1: {
+      enabled: config.widgets.f1?.enabled ?? true, // Default to true if missing
       refreshInterval: 60000 * 60,
     },
     weather: {
@@ -51,39 +105,6 @@ export const getDashboardConfig = (): DashboardConfig => {
     monitoring: {
       refreshInterval: 60000,
     },
-    widgets: [
-      {
-        id: "weather",
-        type: "weather",
-        x: 0,
-        y: 0,
-        colSpan: 3,
-        rowSpan: 2,
-      },
-      {
-        id: "services",
-        type: "service-monitor",
-        x: 0,
-        y: 2,
-        colSpan: 3,
-        rowSpan: 2,
-      },
-      {
-        id: "calendar",
-        type: "calendar",
-        x: 3,
-        y: 0,
-        colSpan: 4,
-        rowSpan: 4,
-      },
-      {
-        id: "sports-combined",
-        type: "sports",
-        x: 7,
-        y: 0,
-        colSpan: 3,
-        rowSpan: 4,
-      },
-    ],
+    widgets: enabledWidgets,
   };
 };

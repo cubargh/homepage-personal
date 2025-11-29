@@ -6,6 +6,7 @@ export interface AppConfig {
   server: {
     root_domain: string;
     timezone: string;
+    debug?: boolean;
     auth: {
       passphrase: string;
       session_days: number;
@@ -22,6 +23,9 @@ export interface AppConfig {
     football: {
       enabled: boolean;
       api_key: string;
+    };
+    f1: {
+      enabled: boolean;
     };
     calendar: {
       enabled: boolean;

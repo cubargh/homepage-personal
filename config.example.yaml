@@ -1,6 +1,7 @@
 server:
   root_domain: "example.com"
   timezone: "UTC"
+  debug: false
   auth:
     passphrase: "secret-passphrase-change-me"
     session_days: 7
@@ -16,6 +17,9 @@ widgets:
   football:
     enabled: true
     api_key: "your-football-data-api-key"
+
+  f1:
+    enabled: true
 
   calendar:
     enabled: true

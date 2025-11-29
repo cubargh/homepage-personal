@@ -12,12 +12,18 @@ export interface ServiceConfig {
   icon?: string; // Icon name from selfh.st/icons (e.g., "jellyfin", "navidrome")
 }
 
-export type WidgetType = "service-monitor" | "football" | "f1" | "weather" | "sports" | "calendar";
+export type WidgetType =
+  | "service-monitor"
+  | "football"
+  | "f1"
+  | "weather"
+  | "sports"
+  | "calendar";
 
 export interface BaseWidgetConfig {
   id: string;
   type: WidgetType;
-  colSpan?: number; 
+  colSpan?: number;
   rowSpan?: number;
   x?: number; // Added for grid layout
   y?: number; // Added for grid layout
@@ -47,22 +53,25 @@ export interface CalendarWidgetConfig extends BaseWidgetConfig {
   type: "calendar";
 }
 
-export type WidgetConfig = 
-  | ServiceWidgetConfig 
-  | FootballWidgetConfig 
-  | F1WidgetConfig 
-  | WeatherWidgetConfig 
-  | SportsWidgetConfig 
+export type WidgetConfig =
+  | ServiceWidgetConfig
+  | FootballWidgetConfig
+  | F1WidgetConfig
+  | WeatherWidgetConfig
+  | SportsWidgetConfig
   | CalendarWidgetConfig;
 
 export interface DashboardConfig {
   timezone: string;
+  debug?: boolean;
   services: ServiceConfig[];
   football: {
+    enabled: boolean;
     leagues: string[];
     refreshInterval: number;
   };
   f1: {
+    enabled: boolean;
     refreshInterval: number;
   };
   weather: {
@@ -88,15 +97,26 @@ export interface ServiceWidgetProps {
 }
 
 export interface FootballWidgetProps {
-  config: { leagues: string[]; refreshInterval: number; timezone: string };
+  config: {
+    enabled: boolean;
+    leagues: string[];
+    refreshInterval: number;
+    timezone: string;
+  };
 }
 
 export interface F1WidgetProps {
-  config: { refreshInterval: number; timezone: string };
+  config: { enabled: boolean; refreshInterval: number; timezone: string };
 }
 
 export interface WeatherWidgetProps {
-  config: { lat: number; lon: number; units: "metric" | "imperial"; refreshInterval: number; timezone: string };
+  config: {
+    lat: number;
+    lon: number;
+    units: "metric" | "imperial";
+    refreshInterval: number;
+    timezone: string;
+  };
 }
 
 export interface CalendarWidgetProps {
@@ -104,8 +124,13 @@ export interface CalendarWidgetProps {
 }
 
 export interface SportsWidgetProps {
-  f1Config: { refreshInterval: number; timezone: string };
-  footballConfig: { leagues: string[]; refreshInterval: number; timezone: string };
+  f1Config: { enabled: boolean; refreshInterval: number; timezone: string };
+  footballConfig: {
+    enabled: boolean;
+    leagues: string[];
+    refreshInterval: number;
+    timezone: string;
+  };
 }
 
 export interface FootballMatch {
@@ -178,58 +203,58 @@ export interface F1ApiNextResponse {
 }
 
 export interface F1ApiDriverChampionshipItem {
-    classificationId: number;
-    driverId: string;
+  classificationId: number;
+  driverId: string;
+  teamId: string;
+  points: number;
+  position: number;
+  wins: number;
+  driver: {
+    name: string;
+    surname: string;
+    nationality: string;
+    birthday: string;
+    number: number;
+    shortName: string;
+    url: string;
+  };
+  team: {
     teamId: string;
-    points: number;
-    position: number;
-    wins: number;
-    driver: {
-        name: string;
-        surname: string;
-        nationality: string;
-        birthday: string;
-        number: number;
-        shortName: string;
-        url: string;
-    };
-    team: {
-        teamId: string;
-        teamName: string;
-        country: string;
-        firstAppareance: number;
-        constructorsChampionships: number | null;
-        driversChampionships: number | null;
-        url: string;
-    };
+    teamName: string;
+    country: string;
+    firstAppareance: number;
+    constructorsChampionships: number | null;
+    driversChampionships: number | null;
+    url: string;
+  };
 }
 
 export interface F1ApiDriverChampionshipResponse {
-    season: number;
-    total: number;
-    drivers_championship: F1ApiDriverChampionshipItem[];
+  season: number;
+  total: number;
+  drivers_championship: F1ApiDriverChampionshipItem[];
 }
 
 export interface F1ApiConstructorChampionshipItem {
-    classificationId: number;
-    teamId: string;
-    points: number;
-    position: number;
-    wins: number;
-    team: {
-        teamName: string;
-        country: string;
-        firstAppareance: number;
-        constructorsChampionships: number | null;
-        driversChampionships: number | null;
-        url: string;
-    };
+  classificationId: number;
+  teamId: string;
+  points: number;
+  position: number;
+  wins: number;
+  team: {
+    teamName: string;
+    country: string;
+    firstAppareance: number;
+    constructorsChampionships: number | null;
+    driversChampionships: number | null;
+    url: string;
+  };
 }
 
 export interface F1ApiConstructorChampionshipResponse {
-    season: number;
-    total: number;
-    constructors_championship: F1ApiConstructorChampionshipItem[];
+  season: number;
+  total: number;
+  constructors_championship: F1ApiConstructorChampionshipItem[];
 }
 
 export interface WeatherData {

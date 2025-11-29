@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDashboardConfig } from "@/config/dashboard";
+import { loadConfig } from "@/lib/config";
 import { addDays, isSameDay, parseISO } from "date-fns";
 
-const API_KEY = process.env.OPENWEATHER_API_KEY;
 const BASE_URL = "https://api.openweathermap.org/data/2.5";
 
 export async function GET(request: NextRequest) {
+  const config = loadConfig();
+  const API_KEY = config.widgets.weather.api_key;
+
   if (!API_KEY) {
     return NextResponse.json({ error: "API Configuration Missing" }, { status: 500 });
   }

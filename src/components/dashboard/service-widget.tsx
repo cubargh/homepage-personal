@@ -42,12 +42,11 @@ function ServiceItem({ service, refreshInterval }: ServiceItemProps) {
   let iconUrl: string | null = null;
   
   if (service.icon) {
-      if (service.icon.startsWith("http")) {
+      if (service.icon.startsWith("http") || service.icon.startsWith("https")) {
           iconUrl = service.icon;
-      } else if (service.icon === "vert") {
-          iconUrl = "https://cdn.jsdelivr.net/gh/selfhst/icons@master/png/vert.png";
       } else {
-          iconUrl = `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${service.icon}.png`;
+          // Use selfh.st icons (using GitHub CDN)
+          iconUrl = `https://cdn.jsdelivr.net/gh/selfhst/icons/png/${service.icon}.png`;
       }
   }
 

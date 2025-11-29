@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
+import { loadConfig } from "@/lib/config";
 
 // Define your session payload type
 export interface SessionPayload {
@@ -7,22 +8,35 @@ export interface SessionPayload {
   [key: string]: unknown; // Allow extensibility
 }
 
-const secretKey = process.env.AUTH_PASSPHRASE;
-if (!secretKey) {
-  // Only log this warning in development or if explicitly checked
-  if (process.env.NODE_ENV === 'development') {
-    console.warn("⚠️  AUTH_PASSPHRASE is not set. Using insecure default key.");
-  }
+// We lazily load the key to avoid issues if config isn't ready at module load time (though it should be)
+// or we can load it once. 
+// Given Next.js server environment, let's load it.
+
+let key: Uint8Array;
+let sessionDays = 7;
+
+try {
+    const config = loadConfig();
+    const secretKey = config.server.auth.passphrase;
+    sessionDays = config.server.auth.session_days || 7;
+
+    if (!secretKey) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn("⚠️  auth.passphrase is not set. Using insecure default key.");
+      }
+    }
+    key = new TextEncoder().encode(secretKey || "default-insecure-secret");
+} catch (error) {
+    // If config fails to load, use default insecure key but log error
+    console.error("Failed to load auth config:", error);
+    key = new TextEncoder().encode("default-insecure-secret");
 }
 
-const key = new TextEncoder().encode(secretKey || "default-insecure-secret");
-
 export async function encrypt(payload: SessionPayload) {
-  const days = parseInt(process.env.AUTH_SESSION_DAYS || "7", 10);
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime(`${days}d`)
+    .setExpirationTime(`${sessionDays}d`)
     .sign(key);
 }
 
@@ -36,5 +50,3 @@ export async function decrypt(input: string): Promise<SessionPayload | null> {
     return null;
   }
 }
-
-

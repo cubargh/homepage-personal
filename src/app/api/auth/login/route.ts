@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { encrypt } from "@/lib/auth";
+import { loadConfig } from "@/lib/config";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { passphrase } = body;
 
-    const envPassphrase = process.env.AUTH_PASSPHRASE;
+    const config = loadConfig();
+    const envPassphrase = config.server.auth.passphrase;
 
     if (passphrase !== envPassphrase) {
       return NextResponse.json({ error: "Invalid passphrase" }, { status: 401 });
     }
 
-    const days = parseInt(process.env.AUTH_SESSION_DAYS || "7", 10);
+    const days = config.server.auth.session_days || 7;
     const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
     // Create session

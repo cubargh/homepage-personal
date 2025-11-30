@@ -18,7 +18,8 @@ export type WidgetType =
   | "f1"
   | "weather"
   | "sports"
-  | "calendar";
+  | "calendar"
+  | "jellyfin";
 
 export interface WidgetConfig {
   id: string;
@@ -67,6 +68,14 @@ export interface WeatherWidgetProps {
 
 export interface CalendarWidgetProps {
   config: { icsUrl: string; refreshInterval: number; timezone: string };
+}
+
+export interface JellyfinWidgetProps {
+  config: {
+    enabled: boolean;
+    url: string;
+    refreshInterval: number;
+  };
 }
 
 export interface SportsWidgetProps {
@@ -234,4 +243,24 @@ export interface CalendarEvent {
   start: string;
   end: string;
   allDay: boolean;
+}
+
+// Jellyfin Types
+export interface JellyfinStats {
+  MovieCount: number;
+  SeriesCount: number;
+  EpisodeCount: number;
+  SongCount: number;
+}
+
+export interface JellyfinItem {
+  Id: string;
+  Name: string;
+  Type: "Movie" | "Series" | "Episode" | "Audio";
+  DateCreated: string;
+  ImageTags: {
+    Primary?: string;
+    Backdrop?: string;
+  };
+  BackdropImageTags?: string[]; // Sometimes it's an array
 }

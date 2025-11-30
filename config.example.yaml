@@ -32,3 +32,9 @@ widgets:
       - name: Jellyfin
         url: "https://tv.example.com"
         icon: "jellyfin"
+
+  jellyfin:
+    enabled: true
+    url: "https://jellyfin.example.com"
+    api_key: "your-jellyfin-api-key"
+    user_name: "your-username"

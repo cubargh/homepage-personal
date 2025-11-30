@@ -5,6 +5,7 @@ import { CalendarWidget } from "@/components/dashboard/calendar-widget";
 import { SportsWidget } from "@/components/dashboard/sports-widget";
 import { F1Widget } from "@/components/dashboard/f1-widget";
 import { FootballWidget } from "@/components/dashboard/football-widget";
+import { JellyfinWidget } from "@/components/dashboard/jellyfin-widget";
 
 // Register Service Monitor
 WidgetRegistry.register({
@@ -120,6 +121,31 @@ WidgetRegistry.register({
     defaultX: 7,
     defaultY: 0,
     defaultId: "sports-combined",
+  },
+});
+
+// Register Jellyfin
+WidgetRegistry.register({
+  type: "jellyfin",
+  component: JellyfinWidget,
+  isEnabled: (config) => config.widgets.jellyfin?.enabled ?? false,
+  getProps: (config) => ({
+    config: {
+      enabled: config.widgets.jellyfin.enabled,
+      url: config.widgets.jellyfin.url,
+      refreshInterval: 60000 * 5, // 5 minutes
+    },
+  }),
+  grid: {
+    w: 4,
+    h: 4,
+    minW: 3,
+    minH: 3,
+  },
+  options: {
+    defaultX: 0,
+    defaultY: 4, // Below weather/services? Or maybe X=10?
+    defaultId: "jellyfin",
   },
 });
 

@@ -39,6 +39,12 @@ export interface AppConfig {
         icon?: string;
       }[];
     };
+    jellyfin: {
+      enabled: boolean;
+      url: string;
+      api_key: string;
+      user_name: string;
+    };
   };
 }
 

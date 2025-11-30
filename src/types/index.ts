@@ -20,73 +20,19 @@ export type WidgetType =
   | "sports"
   | "calendar";
 
-export interface BaseWidgetConfig {
+export interface WidgetConfig {
   id: string;
   type: WidgetType;
-  colSpan?: number;
-  rowSpan?: number;
-  x?: number; // Added for grid layout
-  y?: number; // Added for grid layout
+  colSpan: number;
+  rowSpan: number;
+  x: number; // Added for grid layout
+  y: number; // Added for grid layout
+  props?: any; // Component props
 }
-
-export interface ServiceWidgetConfig extends BaseWidgetConfig {
-  type: "service-monitor";
-}
-
-export interface FootballWidgetConfig extends BaseWidgetConfig {
-  type: "football";
-}
-
-export interface F1WidgetConfig extends BaseWidgetConfig {
-  type: "f1";
-}
-
-export interface WeatherWidgetConfig extends BaseWidgetConfig {
-  type: "weather";
-}
-
-export interface SportsWidgetConfig extends BaseWidgetConfig {
-  type: "sports";
-}
-
-export interface CalendarWidgetConfig extends BaseWidgetConfig {
-  type: "calendar";
-}
-
-export type WidgetConfig =
-  | ServiceWidgetConfig
-  | FootballWidgetConfig
-  | F1WidgetConfig
-  | WeatherWidgetConfig
-  | SportsWidgetConfig
-  | CalendarWidgetConfig;
 
 export interface DashboardConfig {
   timezone: string;
   debug?: boolean;
-  services: ServiceConfig[];
-  football: {
-    enabled: boolean;
-    leagues: string[];
-    refreshInterval: number;
-  };
-  f1: {
-    enabled: boolean;
-    refreshInterval: number;
-  };
-  weather: {
-    lat: number;
-    lon: number;
-    units: "metric" | "imperial";
-    refreshInterval: number;
-  };
-  calendar: {
-    icsUrl: string;
-    refreshInterval: number;
-  };
-  monitoring: {
-    refreshInterval: number;
-  };
   widgets: WidgetConfig[];
 }
 
@@ -261,6 +207,7 @@ export interface WeatherData {
   location: {
     city: string;
     country: string;
+    countryCode?: string; // Optional if you need it
   };
   current: {
     temp: number;

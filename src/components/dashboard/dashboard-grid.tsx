@@ -8,13 +8,10 @@ import React, {
   useCallback,
 } from "react";
 import { Responsive, Layout, Layouts } from "react-grid-layout";
-import { DashboardConfig, WidgetConfig, WidgetType } from "@/types";
-import { ServiceWidget } from "@/components/dashboard/service-widget";
-import { FootballWidget } from "@/components/dashboard/football-widget";
-import { F1Widget } from "@/components/dashboard/f1-widget";
-import { WeatherWidget } from "@/components/dashboard/weather-widget";
-import { SportsWidget } from "@/components/dashboard/sports-widget";
-import { CalendarWidget } from "@/components/dashboard/calendar-widget";
+import { DashboardConfig } from "@/types";
+import { WidgetRegistry } from "@/lib/widget-registry";
+import "@/config/widgets"; // Register widgets (client-side)
+
 import { GridBackground } from "@/components/dashboard/grid-background";
 import { WidgetWrapper } from "@/components/dashboard/widget-wrapper";
 import { WidgetErrorBoundary } from "@/components/dashboard/error-boundary";
@@ -26,15 +23,6 @@ import {
   GRID_MARGIN,
   TARGET_CELL_WIDTH,
 } from "@/config/grid";
-
-const WIDGET_COMPONENTS: Record<WidgetType, React.ComponentType<any>> = {
-  "service-monitor": ServiceWidget,
-  f1: F1Widget,
-  football: FootballWidget,
-  weather: WeatherWidget,
-  sports: SportsWidget,
-  calendar: CalendarWidget,
-};
 
 interface DashboardGridProps {
   dashboardConfig: DashboardConfig;
@@ -119,8 +107,6 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
     setWidth(initialWidth);
 
     // Load Settings
-    // (Removed local storage logic for debug/visibility as it is now config-driven)
-
     const savedLayouts = localStorage.getItem("dashboard-layouts");
     if (savedLayouts) {
       try {
@@ -164,13 +150,8 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
       }
     }
 
-    // ONLY set mounted after we have loaded everything AND set the width
-    // However, we must ensure that the layout state is also ready and matches the new width if possible.
-    // But since RGL handles the layout reflow based on width, we just need to ensure
-    // we don't render with DEFAULT width if real width is available.
-
     setMounted(true);
-  }, [dashboardConfig]); // Added dashboardConfig dependency just in case, though mostly static.
+  }, [dashboardConfig]);
 
   // Calculate dynamic dimensions
   useEffect(() => {
@@ -200,7 +181,6 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
     });
 
     resizeObserver.observe(containerRef.current);
-    // Do NOT call measure() here again as we did it in the mount effect
     window.addEventListener("resize", measure);
 
     return () => {
@@ -209,21 +189,12 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
     };
   }, []);
 
-  // Update metrics when width or breakpoint changes -> MOVED TO USEMEMO ABOVE
-
   const onBreakpointChange = useCallback((breakpoint: string) => {
     setCurrentBreakpoint(breakpoint);
-    // setGridCols(cols); -> Derived now
   }, []);
 
   const onLayoutChange = useCallback(
     (currentLayout: Layout[], allLayouts: Layouts) => {
-      // Check if any visible widgets are missing from currentLayout (which happens when they are hidden and re-added)
-      // If a widget was hidden and is now visible, it might be added at (0,0) by RGL if not in layout.
-      // We should try to preserve its last known position from `layouts` if possible,
-      // or let RGL handle it but ensure we save the state correctly.
-
-      // Merge new positions into state
       setLayouts((prevLayouts) => {
         const newLayouts = { ...prevLayouts, ...allLayouts };
         // Also persist to localStorage
@@ -233,9 +204,6 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
     },
     []
   );
-
-  // Settings Handlers
-  // (Removed toggleWidget and toggleDebug as they are no longer used)
 
   // RGL Event Handlers
   const onDragStart = useCallback(
@@ -280,37 +248,6 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
     setIsResizing(false);
   }, []);
 
-  // Widget Props Factory
-  const getWidgetProps = useCallback(
-    (widget: WidgetConfig) => {
-      const common = { timezone: dashboardConfig.timezone };
-
-      switch (widget.type) {
-        case "service-monitor":
-          return {
-            services: dashboardConfig.services,
-            config: dashboardConfig.monitoring,
-          };
-        case "sports":
-          return {
-            f1Config: { ...dashboardConfig.f1, ...common },
-            footballConfig: { ...dashboardConfig.football, ...common },
-          };
-        case "weather":
-          return { config: { ...dashboardConfig.weather, ...common } };
-        case "calendar":
-          return { config: { ...dashboardConfig.calendar, ...common } };
-        case "f1":
-          return { config: { ...dashboardConfig.f1, ...common } };
-        case "football":
-          return { config: { ...dashboardConfig.football, ...common } };
-        default:
-          return {};
-      }
-    },
-    [dashboardConfig]
-  );
-
   if (!mounted) {
     return <GridSkeleton config={dashboardConfig} />;
   }
@@ -318,7 +255,6 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
   return (
     <div className="flex flex-col gap-4 w-full h-full">
       <div ref={containerRef} className="relative min-h-screen w-full">
-        {/* Render Skeleton if not mounted or loading, but keep it in the same container context */}
         {!mounted ? (
           <GridSkeleton config={dashboardConfig} />
         ) : (
@@ -358,8 +294,15 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
               useCSSTransforms={true}
             >
               {dashboardConfig.widgets.map((widget) => {
-                const WidgetComponent = WIDGET_COMPONENTS[widget.type];
-                if (!WidgetComponent) return null;
+                const definition = WidgetRegistry.get(widget.type);
+                const WidgetComponent = definition?.component;
+
+                if (!WidgetComponent) {
+                  console.warn(
+                    `Widget type "${widget.type}" not found in registry`
+                  );
+                  return null;
+                }
 
                 const isActive = widget.id === activeWidgetId;
 
@@ -371,7 +314,7 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
                     className="pointer-events-auto"
                   >
                     <WidgetErrorBoundary>
-                      <WidgetComponent {...getWidgetProps(widget)} />
+                      <WidgetComponent {...widget.props} />
                     </WidgetErrorBoundary>
                   </WidgetWrapper>
                 );

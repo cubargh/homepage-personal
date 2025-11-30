@@ -175,13 +175,6 @@ export function FootballContent({ config, headless = false }: FootballWidgetProp
                                     )}
                                     <div className="flex flex-col border border-border/30 rounded-lg p-2 md:p-3 hover:bg-white/5 transition-colors mb-2 last:mb-0 bg-card/40">
                                         <div className="flex items-center justify-between">
-                                            {/* Competition Name (Only for Today's Matches) */}
-                                            {selectedLeague === 'TODAY' && match.competition && (
-                                                <div className="absolute top-0 left-2 text-[9px] text-muted-foreground/70 font-mono tracking-tighter uppercase">
-                                                    {match.competition.code || match.competition.name}
-                                                </div>
-                                            )}
-
                                             {/* Home Team */}
                                             <div className="flex items-center space-x-2 w-[38%] overflow-hidden">
                                                  {/* eslint-disable-next-line @next/next/no-img-element */}

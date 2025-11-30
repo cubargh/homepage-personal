@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDashboardConfig } from "@/config/dashboard";
 import { loadConfig } from "@/lib/config";
 import { addDays, isSameDay, parseISO } from "date-fns";
 
@@ -14,10 +13,9 @@ export async function GET(request: NextRequest) {
   }
 
   // Get config dynamically to pick up runtime env vars if needed (though weather lat/lon are likely static, this keeps it consistent)
-  const dashboardConfig = getDashboardConfig();
-  const lat = dashboardConfig.weather.lat;
-  const lon = dashboardConfig.weather.lon;
-  const units = dashboardConfig.weather.units;
+  const lat = config.widgets.weather.lat;
+  const lon = config.widgets.weather.lon;
+  const units = config.widgets.weather.units;
 
   try {
     const [currentRes, forecastRes] = await Promise.all([

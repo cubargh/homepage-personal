@@ -20,7 +20,8 @@ export type WidgetType =
   | "sports"
   | "calendar"
   | "jellyfin"
-  | "immich";
+  | "immich"
+  | "ghostfolio";
 
 export interface WidgetConfig {
   id: string;
@@ -280,3 +281,25 @@ export interface ImmichStats {
   videos: number;
   usage: number; // in bytes
 }
+
+// Ghostfolio Types
+export interface GhostfolioWidgetProps {
+  config: {
+    enabled: boolean;
+    url: string;
+    refreshInterval: number;
+    display_metrics?: string[]; // "today", "week", "month", "year", "total"
+  };
+}
+
+export interface GhostfolioStats {
+  performance: {
+    "1d": { relativeChange: number };
+    "7d": { relativeChange: number };
+    "28d": { relativeChange: number };
+    "30d": { relativeChange: number };
+    ytd: { relativeChange: number };
+    max: { relativeChange: number };
+  };
+}
+

@@ -7,6 +7,7 @@ import { F1Widget } from "@/components/dashboard/f1-widget";
 import { FootballWidget } from "@/components/dashboard/football-widget";
 import { JellyfinWidget } from "@/components/dashboard/jellyfin-widget";
 import { ImmichWidget } from "@/components/dashboard/immich-widget";
+import { GhostfolioWidget } from "@/components/dashboard/ghostfolio-widget";
 
 // Register Service Monitor
 WidgetRegistry.register({
@@ -145,7 +146,7 @@ WidgetRegistry.register({
   },
   options: {
     defaultX: 0,
-    defaultY: 4, // Below weather/services? Or maybe X=10?
+    defaultY: 4, 
     defaultId: "jellyfin",
   },
 });
@@ -172,6 +173,32 @@ WidgetRegistry.register({
     defaultX: 4,
     defaultY: 4, 
     defaultId: "immich",
+  },
+});
+
+// Register Ghostfolio
+WidgetRegistry.register({
+  type: "ghostfolio",
+  component: GhostfolioWidget,
+  isEnabled: (config) => config.widgets.ghostfolio?.enabled ?? false,
+  getProps: (config) => ({
+    config: {
+      enabled: config.widgets.ghostfolio.enabled,
+      url: config.widgets.ghostfolio.url,
+      refreshInterval: 60000 * 5, // 5 minutes
+      display_metrics: config.widgets.ghostfolio.display_metrics,
+    },
+  }),
+  grid: {
+    w: 3,
+    h: 2,
+    minW: 3,
+    minH: 2,
+  },
+  options: {
+    defaultX: 7,
+    defaultY: 4,
+    defaultId: "ghostfolio",
   },
 });
 

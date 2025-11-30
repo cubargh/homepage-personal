@@ -50,6 +50,12 @@ export interface AppConfig {
       url: string;
       api_key: string;
     };
+    ghostfolio: {
+      enabled: boolean;
+      url: string;
+      public_token: string;
+      display_metrics?: string[];
+    };
   };
 }
 

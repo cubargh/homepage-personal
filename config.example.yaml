@@ -43,3 +43,13 @@ widgets:
     enabled: true
     url: "https://photos.example.com"
     api_key: "your-immich-api-key"
+
+  ghostfolio:
+    enabled: true
+    url: "https://your-ghostfolio-instance.com"
+    public_token: "your-public-token" # (My Ghostfolio/Access/Add new)
+    # Options: today, year, total
+    display_metrics:
+      - today
+      - year
+      - total

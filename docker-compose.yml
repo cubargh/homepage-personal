@@ -9,7 +9,6 @@ services:
       - "4444:3000"
     volumes:
       - ./config.yaml:/app/config.yaml
-    env_file:
-      - .env
     environment:
       - NODE_ENV=production
+      - CONFIG_FILE=/app/config.yaml

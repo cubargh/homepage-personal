@@ -294,6 +294,15 @@ export interface GhostfolioWidgetProps {
 }
 
 export interface GhostfolioStats {
+  performance: {
+    "1d": { relativeChange: number };
+    "7d": { relativeChange: number };
+    "28d": { relativeChange: number };
+    "30d": { relativeChange: number };
+    ytd: { relativeChange: number };
+    max: { relativeChange: number };
+  };
+}
 
 // Navidrome Types
 export interface NavidromeWidgetProps {
@@ -323,5 +332,3 @@ export interface NavidromeNowPlaying {
   minutesAgo: number; // How long ago it was played/started
   player: string; // username
 }
-
-

@@ -53,3 +53,9 @@ widgets:
       - today
       - year
       - total
+
+  navidrome:
+    enabled: true
+    url: "https://music.example.com"
+    user: "your-username"
+    password: "your-password"

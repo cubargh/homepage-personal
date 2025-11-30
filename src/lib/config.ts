@@ -56,6 +56,12 @@ export interface AppConfig {
       public_token: string;
       display_metrics?: string[];
     };
+    navidrome: {
+      enabled: boolean;
+      url: string;
+      user: string;
+      password: string;
+    };
   };
 }
 

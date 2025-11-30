@@ -8,6 +8,7 @@ import { FootballWidget } from "@/components/dashboard/football-widget";
 import { JellyfinWidget } from "@/components/dashboard/jellyfin-widget";
 import { ImmichWidget } from "@/components/dashboard/immich-widget";
 import { GhostfolioWidget } from "@/components/dashboard/ghostfolio-widget";
+import { NavidromeWidget } from "@/components/dashboard/navidrome-widget";
 
 // Register Service Monitor
 WidgetRegistry.register({
@@ -199,6 +200,33 @@ WidgetRegistry.register({
     defaultX: 7,
     defaultY: 4,
     defaultId: "ghostfolio",
+  },
+});
+
+// Register Navidrome
+WidgetRegistry.register({
+  type: "navidrome",
+  component: NavidromeWidget,
+  isEnabled: (config) => config.widgets.navidrome?.enabled ?? false,
+  getProps: (config) => ({
+    config: {
+      enabled: config.widgets.navidrome.enabled,
+      url: config.widgets.navidrome.url,
+      user: config.widgets.navidrome.user,
+      password: config.widgets.navidrome.password,
+      refreshInterval: 30000, // 30 seconds
+    },
+  }),
+  grid: {
+    w: 3,
+    h: 3, // Medium square
+    minW: 2,
+    minH: 2,
+  },
+  options: {
+    defaultX: 4,
+    defaultY: 6,
+    defaultId: "navidrome",
   },
 });
 

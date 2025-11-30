@@ -21,7 +21,8 @@ export type WidgetType =
   | "calendar"
   | "jellyfin"
   | "immich"
-  | "ghostfolio";
+  | "ghostfolio"
+  | "navidrome";
 
 export interface WidgetConfig {
   id: string;
@@ -293,13 +294,34 @@ export interface GhostfolioWidgetProps {
 }
 
 export interface GhostfolioStats {
-  performance: {
-    "1d": { relativeChange: number };
-    "7d": { relativeChange: number };
-    "28d": { relativeChange: number };
-    "30d": { relativeChange: number };
-    ytd: { relativeChange: number };
-    max: { relativeChange: number };
+
+// Navidrome Types
+export interface NavidromeWidgetProps {
+  config: {
+    enabled: boolean;
+    url: string;
+    user: string;
+    password: string; // The raw password
+    refreshInterval: number;
   };
 }
+
+export interface NavidromeStats {
+  albumCount: number;
+  artistCount: number;
+  songCount: number;
+  nowPlaying?: NavidromeNowPlaying;
+}
+
+export interface NavidromeNowPlaying {
+  id: string;
+  title: string;
+  artist: string;
+  album: string;
+  coverArt: string;
+  duration: number;
+  minutesAgo: number; // How long ago it was played/started
+  player: string; // username
+}
+
 

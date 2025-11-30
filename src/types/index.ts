@@ -19,7 +19,8 @@ export type WidgetType =
   | "weather"
   | "sports"
   | "calendar"
-  | "jellyfin";
+  | "jellyfin"
+  | "immich";
 
 export interface WidgetConfig {
   id: string;
@@ -263,4 +264,19 @@ export interface JellyfinItem {
     Backdrop?: string;
   };
   BackdropImageTags?: string[]; // Sometimes it's an array
+}
+
+// Immich Types
+export interface ImmichWidgetProps {
+  config: {
+    enabled: boolean;
+    url: string;
+    refreshInterval: number;
+  };
+}
+
+export interface ImmichStats {
+  photos: number;
+  videos: number;
+  usage: number; // in bytes
 }

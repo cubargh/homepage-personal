@@ -45,6 +45,11 @@ export interface AppConfig {
       api_key: string;
       user_name: string;
     };
+    immich: {
+      enabled: boolean;
+      url: string;
+      api_key: string;
+    };
   };
 }
 

@@ -6,6 +6,7 @@ import { SportsWidget } from "@/components/dashboard/sports-widget";
 import { F1Widget } from "@/components/dashboard/f1-widget";
 import { FootballWidget } from "@/components/dashboard/football-widget";
 import { JellyfinWidget } from "@/components/dashboard/jellyfin-widget";
+import { ImmichWidget } from "@/components/dashboard/immich-widget";
 
 // Register Service Monitor
 WidgetRegistry.register({
@@ -146,6 +147,31 @@ WidgetRegistry.register({
     defaultX: 0,
     defaultY: 4, // Below weather/services? Or maybe X=10?
     defaultId: "jellyfin",
+  },
+});
+
+// Register Immich
+WidgetRegistry.register({
+  type: "immich",
+  component: ImmichWidget,
+  isEnabled: (config) => config.widgets.immich?.enabled ?? false,
+  getProps: (config) => ({
+    config: {
+      enabled: config.widgets.immich.enabled,
+      url: config.widgets.immich.url,
+      refreshInterval: 60000 * 15, // 15 minutes
+    },
+  }),
+  grid: {
+    w: 3,
+    h: 2,
+    minW: 3,
+    minH: 2,
+  },
+  options: {
+    defaultX: 4,
+    defaultY: 4, 
+    defaultId: "immich",
   },
 });
 

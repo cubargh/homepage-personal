@@ -38,3 +38,8 @@ widgets:
     url: "https://jellyfin.example.com"
     api_key: "your-jellyfin-api-key"
     user_name: "your-username"
+
+  immich:
+    enabled: true
+    url: "https://photos.example.com"
+    api_key: "your-immich-api-key"

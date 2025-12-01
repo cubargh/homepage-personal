@@ -62,6 +62,12 @@ export interface AppConfig {
       user: string;
       password: string;
     };
+    qbittorrent: {
+      enabled: boolean;
+      url: string;
+      user?: string;
+      password?: string;
+    };
   };
 }
 

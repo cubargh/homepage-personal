@@ -9,6 +9,7 @@ import { JellyfinWidget } from "@/components/dashboard/jellyfin-widget";
 import { ImmichWidget } from "@/components/dashboard/immich-widget";
 import { GhostfolioWidget } from "@/components/dashboard/ghostfolio-widget";
 import { NavidromeWidget } from "@/components/dashboard/navidrome-widget";
+import { QBittorrentWidget } from "@/components/dashboard/qbittorrent-widget";
 
 // Register Service Monitor
 WidgetRegistry.register({
@@ -227,6 +228,31 @@ WidgetRegistry.register({
     defaultX: 4,
     defaultY: 6,
     defaultId: "navidrome",
+  },
+});
+
+// Register qBittorrent
+WidgetRegistry.register({
+  type: "qbittorrent",
+  component: QBittorrentWidget,
+  isEnabled: (config) => config.widgets.qbittorrent?.enabled ?? false,
+  getProps: (config) => ({
+    config: {
+      enabled: config.widgets.qbittorrent.enabled,
+      url: config.widgets.qbittorrent.url,
+      refreshInterval: 1000, // 1 second update
+    },
+  }),
+  grid: {
+    w: 3,
+    h: 3,
+    minW: 3,
+    minH: 2,
+  },
+  options: {
+    defaultX: 0,
+    defaultY: 6,
+    defaultId: "qbittorrent",
   },
 });
 

@@ -13,6 +13,7 @@ A self-hosted personal dashboard built with Next.js, featuring widgets for weath
   - **Jellyfin**: Library stats and latest movies/shows.
   - **Navidrome**: "Now Playing" with cover art and library stats.
   - **Immich**: Server statistics (Photos, Videos, Usage).
+  - **qBittorrent**: Active downloads, upload/download speeds, and seeding stats.
 - **Finance**:
   - **Ghostfolio**: Portfolio performance metrics (Today, Month, Year, Total).
 - **Calendar**: Upcoming events from ICS feeds.
@@ -51,69 +52,7 @@ A self-hosted personal dashboard built with Next.js, featuring widgets for weath
     cp config.example.yaml config.yaml
     ```
 
-    Edit `config.yaml` with your settings:
-
-    ```yaml
-    server:
-      root_domain: "example.com"
-      timezone: "America/New_York"
-      auth:
-        passphrase: "your-secret-passphrase"
-        session_days: 7
-
-    widgets:
-      weather:
-        enabled: true
-        lat: 40.7128
-        lon: -74.0060
-        api_key: "your-openweather-api-key"
-        units: "metric"
-
-      football:
-        enabled: true
-        api_key: "your-football-data-api-key"
-
-      f1:
-        enabled: true
-
-      calendar:
-        enabled: true
-        ics_urls:
-          - "https://calendar.google.com/calendar/ical/..."
-
-      service_status:
-        enabled: true
-        services:
-          - name: Jellyfin
-            url: "https://tv.example.com"
-            icon: "jellyfin"
-
-      jellyfin:
-        enabled: true
-        url: "https://jellyfin.example.com"
-        api_key: "your-jellyfin-api-key"
-        user_name: "your-username"
-
-      immich:
-        enabled: true
-        url: "https://photos.example.com"
-        api_key: "your-immich-api-key"
-
-      ghostfolio:
-        enabled: true
-        url: "https://ghostfolio.example.com"
-        public_token: "your-public-token"
-        display_metrics:
-          - today
-          - year
-          - total
-
-      navidrome:
-        enabled: true
-        url: "https://music.example.com"
-        user: "your-username"
-        password: "your-password"
-    ```
+    Edit `config.yaml` with your settings. Refer to `config.example.yaml` for all available options and structure.
 
 ### Running locally
 

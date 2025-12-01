@@ -22,7 +22,8 @@ export type WidgetType =
   | "jellyfin"
   | "immich"
   | "ghostfolio"
-  | "navidrome";
+  | "navidrome"
+  | "qbittorrent";
 
 export interface WidgetConfig {
   id: string;
@@ -331,4 +332,41 @@ export interface NavidromeNowPlaying {
   duration: number;
   minutesAgo: number; // How long ago it was played/started
   player: string; // username
+}
+
+// qBittorrent Types
+export interface QBittorrentWidgetProps {
+  config: {
+    enabled: boolean;
+    url: string;
+    refreshInterval: number;
+    display_metrics?: string[];
+  };
+}
+
+export interface QBittorrentTorrent {
+  hash: string;
+  name: string;
+  state: string;
+  size: number;
+  progress: number;
+  dlspeed: number;
+  upspeed: number;
+  eta: number;
+  ratio: number;
+  num_seeds: number;
+  num_leechs: number;
+}
+
+export interface QBittorrentTransferInfo {
+  dl_info_speed: number;
+  up_info_speed: number;
+  dl_info_data: number;
+  up_info_data: number;
+}
+
+export interface QBittorrentData {
+  transfer: QBittorrentTransferInfo;
+  seeding: QBittorrentTorrent[];
+  leeching: QBittorrentTorrent[];
 }

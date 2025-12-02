@@ -197,8 +197,8 @@ WidgetRegistry.register({
   grid: {
     w: 3,
     h: 2,
-    minW: 2,
-    minH: 2,
+    minW: 1, // Allow 1x1 minimal layout
+    minH: 1, // Allow 1x1 minimal layout
   },
   options: {
     defaultX: 7,

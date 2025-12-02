@@ -1,18 +1,35 @@
 import { NextResponse } from "next/server";
 import ical from "node-ical";
-import { loadConfig } from "@/lib/config";
+import { loadConfig, CalendarWidgetConfig } from "@/lib/config";
+import { normalizeWidgetConfig } from "@/lib/widget-config-utils";
 
 export async function GET() {
   const config = loadConfig();
-  const icsUrlsConfig = config.widgets.calendar.ics_urls;
+  
+  // Handle both single config and array of configs
+  const calendarConfigs = normalizeWidgetConfig<CalendarWidgetConfig>(
+    config.widgets.calendar
+  ).filter((c) => c.enabled);
 
-  if (!icsUrlsConfig || icsUrlsConfig.length === 0) {
+  if (calendarConfigs.length === 0) {
     return NextResponse.json({ error: "Calendar ICS URL not configured" }, { status: 500 });
   }
 
   try {
+    // Aggregate all ICS URLs from all calendar widget instances
+    const allIcsUrls: string[] = [];
+    calendarConfigs.forEach((calendarConfig) => {
+      if (calendarConfig.ics_urls) {
+        allIcsUrls.push(...calendarConfig.ics_urls);
+      }
+    });
+
+    if (allIcsUrls.length === 0) {
+      return NextResponse.json({ error: "Calendar ICS URL not configured" }, { status: 500 });
+    }
+
     // Parse URLs and colors from config (format: "url" or "hexcolor;url")
-    const calendarConfigs = icsUrlsConfig.map((urlConfig) => {
+    const parsedConfigs = allIcsUrls.map((urlConfig) => {
       const trimmed = urlConfig.trim();
       const parts = trimmed.split(';');
       let cleanUrl: string;
@@ -35,7 +52,7 @@ export async function GET() {
       return { url: cleanUrl, color };
     }).filter(config => config.url.length > 0);
     
-    const allEvents = await Promise.all(calendarConfigs.map(async ({ url, color }, index) => {
+    const allEvents = await Promise.all(parsedConfigs.map(async ({ url, color }, index) => {
         try {
             const response = await fetch(url, { next: { revalidate: 300 } }); // Cache for 5 minutes
             if (!response.ok) {

@@ -2,6 +2,116 @@ import yaml from "js-yaml";
 import fs from "fs";
 import path from "path";
 
+// Base widget config types
+export interface WeatherWidgetConfig {
+  enabled: boolean;
+  lat: number;
+  lon: number;
+  api_key: string;
+  units: string;
+}
+
+export interface SportsWidgetConfig {
+  enabled: boolean;
+  f1?: {
+    enabled: boolean;
+  };
+  football?: {
+    enabled: boolean;
+    api_key: string;
+  };
+}
+
+// Keep old interfaces for backward compatibility (deprecated)
+export interface FootballWidgetConfig {
+  enabled: boolean;
+  api_key: string;
+}
+
+export interface F1WidgetConfig {
+  enabled: boolean;
+}
+
+export interface CalendarWidgetConfig {
+  enabled: boolean;
+  ics_urls: string[];
+}
+
+export interface ServiceStatusWidgetConfig {
+  enabled: boolean;
+  columns: number | "auto";
+  rows?: number | "auto";
+  compactMode?: boolean;
+  services: {
+    name: string;
+    url: string;
+    icon?: string;
+  }[];
+}
+
+export interface ShortcutsWidgetConfig {
+  enabled: boolean;
+  columns: number | "auto";
+  rows?: number | "auto";
+  compactMode?: boolean;
+  shortcuts: {
+    name: string;
+    url: string;
+    icon?: string;
+  }[];
+}
+
+export interface IPCameraWidgetConfig {
+  enabled: boolean;
+  cameras: {
+    name: string;
+    url: string;
+  }[];
+}
+
+export interface RSSWidgetConfig {
+  enabled: boolean;
+  feeds: string[];
+  refreshInterval?: number;
+  maxItems?: number;
+  view?: "full" | "concise" | "minimal";
+  wrap?: boolean;
+}
+
+export interface JellyfinWidgetConfig {
+  enabled: boolean;
+  url: string;
+  api_key: string;
+  user_name: string;
+}
+
+export interface ImmichWidgetConfig {
+  enabled: boolean;
+  url: string;
+  api_key: string;
+}
+
+export interface GhostfolioWidgetConfig {
+  enabled: boolean;
+  url: string;
+  public_token: string;
+  display_metrics?: string[];
+}
+
+export interface NavidromeWidgetConfig {
+  enabled: boolean;
+  url: string;
+  user: string;
+  password: string;
+}
+
+export interface QBittorrentWidgetConfig {
+  enabled: boolean;
+  url: string;
+  user?: string;
+  password?: string;
+}
+
 export interface AppConfig {
   server: {
     root_domain: string;
@@ -13,92 +123,26 @@ export interface AppConfig {
     };
   };
   widgets: {
-    weather: {
-      enabled: boolean;
-      lat: number;
-      lon: number;
-      api_key: string;
-      units: string;
-    };
-    football: {
-      enabled: boolean;
-      api_key: string;
-    };
-    f1: {
-      enabled: boolean;
-    };
-    calendar: {
-      enabled: boolean;
-      ics_urls: string[];
-    };
-    service_status: {
-      enabled: boolean;
-      columns: number | "auto"; // Number of columns for the service grid, or "auto" to calculate automatically
-      rows?: number | "auto"; // Number of rows to display, or "auto" to calculate automatically (defaults to showing all)
-      compactMode?: boolean; // Whether to use compact mode (icon + status only, no text)
-      services: {
-        name: string;
-        url: string;
-        icon?: string;
-      }[];
-    };
-    shortcuts: {
-      enabled: boolean;
-      columns: number | "auto"; // Number of columns for the shortcuts grid, or "auto" to calculate automatically
-      rows?: number | "auto"; // Number of rows to display, or "auto" to calculate automatically (defaults to "auto")
-      compactMode?: boolean; // Whether to use compact mode (icon only, no text)
-      shortcuts: {
-        name: string;
-        url: string;
-        icon?: string;
-      }[];
-    };
-    ip_camera: {
-      enabled: boolean;
-      cameras: {
-        name: string;
-        url: string; // HTTP/HTTPS or RTSP URL
-      }[];
-    };
-    rss: {
-      enabled: boolean;
-      feeds: string[]; // Array of RSS feed URLs, optionally with hex color: "url" or "hexcolor;url"
-      refreshInterval?: number; // Cache refresh interval in seconds (default: 300)
-      maxItems?: number; // Maximum items to display per feed (default: 10) and total (default: 20)
-      view?: "full" | "concise" | "minimal"; // Display mode: full (all info), concise (title + date), minimal (title only)
-      wrap?: boolean; // Whether to wrap text (default: true). If false, truncate at 95% width with ellipsis
-    };
-    jellyfin: {
-      enabled: boolean;
-      url: string;
-      api_key: string;
-      user_name: string;
-    };
-    immich: {
-      enabled: boolean;
-      url: string;
-      api_key: string;
-    };
-    ghostfolio: {
-      enabled: boolean;
-      url: string;
-      public_token: string;
-      display_metrics?: string[];
-    };
-    navidrome: {
-      enabled: boolean;
-      url: string;
-      user: string;
-      password: string;
-    };
-    qbittorrent: {
-      enabled: boolean;
-      url: string;
-      user?: string;
-      password?: string;
-    };
+    weather: WeatherWidgetConfig | WeatherWidgetConfig[];
+    sports: SportsWidgetConfig | SportsWidgetConfig[];
+    // Deprecated: Use sports.f1 and sports.football instead
+    football?: FootballWidgetConfig | FootballWidgetConfig[];
+    f1?: F1WidgetConfig | F1WidgetConfig[];
+    calendar: CalendarWidgetConfig | CalendarWidgetConfig[];
+    service_status: ServiceStatusWidgetConfig | ServiceStatusWidgetConfig[];
+    shortcuts: ShortcutsWidgetConfig | ShortcutsWidgetConfig[];
+    ip_camera: IPCameraWidgetConfig | IPCameraWidgetConfig[];
+    rss: RSSWidgetConfig | RSSWidgetConfig[];
+    jellyfin: JellyfinWidgetConfig | JellyfinWidgetConfig[];
+    immich: ImmichWidgetConfig | ImmichWidgetConfig[];
+    ghostfolio: GhostfolioWidgetConfig | GhostfolioWidgetConfig[];
+    navidrome: NavidromeWidgetConfig | NavidromeWidgetConfig[];
+    qbittorrent: QBittorrentWidgetConfig | QBittorrentWidgetConfig[];
   };
 }
+
+// Re-export widget config utilities for convenience
+export { normalizeWidgetConfig, getFirstEnabledWidgetConfig } from "./widget-config-utils";
 
 // let configCache: AppConfig | null = null;
 

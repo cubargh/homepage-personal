@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadConfig } from "@/lib/config";
+import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
 import md5 from "crypto-js/md5";
 
 export async function GET(request: NextRequest) {
   const config = loadConfig();
-  const navidromeConfig = config.widgets.navidrome;
+  const navidromeConfig = getFirstEnabledWidgetConfig(config.widgets.navidrome);
 
   if (
-    !navidromeConfig?.enabled ||
+    !navidromeConfig ||
     !navidromeConfig.url ||
     !navidromeConfig.user ||
     !navidromeConfig.password

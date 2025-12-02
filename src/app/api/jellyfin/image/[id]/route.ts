@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadConfig } from "@/lib/config";
+import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
 
 export async function GET(
   request: NextRequest,
@@ -7,9 +8,9 @@ export async function GET(
 ) {
   const { id } = await params;
   const config = loadConfig();
-  const jfConfig = config.widgets.jellyfin;
+  const jfConfig = getFirstEnabledWidgetConfig(config.widgets.jellyfin);
 
-  if (!jfConfig?.enabled || !jfConfig.api_key || !jfConfig.url) {
+  if (!jfConfig || !jfConfig.api_key || !jfConfig.url) {
     return new NextResponse("Config missing", { status: 500 });
   }
 

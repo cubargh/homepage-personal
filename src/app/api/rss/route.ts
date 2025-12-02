@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { loadConfig } from "@/lib/config";
+import { loadConfig, RSSWidgetConfig } from "@/lib/config";
+import { normalizeWidgetConfig } from "@/lib/widget-config-utils";
 import Parser from "rss-parser";
 
 const parser = new Parser({
@@ -49,9 +50,13 @@ async function fetchWithRetry(
 
 export async function GET(request: NextRequest) {
   const config = loadConfig();
-  const rssConfig = config.widgets.rss;
+  
+  // Handle both single config and array of configs
+  const rssConfigs = normalizeWidgetConfig<RSSWidgetConfig>(
+    config.widgets.rss
+  ).filter((c) => c.enabled);
 
-  if (!rssConfig?.enabled || !rssConfig.feeds || rssConfig.feeds.length === 0) {
+  if (rssConfigs.length === 0) {
     return NextResponse.json(
       { error: "RSS configuration missing or disabled" },
       { status: 500 }
@@ -59,8 +64,28 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Aggregate all feeds from all RSS widget instances
+    const allFeeds: string[] = [];
+    let maxItems = 20; // Default
+    rssConfigs.forEach((rssConfig) => {
+      if (rssConfig.feeds) {
+        allFeeds.push(...rssConfig.feeds);
+      }
+      // Use the highest maxItems value from all configs
+      if (rssConfig.maxItems && rssConfig.maxItems > maxItems) {
+        maxItems = rssConfig.maxItems;
+      }
+    });
+
+    if (allFeeds.length === 0) {
+      return NextResponse.json(
+        { error: "RSS feeds not configured" },
+        { status: 500 }
+      );
+    }
+
     // Parse feed URLs and colors from config (format: "url" or "hexcolor;url")
-    const feedConfigs = rssConfig.feeds.map((feedConfig: string) => {
+    const feedConfigs = allFeeds.map((feedConfig: string) => {
       const trimmed = feedConfig.trim();
       const parts = trimmed.split(';');
       let feedUrl: string;
@@ -91,7 +116,7 @@ export async function GET(request: NextRequest) {
       try {
         const feed = await fetchWithRetry(feedUrl);
 
-        const items = (feed.items || []).slice(0, rssConfig.maxItems || 10).map((item: any) => {
+        const items = (feed.items || []).slice(0, maxItems || 10).map((item: any) => {
           // Extract author from various possible fields
           const author =
             item.creator ||
@@ -149,8 +174,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Limit total items
-    const maxTotalItems = rssConfig.maxItems || 20;
-    const limitedItems = allItems.slice(0, maxTotalItems);
+    const limitedItems = allItems.slice(0, maxItems);
 
     return NextResponse.json({
       feeds: validFeeds,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadConfig } from "@/lib/config";
+import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
 
 const BASE_URL = "https://api.football-data.org/v4";
 
@@ -8,7 +9,16 @@ export async function GET(request: NextRequest) {
   const endpoint = searchParams.get("endpoint") || "matches";
   
   const config = loadConfig();
-  const API_KEY = config.widgets.football.api_key;
+  
+  // Check new sports config first
+  const sportsConfig = getFirstEnabledWidgetConfig(config.widgets.sports);
+  let API_KEY = sportsConfig?.football?.api_key;
+  
+  // Fallback to old football config for backward compatibility
+  if (!API_KEY) {
+    const footballConfig = getFirstEnabledWidgetConfig(config.widgets.football);
+    API_KEY = footballConfig?.api_key;
+  }
   
   if (!API_KEY) {
      return NextResponse.json({ error: "API Configuration Missing" }, { status: 500 });

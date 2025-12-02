@@ -18,6 +18,7 @@ interface SportsWidgetProps {
   };
   footballConfig: {
     enabled: boolean;
+    api_key?: string;
     leagues: string[];
     refreshInterval: number;
     timezone: string;
@@ -26,12 +27,19 @@ interface SportsWidgetProps {
 
 export function SportsWidget({ f1Config, footballConfig }: SportsWidgetProps) {
   // Default active tab based on enabled status
+  // Prefer football if both are enabled, otherwise use whichever is enabled
   const defaultTab = footballConfig.enabled ? "football" : (f1Config.enabled ? "f1" : "football");
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const hasSetDefaultTab = useRef(false);
 
-  const { nextRace } = useF1Data(f1Config.refreshInterval);
+  // Only fetch F1 data if F1 is enabled (pass 0 to disable auto-refresh)
+  const { nextRace } = useF1Data(f1Config.enabled ? f1Config.refreshInterval : 0);
+  
+  // Safety check: if neither is enabled, don't render (shouldn't happen due to isEnabled check)
+  if (!f1Config.enabled && !footballConfig.enabled) {
+    return null;
+  }
 
   useEffect(() => {
     // Only auto-switch to F1 if F1 is enabled

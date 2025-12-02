@@ -1,17 +1,24 @@
 import { DashboardConfig, WidgetConfig } from "@/types";
-import { loadConfig } from "@/lib/config";
+import { loadConfig, AppConfig } from "@/lib/config";
 import { WidgetRegistry } from "@/lib/widget-registry";
 import "@/config/widgets"; // Register widgets
 
+// Helper function to normalize widget configs to arrays
+function normalizeWidgetConfig<T>(config: T | T[] | undefined): T[] {
+  if (!config) return [];
+  return Array.isArray(config) ? config : [config];
+}
+
+// Helper function to get widget config by type
+function getWidgetConfig<T>(
+  config: AppConfig,
+  widgetType: keyof AppConfig["widgets"]
+): T | T[] | undefined {
+  return config.widgets[widgetType] as T | T[] | undefined;
+}
+
 export const getDashboardConfig = (): DashboardConfig => {
   const config = loadConfig();
-
-  const services = config.widgets.service_status?.services || [];
-
-  // Debug: Log if services are empty to help diagnose
-  if (!services || services.length === 0) {
-    console.warn("DashboardConfig: No services found in config.yaml");
-  }
 
   const ROOT_DOMAIN = config.server.root_domain;
   const TIMEZONE = config.server.timezone;
@@ -25,18 +32,46 @@ export const getDashboardConfig = (): DashboardConfig => {
   const enabledWidgets: WidgetConfig[] = [];
 
   WidgetRegistry.getAll().forEach((def) => {
-    if (def.isEnabled(config)) {
-      console.log(`${def.type} widget enabled`);
-      enabledWidgets.push({
-        id: def.options?.defaultId || def.type,
-        type: def.type,
-        x: def.options?.defaultX ?? 0,
-        y: def.options?.defaultY ?? 0,
-        colSpan: def.grid.w,
-        rowSpan: def.grid.h,
-        props: def.getProps(config),
-      });
-    }
+    // Get the widget config (can be single object or array)
+    const widgetConfigs = normalizeWidgetConfig(
+      getWidgetConfig(config, def.type as keyof AppConfig["widgets"])
+    );
+
+    // Process each widget instance
+    widgetConfigs.forEach((widgetConfig: any, index: number) => {
+      // Check if this instance is enabled
+      if (widgetConfig?.enabled) {
+        // Create a modified config with only this widget instance
+        // This ensures getProps() receives a config with a single widget instance
+        const instanceConfig: AppConfig = {
+          ...config,
+          widgets: {
+            ...config.widgets,
+            [def.type]: widgetConfig, // Replace with single instance
+          },
+        };
+
+        // Generate unique ID for this instance
+        const baseId = def.options?.defaultId || def.type;
+        const instanceId =
+          widgetConfigs.length > 1 ? `${baseId}-${index}` : baseId;
+
+        console.log(`${def.type} widget enabled (id: ${instanceId})`);
+
+        // Check if widget is enabled using the instance config
+        if (def.isEnabled(instanceConfig)) {
+          enabledWidgets.push({
+            id: instanceId,
+            type: def.type,
+            x: def.options?.defaultX ?? 0,
+            y: def.options?.defaultY ?? 0,
+            colSpan: def.grid.w,
+            rowSpan: def.grid.h,
+            props: def.getProps(instanceConfig),
+          });
+        }
+      }
+    });
   });
 
   return {

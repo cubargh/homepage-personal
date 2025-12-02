@@ -1,21 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadConfig } from "@/lib/config";
+import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
 import { addDays, isSameDay, parseISO } from "date-fns";
 
 const BASE_URL = "https://api.openweathermap.org/data/2.5";
 
 export async function GET(request: NextRequest) {
   const config = loadConfig();
-  const API_KEY = config.widgets.weather.api_key;
+  const weatherConfig = getFirstEnabledWidgetConfig(config.widgets.weather);
+  
+  if (!weatherConfig) {
+    return NextResponse.json({ error: "Weather configuration missing or disabled" }, { status: 500 });
+  }
+
+  const API_KEY = weatherConfig.api_key;
+  const lat = weatherConfig.lat;
+  const lon = weatherConfig.lon;
+  const units = weatherConfig.units;
 
   if (!API_KEY) {
     return NextResponse.json({ error: "API Configuration Missing" }, { status: 500 });
   }
-
-  // Get config dynamically to pick up runtime env vars if needed (though weather lat/lon are likely static, this keeps it consistent)
-  const lat = config.widgets.weather.lat;
-  const lon = config.widgets.weather.lon;
-  const units = config.widgets.weather.units;
 
   try {
     const [currentRes, forecastRes] = await Promise.all([

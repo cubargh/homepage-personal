@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadConfig } from "@/lib/config";
+import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
 
 export async function GET(request: NextRequest) {
   const config = loadConfig();
-  const ghostfolioConfig = config.widgets.ghostfolio;
+  const ghostfolioConfig = getFirstEnabledWidgetConfig(config.widgets.ghostfolio);
 
   if (
-    !ghostfolioConfig?.enabled ||
+    !ghostfolioConfig ||
     !ghostfolioConfig.public_token ||
     !ghostfolioConfig.url
   ) {

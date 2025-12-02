@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadConfig } from "@/lib/config";
+import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
 
 export async function GET(request: NextRequest) {
   const config = loadConfig();
-  const jfConfig = config.widgets.jellyfin;
+  const jfConfig = getFirstEnabledWidgetConfig(config.widgets.jellyfin);
 
-  if (!jfConfig?.enabled || !jfConfig.api_key || !jfConfig.url) {
+  if (!jfConfig || !jfConfig.api_key || !jfConfig.url) {
     return NextResponse.json(
       { error: "Jellyfin configuration missing or disabled" },
       { status: 500 }

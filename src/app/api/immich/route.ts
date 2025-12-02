@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadConfig } from "@/lib/config";
+import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
 
 export async function GET(request: NextRequest) {
   const config = loadConfig();
-  const immichConfig = config.widgets.immich;
+  const immichConfig = getFirstEnabledWidgetConfig(config.widgets.immich);
 
-  if (!immichConfig?.enabled || !immichConfig.api_key || !immichConfig.url) {
+  if (!immichConfig || !immichConfig.api_key || !immichConfig.url) {
     return NextResponse.json(
       { error: "Immich configuration missing or disabled" },
       { status: 500 }

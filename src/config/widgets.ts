@@ -13,20 +13,26 @@ import { NavidromeWidget } from "@/components/dashboard/navidrome-widget";
 import { QBittorrentWidget } from "@/components/dashboard/qbittorrent-widget";
 import { IPCameraWidget } from "@/components/dashboard/ip-camera-widget";
 import { RSSWidget } from "@/components/dashboard/rss-widget";
+import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
+import type { ServiceStatusWidgetConfig } from "@/lib/config";
 
 // Register Service Monitor
 WidgetRegistry.register({
   type: "service-monitor",
   component: ServiceWidget,
-  isEnabled: (config) => config.widgets.service_status?.enabled ?? false,
+  isEnabled: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.service_status);
+    return widgetConfig?.enabled ?? false;
+  },
   getProps: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.service_status) as ServiceStatusWidgetConfig | undefined;
     return {
-      services: config.widgets.service_status?.services || [],
+      services: widgetConfig?.services || [],
       config: {
         refreshInterval: 60000, // 1 minute
-        columns: config.widgets.service_status?.columns ?? 2,
-        rows: config.widgets.service_status?.rows ?? "auto",
-        compactMode: config.widgets.service_status?.compactMode ?? false,
+        columns: widgetConfig?.columns ?? 2,
+        rows: widgetConfig?.rows ?? "auto",
+        compactMode: widgetConfig?.compactMode ?? false,
       },
     };
   },
@@ -47,14 +53,18 @@ WidgetRegistry.register({
 WidgetRegistry.register({
   type: "shortcuts",
   component: ShortcutsWidget,
-  isEnabled: (config) => config.widgets.shortcuts?.enabled ?? false,
+  isEnabled: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.shortcuts);
+    return widgetConfig?.enabled ?? false;
+  },
   getProps: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.shortcuts);
     return {
-      shortcuts: config.widgets.shortcuts?.shortcuts || [],
+      shortcuts: widgetConfig?.shortcuts || [],
       config: {
-        columns: config.widgets.shortcuts?.columns ?? 2,
-        rows: config.widgets.shortcuts?.rows ?? "auto",
-        compactMode: config.widgets.shortcuts?.compactMode ?? false,
+        columns: widgetConfig?.columns ?? 2,
+        rows: widgetConfig?.rows ?? "auto",
+        compactMode: widgetConfig?.compactMode ?? false,
       },
     };
   },
@@ -75,13 +85,20 @@ WidgetRegistry.register({
 WidgetRegistry.register({
   type: "weather",
   component: WeatherWidget,
-  isEnabled: (config) => config.widgets.weather.enabled,
+  isEnabled: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.weather);
+    return widgetConfig?.enabled ?? false;
+  },
   getProps: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.weather);
+    if (!widgetConfig) {
+      throw new Error("Weather widget config not found");
+    }
     return {
       config: {
-        lat: config.widgets.weather.lat,
-        lon: config.widgets.weather.lon,
-        units: config.widgets.weather.units as "metric" | "imperial",
+        lat: widgetConfig.lat,
+        lon: widgetConfig.lon,
+        units: widgetConfig.units as "metric" | "imperial",
         refreshInterval: 60000 * 30, // 30 minutes
         timezone: config.server.timezone,
       },
@@ -104,11 +121,18 @@ WidgetRegistry.register({
 WidgetRegistry.register({
   type: "calendar",
   component: CalendarWidget,
-  isEnabled: (config) => config.widgets.calendar.enabled,
+  isEnabled: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.calendar);
+    return widgetConfig?.enabled ?? false;
+  },
   getProps: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.calendar);
+    if (!widgetConfig) {
+      throw new Error("Calendar widget config not found");
+    }
     return {
       config: {
-        icsUrl: config.widgets.calendar.ics_urls.join(","),
+        icsUrl: widgetConfig.ics_urls.join(","),
         refreshInterval: 60000 * 15, // 15 minutes
         timezone: config.server.timezone,
       },
@@ -131,18 +155,56 @@ WidgetRegistry.register({
 WidgetRegistry.register({
   type: "sports",
   component: SportsWidget,
-  isEnabled: (config) =>
-    config.widgets.football.enabled || (config.widgets.f1?.enabled ?? false),
+  isEnabled: (config) => {
+    const sportsConfig = getFirstEnabledWidgetConfig(config.widgets.sports);
+    if (sportsConfig?.enabled) {
+      // Verify at least one sub-widget is enabled
+      const f1Enabled = sportsConfig.f1?.enabled ?? false;
+      const footballEnabled = sportsConfig.football?.enabled ?? false;
+      return f1Enabled || footballEnabled;
+    }
+    // Backward compatibility: check old f1/football configs
+    const footballConfig = getFirstEnabledWidgetConfig(config.widgets.football);
+    const f1Config = getFirstEnabledWidgetConfig(config.widgets.f1);
+    return (footballConfig?.enabled ?? false) || (f1Config?.enabled ?? false);
+  },
   getProps: (config) => {
     const common = { timezone: config.server.timezone };
+    const sportsConfig = getFirstEnabledWidgetConfig(config.widgets.sports);
+    
+    // Use new sports config if available
+    if (sportsConfig?.enabled) {
+      const f1Enabled = sportsConfig.f1?.enabled ?? false;
+      const footballEnabled = sportsConfig.football?.enabled ?? false;
+      
+      return {
+        f1Config: {
+          enabled: f1Enabled,
+          refreshInterval: 60000 * 60, // 1 hour
+          ...common,
+        },
+        footballConfig: {
+          enabled: footballEnabled,
+          api_key: sportsConfig.football?.api_key || "",
+          leagues: ["PL", "PD", "BL1", "SA", "CL"],
+          refreshInterval: 60000, // 1 minute
+          ...common,
+        },
+      };
+    }
+    
+    // Backward compatibility: use old f1/football configs
+    const f1Config = getFirstEnabledWidgetConfig(config.widgets.f1);
+    const footballConfig = getFirstEnabledWidgetConfig(config.widgets.football);
     return {
       f1Config: {
-        enabled: config.widgets.f1?.enabled ?? true,
+        enabled: f1Config?.enabled ?? false,
         refreshInterval: 60000 * 60, // 1 hour
         ...common,
       },
       footballConfig: {
-        enabled: config.widgets.football.enabled,
+        enabled: footballConfig?.enabled ?? false,
+        api_key: footballConfig?.api_key || "",
         leagues: ["PL", "PD", "BL1", "SA", "CL"], // Hardcoded in original dashboard.ts
         refreshInterval: 60000, // 1 minute
         ...common,
@@ -166,14 +228,23 @@ WidgetRegistry.register({
 WidgetRegistry.register({
   type: "jellyfin",
   component: JellyfinWidget,
-  isEnabled: (config) => config.widgets.jellyfin?.enabled ?? false,
-  getProps: (config) => ({
-    config: {
-      enabled: config.widgets.jellyfin.enabled,
-      url: config.widgets.jellyfin.url,
-      refreshInterval: 60000 * 5, // 5 minutes
-    },
-  }),
+  isEnabled: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.jellyfin);
+    return widgetConfig?.enabled ?? false;
+  },
+  getProps: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.jellyfin);
+    if (!widgetConfig) {
+      throw new Error("Jellyfin widget config not found");
+    }
+    return {
+      config: {
+        enabled: widgetConfig.enabled,
+        url: widgetConfig.url,
+        refreshInterval: 60000 * 5, // 5 minutes
+      },
+    };
+  },
   grid: {
     w: 4,
     h: 4,
@@ -191,14 +262,23 @@ WidgetRegistry.register({
 WidgetRegistry.register({
   type: "immich",
   component: ImmichWidget,
-  isEnabled: (config) => config.widgets.immich?.enabled ?? false,
-  getProps: (config) => ({
-    config: {
-      enabled: config.widgets.immich.enabled,
-      url: config.widgets.immich.url,
-      refreshInterval: 60000 * 15, // 15 minutes
-    },
-  }),
+  isEnabled: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.immich);
+    return widgetConfig?.enabled ?? false;
+  },
+  getProps: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.immich);
+    if (!widgetConfig) {
+      throw new Error("Immich widget config not found");
+    }
+    return {
+      config: {
+        enabled: widgetConfig.enabled,
+        url: widgetConfig.url,
+        refreshInterval: 60000 * 15, // 15 minutes
+      },
+    };
+  },
   grid: {
     w: 3,
     h: 2,
@@ -216,15 +296,24 @@ WidgetRegistry.register({
 WidgetRegistry.register({
   type: "ghostfolio",
   component: GhostfolioWidget,
-  isEnabled: (config) => config.widgets.ghostfolio?.enabled ?? false,
-  getProps: (config) => ({
-    config: {
-      enabled: config.widgets.ghostfolio.enabled,
-      url: config.widgets.ghostfolio.url,
-      refreshInterval: 60000 * 5, // 5 minutes
-      display_metrics: config.widgets.ghostfolio.display_metrics,
-    },
-  }),
+  isEnabled: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.ghostfolio);
+    return widgetConfig?.enabled ?? false;
+  },
+  getProps: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.ghostfolio);
+    if (!widgetConfig) {
+      throw new Error("Ghostfolio widget config not found");
+    }
+    return {
+      config: {
+        enabled: widgetConfig.enabled,
+        url: widgetConfig.url,
+        refreshInterval: 60000 * 5, // 5 minutes
+        display_metrics: widgetConfig.display_metrics,
+      },
+    };
+  },
   grid: {
     w: 3,
     h: 2,
@@ -242,16 +331,25 @@ WidgetRegistry.register({
 WidgetRegistry.register({
   type: "navidrome",
   component: NavidromeWidget,
-  isEnabled: (config) => config.widgets.navidrome?.enabled ?? false,
-  getProps: (config) => ({
-    config: {
-      enabled: config.widgets.navidrome.enabled,
-      url: config.widgets.navidrome.url,
-      user: config.widgets.navidrome.user,
-      password: config.widgets.navidrome.password,
-      refreshInterval: 30000, // 30 seconds
-    },
-  }),
+  isEnabled: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.navidrome);
+    return widgetConfig?.enabled ?? false;
+  },
+  getProps: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.navidrome);
+    if (!widgetConfig) {
+      throw new Error("Navidrome widget config not found");
+    }
+    return {
+      config: {
+        enabled: widgetConfig.enabled,
+        url: widgetConfig.url,
+        user: widgetConfig.user,
+        password: widgetConfig.password,
+        refreshInterval: 30000, // 30 seconds
+      },
+    };
+  },
   grid: {
     w: 3,
     h: 3, // Medium square
@@ -269,10 +367,14 @@ WidgetRegistry.register({
 WidgetRegistry.register({
   type: "ip-camera",
   component: IPCameraWidget,
-  isEnabled: (config) => config.widgets.ip_camera?.enabled ?? false,
+  isEnabled: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.ip_camera);
+    return widgetConfig?.enabled ?? false;
+  },
   getProps: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.ip_camera);
     return {
-      cameras: config.widgets.ip_camera?.cameras || [],
+      cameras: widgetConfig?.cameras || [],
       config: {
         refreshInterval: 1000, // 1 second (for image refresh)
       },
@@ -295,13 +397,17 @@ WidgetRegistry.register({
 WidgetRegistry.register({
   type: "rss",
   component: RSSWidget,
-  isEnabled: (config) => config.widgets.rss?.enabled ?? false,
+  isEnabled: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.rss);
+    return widgetConfig?.enabled ?? false;
+  },
   getProps: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.rss);
     return {
       config: {
-        refreshInterval: (config.widgets.rss?.refreshInterval || 300) * 1000, // Convert seconds to milliseconds
-        view: config.widgets.rss?.view || "full",
-        wrap: config.widgets.rss?.wrap ?? true, // Default to true for wrapping
+        refreshInterval: (widgetConfig?.refreshInterval || 300) * 1000, // Convert seconds to milliseconds
+        view: widgetConfig?.view || "full",
+        wrap: widgetConfig?.wrap ?? true, // Default to true for wrapping
         timezone: config.server.timezone,
       },
     };
@@ -323,14 +429,23 @@ WidgetRegistry.register({
 WidgetRegistry.register({
   type: "qbittorrent",
   component: QBittorrentWidget,
-  isEnabled: (config) => config.widgets.qbittorrent?.enabled ?? false,
-  getProps: (config) => ({
-    config: {
-      enabled: config.widgets.qbittorrent.enabled,
-      url: config.widgets.qbittorrent.url,
-      refreshInterval: 1000, // 1 second update
-    },
-  }),
+  isEnabled: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.qbittorrent);
+    return widgetConfig?.enabled ?? false;
+  },
+  getProps: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.qbittorrent);
+    if (!widgetConfig) {
+      throw new Error("qBittorrent widget config not found");
+    }
+    return {
+      config: {
+        enabled: widgetConfig.enabled,
+        url: widgetConfig.url,
+        refreshInterval: 1000, // 1 second update
+      },
+    };
+  },
   grid: {
     w: 3,
     h: 3,
@@ -349,13 +464,16 @@ WidgetRegistry.register({
   type: "f1",
   component: F1Widget,
   isEnabled: () => false, // Disabled by default in favor of combined sports widget
-  getProps: (config) => ({
-    config: {
-      enabled: config.widgets.f1?.enabled ?? true,
-      refreshInterval: 60000 * 60,
-      timezone: config.server.timezone,
-    },
-  }),
+  getProps: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.f1);
+    return {
+      config: {
+        enabled: widgetConfig?.enabled ?? true,
+        refreshInterval: 60000 * 60,
+        timezone: config.server.timezone,
+      },
+    };
+  },
   grid: { w: 3, h: 2 },
 });
 
@@ -364,13 +482,19 @@ WidgetRegistry.register({
   type: "football",
   component: FootballWidget,
   isEnabled: () => false, // Disabled by default in favor of combined sports widget
-  getProps: (config) => ({
-    config: {
-      enabled: config.widgets.football.enabled,
-      leagues: ["PL", "PD", "BL1", "SA", "CL"],
-      refreshInterval: 60000,
-      timezone: config.server.timezone,
-    },
-  }),
+  getProps: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.football);
+    if (!widgetConfig) {
+      throw new Error("Football widget config not found");
+    }
+    return {
+      config: {
+        enabled: widgetConfig.enabled,
+        leagues: ["PL", "PD", "BL1", "SA", "CL"],
+        refreshInterval: 60000,
+        timezone: config.server.timezone,
+      },
+    };
+  },
   grid: { w: 3, h: 2 },
 });

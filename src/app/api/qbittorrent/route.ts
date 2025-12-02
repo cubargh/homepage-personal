@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadConfig } from "@/lib/config";
+import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
 
 export async function GET(request: NextRequest) {
   const config = loadConfig();
-  const qbConfig = config.widgets.qbittorrent;
+  const qbConfig = getFirstEnabledWidgetConfig(config.widgets.qbittorrent);
 
-  if (!qbConfig?.enabled || !qbConfig.url) {
+  if (!qbConfig || !qbConfig.url) {
     return NextResponse.json(
       { error: "qBittorrent configuration missing or disabled" },
       { status: 500 }

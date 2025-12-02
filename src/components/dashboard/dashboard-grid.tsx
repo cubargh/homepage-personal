@@ -34,9 +34,129 @@ const CONTAINER_PADDING: [number, number] = [10, 10];
 export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
-  const [width, setWidth] = useState(1200);
   const [rowHeight, setRowHeight] = useState(100);
   const [currentBreakpoint, setCurrentBreakpoint] = useState<string>("lg");
+
+  // Track active interactions
+  const [isGridActive, setIsGridActive] = useState(false); // Dragging or Resizing anything (for background)
+  const [activeWidgetId, setActiveWidgetId] = useState<string | null>(null); // Specific widget being interacted with
+  const [isResizing, setIsResizing] = useState(false); // Specific state for resizing action
+
+  // Settings & Visibility State
+  const showDebug = dashboardConfig.debug || false;
+
+  // Memoize initial layouts based on config
+  const defaultLayouts = useMemo(
+    () => generateLayouts(dashboardConfig),
+    [dashboardConfig]
+  );
+
+  // Calculate required width from saved layouts to maintain column count
+  const calculateWidthFromLayouts = (layouts: Layouts): number | null => {
+    const lgItems = layouts.lg || [];
+    if (lgItems.length === 0) return null;
+
+    // Find the maximum column position used in saved layout
+    const maxRight = Math.max(
+      ...lgItems.map((l: any) => (l.x || 0) + (l.w || 0)),
+      0
+    );
+
+    if (maxRight === 0) return null;
+
+    // Calculate what width would produce this column count
+    // Formula: cols = (width - paddingX + margin) / (TARGET_CELL_WIDTH + margin)
+    // Solving for width: width = cols * (TARGET_CELL_WIDTH + margin) - margin + paddingX
+    const margin = GRID_MARGIN[0];
+    const paddingX = CONTAINER_PADDING[0] * 2;
+    // Add 1 to account for Math.floor rounding down
+    const requiredWidth =
+      (maxRight + 1) * (TARGET_CELL_WIDTH + margin) - margin + paddingX;
+
+    return Math.max(requiredWidth, GRID_BREAKPOINTS.lg);
+  };
+
+  // Load localStorage layouts synchronously before first render
+  const loadSavedLayouts = (): {
+    layouts: Layouts;
+    savedWidth: number | null;
+  } => {
+    if (typeof window === "undefined") {
+      return { layouts: defaultLayouts, savedWidth: null };
+    }
+
+    const savedLayouts = localStorage.getItem("dashboard-layouts");
+    if (!savedLayouts) {
+      return { layouts: defaultLayouts, savedWidth: null };
+    }
+
+    try {
+      const parsedLayouts = JSON.parse(savedLayouts);
+      if (parsedLayouts && typeof parsedLayouts === "object") {
+        // Migration logic
+        if (parsedLayouts.desktop) {
+          parsedLayouts.lg = parsedLayouts.desktop;
+          delete parsedLayouts.desktop;
+        }
+        if (parsedLayouts.mobile) {
+          parsedLayouts.sm = parsedLayouts.mobile;
+          delete parsedLayouts.mobile;
+        }
+
+        const lgItems = parsedLayouts.lg || [];
+        const maxRight = Math.max(
+          ...lgItems.map((l: any) => (l.x || 0) + (l.w || 0)),
+          0
+        );
+
+        let finalLayouts: Layouts;
+        if (maxRight <= 10 && lgItems.length > 0) {
+          console.log("Detected old 10-col layout, migrating to 20-col...");
+          const migratedLayouts: Layouts = {};
+          for (const bp in parsedLayouts) {
+            migratedLayouts[bp] = parsedLayouts[bp].map((l: any) => ({
+              ...l,
+              x: l.x * 2,
+              y: l.y * 2,
+              w: l.w * 2,
+              h: l.h * 2,
+            }));
+          }
+          finalLayouts = migratedLayouts;
+        } else {
+          finalLayouts = parsedLayouts;
+        }
+
+        // Calculate required width from the saved layouts
+        const savedWidth = calculateWidthFromLayouts(finalLayouts);
+        return { layouts: finalLayouts, savedWidth };
+      }
+    } catch (e) {
+      console.error("Failed to parse saved layout", e);
+    }
+
+    return { layouts: defaultLayouts, savedWidth: null };
+  };
+
+  const { layouts: initialLayouts, savedWidth: initialSavedWidth } =
+    loadSavedLayouts();
+  const [layouts, setLayouts] = useState<Layouts>(initialLayouts);
+
+  // Initialize width: use saved width if available, otherwise use viewport
+  const getInitialWidth = (): number => {
+    // If we have saved layouts, use the calculated width to maintain column count
+    if (initialSavedWidth !== null) {
+      return initialSavedWidth;
+    }
+
+    // Otherwise, use viewport width
+    if (typeof window !== "undefined") {
+      return window.innerWidth;
+    }
+    return 1200;
+  };
+
+  const [width, setWidth] = useState(getInitialWidth());
 
   // Calculate responsive columns purely based on width
   const activeCols = useMemo(() => {
@@ -77,81 +197,20 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
     setRowHeight(colWidth);
   }, [colWidth]);
 
-  // Track active interactions
-  const [isGridActive, setIsGridActive] = useState(false); // Dragging or Resizing anything (for background)
-  const [activeWidgetId, setActiveWidgetId] = useState<string | null>(null); // Specific widget being interacted with
-  const [isResizing, setIsResizing] = useState(false); // Specific state for resizing action
-
-  // Settings & Visibility State
-  const showDebug = dashboardConfig.debug || false;
-
-  // Memoize initial layouts based on config
-  const defaultLayouts = useMemo(
-    () => generateLayouts(dashboardConfig),
-    [dashboardConfig]
-  );
-
-  const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
-
-  // Initialize and Load Layouts & Settings
+  // Initialize and Load Settings
   useEffect(() => {
-    let initialWidth = 1200;
-    // Initialize width immediately if ref is available
-    if (containerRef.current) {
-      initialWidth = Math.floor(
+    // If we didn't have saved layouts, measure container now
+    if (initialSavedWidth === null && containerRef.current) {
+      const measuredWidth = Math.floor(
         containerRef.current.getBoundingClientRect().width
       );
-    } else if (typeof window !== "undefined") {
-      initialWidth = window.innerWidth;
-    }
-    setWidth(initialWidth);
-
-    // Load Settings
-    const savedLayouts = localStorage.getItem("dashboard-layouts");
-    if (savedLayouts) {
-      try {
-        const parsedLayouts = JSON.parse(savedLayouts);
-        if (parsedLayouts && typeof parsedLayouts === "object") {
-          // Migration logic
-          if (parsedLayouts.desktop) {
-            parsedLayouts.lg = parsedLayouts.desktop;
-            delete parsedLayouts.desktop;
-          }
-          if (parsedLayouts.mobile) {
-            parsedLayouts.sm = parsedLayouts.mobile;
-            delete parsedLayouts.mobile;
-          }
-
-          const lgItems = parsedLayouts.lg || [];
-          const maxRight = Math.max(
-            ...lgItems.map((l: any) => (l.x || 0) + (l.w || 0)),
-            0
-          );
-
-          if (maxRight <= 10 && lgItems.length > 0) {
-            console.log("Detected old 10-col layout, migrating to 20-col...");
-            const migratedLayouts: Layouts = {};
-            for (const bp in parsedLayouts) {
-              migratedLayouts[bp] = parsedLayouts[bp].map((l: any) => ({
-                ...l,
-                x: l.x * 2,
-                y: l.y * 2,
-                w: l.w * 2,
-                h: l.h * 2,
-              }));
-            }
-            setLayouts(migratedLayouts);
-          } else {
-            setLayouts(parsedLayouts);
-          }
-        }
-      } catch (e) {
-        console.error("Failed to parse saved layout", e);
+      if (measuredWidth > 0) {
+        setWidth(measuredWidth);
       }
     }
 
     setMounted(true);
-  }, [dashboardConfig]);
+  }, [dashboardConfig, initialSavedWidth]);
 
   // Calculate dynamic dimensions
   useEffect(() => {
@@ -305,10 +364,14 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
                 }
 
                 const isActive = widget.id === activeWidgetId;
-                
+
                 // Get current grid dimensions
-                const currentLayout = layouts[currentBreakpoint]?.find(l => l.i === widget.id);
-                const gridSize = currentLayout ? { w: currentLayout.w, h: currentLayout.h } : undefined;
+                const currentLayout = layouts[currentBreakpoint]?.find(
+                  (l) => l.i === widget.id
+                );
+                const gridSize = currentLayout
+                  ? { w: currentLayout.w, h: currentLayout.h }
+                  : undefined;
 
                 return (
                   <WidgetWrapper

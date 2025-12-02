@@ -30,7 +30,8 @@ export type WidgetType =
   | "immich"
   | "ghostfolio"
   | "navidrome"
-  | "qbittorrent";
+  | "qbittorrent"
+  | "ip-camera";
 
 export interface WidgetConfig {
   id: string;
@@ -103,6 +104,18 @@ export interface WeatherWidgetProps extends BaseWidgetProps {
 
 export interface CalendarWidgetProps extends BaseWidgetProps {
   config: { icsUrl: string; refreshInterval: number; timezone: string };
+}
+
+export interface IPCameraConfig {
+  name: string;
+  url: string; // HTTP/HTTPS or RTSP URL
+}
+
+export interface IPCameraWidgetProps extends BaseWidgetProps {
+  cameras: IPCameraConfig[];
+  config: {
+    refreshInterval?: number; // Not used for streaming, but kept for consistency
+  };
 }
 
 export interface JellyfinWidgetProps extends BaseWidgetProps {

@@ -50,6 +50,14 @@ widgets:
         url: "https://docs.example.com"
         icon: "book"
 
+  ip_camera:
+    enabled: true
+    cameras:
+      - name: "Front Door"
+        url: "http://192.168.1.100:8080/video" # HTTP camera
+      - name: "Backyard"
+        url: "rtsp://192.168.1.101:554/stream" # RTSP camera
+
   jellyfin:
     enabled: true
     url: "https://jellyfin.example.com"

@@ -11,6 +11,7 @@ import { ImmichWidget } from "@/components/dashboard/immich-widget";
 import { GhostfolioWidget } from "@/components/dashboard/ghostfolio-widget";
 import { NavidromeWidget } from "@/components/dashboard/navidrome-widget";
 import { QBittorrentWidget } from "@/components/dashboard/qbittorrent-widget";
+import { IPCameraWidget } from "@/components/dashboard/ip-camera-widget";
 
 // Register Service Monitor
 WidgetRegistry.register({
@@ -260,6 +261,32 @@ WidgetRegistry.register({
     defaultX: 4,
     defaultY: 6,
     defaultId: "navidrome",
+  },
+});
+
+// Register IP Camera
+WidgetRegistry.register({
+  type: "ip-camera",
+  component: IPCameraWidget,
+  isEnabled: (config) => config.widgets.ip_camera?.enabled ?? false,
+  getProps: (config) => {
+    return {
+      cameras: config.widgets.ip_camera?.cameras || [],
+      config: {
+        refreshInterval: 1000, // 1 second (for image refresh)
+      },
+    };
+  },
+  grid: {
+    w: 3,
+    h: 3,
+    minW: 1, // Allow 1x1 compact layout
+    minH: 1, // Allow 1x1 compact layout
+  },
+  options: {
+    defaultX: 0,
+    defaultY: 8,
+    defaultId: "ip-camera",
   },
 });
 

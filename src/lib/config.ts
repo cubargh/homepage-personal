@@ -53,6 +53,13 @@ export interface AppConfig {
         icon?: string;
       }[];
     };
+    ip_camera: {
+      enabled: boolean;
+      cameras: {
+        name: string;
+        url: string; // HTTP/HTTPS or RTSP URL
+      }[];
+    };
     jellyfin: {
       enabled: boolean;
       url: string;

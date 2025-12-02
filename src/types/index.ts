@@ -12,8 +12,15 @@ export interface ServiceConfig {
   icon?: string; // Icon name from selfh.st/icons (e.g., "jellyfin", "navidrome")
 }
 
+export interface ShortcutConfig {
+  name: string;
+  url: string;
+  icon?: string; // Icon name from selfh.st/icons or full URL
+}
+
 export type WidgetType =
   | "service-monitor"
+  | "shortcuts"
   | "football"
   | "f1"
   | "weather"
@@ -57,6 +64,15 @@ export interface ServiceWidgetProps extends BaseWidgetProps {
   config: { 
     refreshInterval: number;
     columns: number | "auto"; // Number of columns for the service grid, or "auto"
+    rows?: number | "auto"; // Number of rows to display, or "auto"
+    compactMode: boolean; // Whether to use compact mode
+  };
+}
+
+export interface ShortcutsWidgetProps extends BaseWidgetProps {
+  shortcuts: ShortcutConfig[];
+  config: {
+    columns: number | "auto"; // Number of columns for the shortcuts grid, or "auto"
     rows?: number | "auto"; // Number of rows to display, or "auto"
     compactMode: boolean; // Whether to use compact mode
   };

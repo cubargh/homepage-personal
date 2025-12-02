@@ -42,6 +42,17 @@ export interface AppConfig {
         icon?: string;
       }[];
     };
+    shortcuts: {
+      enabled: boolean;
+      columns: number | "auto"; // Number of columns for the shortcuts grid, or "auto" to calculate automatically
+      rows?: number | "auto"; // Number of rows to display, or "auto" to calculate automatically (defaults to "auto")
+      compactMode?: boolean; // Whether to use compact mode (icon only, no text)
+      shortcuts: {
+        name: string;
+        url: string;
+        icon?: string;
+      }[];
+    };
     jellyfin: {
       enabled: boolean;
       url: string;

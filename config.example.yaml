@@ -36,6 +36,19 @@ widgets:
         url: "https://tv.example.com"
         icon: "jellyfin"
 
+  shortcuts:
+    enabled: true
+    columns: 2 # Number of columns for the shortcuts grid, or "auto" to calculate automatically
+    rows: "auto" # Number of rows to display, or "auto" to calculate automatically (defaults to "auto")
+    compactMode: false # Set to true for compact mode (icon only, no text)
+    shortcuts:
+      - name: GitHub
+        url: "https://github.com"
+        icon: "github"
+      - name: Documentation
+        url: "https://docs.example.com"
+        icon: "book"
+
   jellyfin:
     enabled: true
     url: "https://jellyfin.example.com"

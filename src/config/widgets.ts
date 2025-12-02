@@ -1,5 +1,6 @@
 import { WidgetRegistry } from "@/lib/widget-registry";
 import { ServiceWidget } from "@/components/dashboard/service-widget";
+import { ShortcutsWidget } from "@/components/dashboard/shortcuts-widget";
 import { WeatherWidget } from "@/components/dashboard/weather-widget";
 import { CalendarWidget } from "@/components/dashboard/calendar-widget";
 import { SportsWidget } from "@/components/dashboard/sports-widget";
@@ -37,6 +38,34 @@ WidgetRegistry.register({
     defaultX: 0,
     defaultY: 2,
     defaultId: "services",
+  },
+});
+
+// Register Shortcuts
+WidgetRegistry.register({
+  type: "shortcuts",
+  component: ShortcutsWidget,
+  isEnabled: (config) => config.widgets.shortcuts?.enabled ?? false,
+  getProps: (config) => {
+    return {
+      shortcuts: config.widgets.shortcuts?.shortcuts || [],
+      config: {
+        columns: config.widgets.shortcuts?.columns ?? 2,
+        rows: config.widgets.shortcuts?.rows ?? "auto",
+        compactMode: config.widgets.shortcuts?.compactMode ?? false,
+      },
+    };
+  },
+  grid: {
+    w: 3,
+    h: 2,
+    minW: 1, // Allow 1x1 compact layout
+    minH: 1, // Allow 1x1 compact layout
+  },
+  options: {
+    defaultX: 3,
+    defaultY: 0,
+    defaultId: "shortcuts",
   },
 });
 

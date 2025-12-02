@@ -1,12 +1,27 @@
+# Homepage Personal Dashboard Configuration
+# This file contains all configuration options for the dashboard widgets and server settings.
+
 server:
+  # Root domain for your services (used for generating service URLs)
   root_domain: "example.com"
+
+  # IANA timezone string (e.g., "America/New_York", "Europe/London", "UTC")
+  # Used for formatting dates and times across all widgets
   timezone: "UTC"
+
+  # Enable debug mode for additional logging
   debug: false
+
   auth:
+    # Passphrase for session authentication (change this!)
     passphrase: "secret-passphrase-change-me"
+
+    # Number of days before session expires
     session_days: 7
 
 widgets:
+  # Weather Widget
+  # Displays current weather and forecast using OpenWeatherMap API
   weather:
     enabled: true
     lat: -34.576
@@ -14,34 +29,45 @@ widgets:
     api_key: "your-openweather-api-key"
     units: "metric"
 
+  # Football Widget
+  # Shows upcoming matches and standings from Football-Data.org API
   football:
     enabled: true
     api_key: "your-football-data-api-key"
 
+  # Formula 1 Widget
+  # Displays F1 race schedule and standings
   f1:
     enabled: true
 
+  # Calendar Widget
+  # Aggregates events from multiple ICS calendar feeds
   calendar:
     enabled: true
     ics_urls:
       - "https://calendar.google.com/calendar/ical/..."
-      - "#ff5733;https://calendar.google.com/calendar/ical/..." # Hex color first, then URL
+      # Format: "#hexcolor;url" - hex color first, then URL
+      - "#ff5733;https://calendar.google.com/calendar/ical/..."
 
+  # Service Status Widget
+  # Monitors uptime/status of configured services
   service_status:
     enabled: true
-    columns: 2 # Number of columns for the service grid, or "auto" to calculate automatically
-    rows: "auto" # Number of rows to display, or "auto" to calculate automatically (defaults to "auto")
-    compactMode: false # Set to true for compact mode (icon + status only, no text)
+    columns: 2
+    rows: "auto"
+    compactMode: false
     services:
       - name: Jellyfin
         url: "https://tv.example.com"
         icon: "jellyfin"
 
+  # Shortcuts Widget
+  # Quick access links to frequently used websites
   shortcuts:
     enabled: true
-    columns: 2 # Number of columns for the shortcuts grid, or "auto" to calculate automatically
-    rows: "auto" # Number of rows to display, or "auto" to calculate automatically (defaults to "auto")
-    compactMode: false # Set to true for compact mode (icon only, no text)
+    columns: 2
+    rows: "auto"
+    compactMode: false
     shortcuts:
       - name: GitHub
         url: "https://github.com"
@@ -50,51 +76,65 @@ widgets:
         url: "https://docs.example.com"
         icon: "book"
 
+  # IP Camera Widget
+  # Live streaming from IP cameras (HTTP/HTTPS or RTSP)
   ip_camera:
     enabled: true
     cameras:
       - name: "Front Door"
-        url: "http://192.168.1.100:8080/video" # HTTP camera
+        url: "http://192.168.1.100:8080/video"
       - name: "Backyard"
-        url: "rtsp://192.168.1.101:554/stream" # RTSP camera
+        url: "rtsp://192.168.1.101:554/stream"
 
+  # RSS Feed Reader Widget
+  # Aggregates and displays articles from multiple RSS feeds
   rss:
     enabled: true
     feeds:
       - "https://rss.cnn.com/rss/edition.rss"
-      - "#ff5733;https://feeds.bbci.co.uk/news/rss.xml" # Hex color first, then URL
-    refreshInterval: 300 # Cache refresh interval in seconds (default: 300)
-    maxItems: 20 # Maximum items to display total (default: 20)
-    view: "full" # Display mode: "full" (all info), "concise" (title + date + feed), "minimal" (title only)
-    wrap: true # Whether to wrap text (default: true). If false, truncate at 95% width with ellipsis
+      # Format: "#hexcolor;url" - hex color first, then URL
+      - "#ff5733;https://feeds.bbci.co.uk/news/rss.xml"
+    refreshInterval: 300
+    maxItems: 20
+    view: "full"
+    wrap: true
 
+  # Jellyfin Widget
+  # Displays media library statistics and recent additions
   jellyfin:
     enabled: true
     url: "https://jellyfin.example.com"
     api_key: "your-jellyfin-api-key"
     user_name: "your-username"
 
+  # Immich Widget
+  # Shows photo library statistics
   immich:
     enabled: true
     url: "https://photos.example.com"
     api_key: "your-immich-api-key"
 
+  # Ghostfolio Widget
+  # Portfolio tracking and performance metrics
   ghostfolio:
     enabled: true
     url: "https://your-ghostfolio-instance.com"
-    public_token: "your-public-token" # (My Ghostfolio/Access/Add new)
-    # Options: today, year, total
+    public_token: "your-public-token"
     display_metrics:
       - today
       - year
       - total
 
+  # Navidrome Widget
+  # Music server statistics and now playing
   navidrome:
     enabled: true
     url: "https://music.example.com"
     user: "your-username"
     password: "your-password"
 
+  # qBittorrent Widget
+  # Torrent client statistics and active downloads
   qbittorrent:
     enabled: true
     url: "http://qbittorrent.example.com"

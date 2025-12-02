@@ -60,6 +60,14 @@ export interface AppConfig {
         url: string; // HTTP/HTTPS or RTSP URL
       }[];
     };
+    rss: {
+      enabled: boolean;
+      feeds: string[]; // Array of RSS feed URLs, optionally with hex color: "url" or "hexcolor;url"
+      refreshInterval?: number; // Cache refresh interval in seconds (default: 300)
+      maxItems?: number; // Maximum items to display per feed (default: 10) and total (default: 20)
+      view?: "full" | "concise" | "minimal"; // Display mode: full (all info), concise (title + date), minimal (title only)
+      wrap?: boolean; // Whether to wrap text (default: true). If false, truncate at 95% width with ellipsis
+    };
     jellyfin: {
       enabled: boolean;
       url: string;

@@ -12,6 +12,7 @@ import { GhostfolioWidget } from "@/components/dashboard/ghostfolio-widget";
 import { NavidromeWidget } from "@/components/dashboard/navidrome-widget";
 import { QBittorrentWidget } from "@/components/dashboard/qbittorrent-widget";
 import { IPCameraWidget } from "@/components/dashboard/ip-camera-widget";
+import { RSSWidget } from "@/components/dashboard/rss-widget";
 
 // Register Service Monitor
 WidgetRegistry.register({
@@ -287,6 +288,34 @@ WidgetRegistry.register({
     defaultX: 0,
     defaultY: 8,
     defaultId: "ip-camera",
+  },
+});
+
+// Register RSS Feed Reader
+WidgetRegistry.register({
+  type: "rss",
+  component: RSSWidget,
+  isEnabled: (config) => config.widgets.rss?.enabled ?? false,
+  getProps: (config) => {
+    return {
+      config: {
+        refreshInterval: (config.widgets.rss?.refreshInterval || 300) * 1000, // Convert seconds to milliseconds
+        view: config.widgets.rss?.view || "full",
+        wrap: config.widgets.rss?.wrap ?? true, // Default to true for wrapping
+        timezone: config.server.timezone,
+      },
+    };
+  },
+  grid: {
+    w: 4,
+    h: 4,
+    minW: 1, // Allow 1x1 compact layout
+    minH: 1, // Allow 1x1 compact layout
+  },
+  options: {
+    defaultX: 0,
+    defaultY: 11,
+    defaultId: "rss",
   },
 });
 

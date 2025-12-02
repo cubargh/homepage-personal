@@ -58,6 +58,16 @@ widgets:
       - name: "Backyard"
         url: "rtsp://192.168.1.101:554/stream" # RTSP camera
 
+  rss:
+    enabled: true
+    feeds:
+      - "https://rss.cnn.com/rss/edition.rss"
+      - "#ff5733;https://feeds.bbci.co.uk/news/rss.xml" # Hex color first, then URL
+    refreshInterval: 300 # Cache refresh interval in seconds (default: 300)
+    maxItems: 20 # Maximum items to display total (default: 20)
+    view: "full" # Display mode: "full" (all info), "concise" (title + date + feed), "minimal" (title only)
+    wrap: true # Whether to wrap text (default: true). If false, truncate at 95% width with ellipsis
+
   jellyfin:
     enabled: true
     url: "https://jellyfin.example.com"

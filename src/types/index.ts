@@ -31,7 +31,8 @@ export type WidgetType =
   | "ghostfolio"
   | "navidrome"
   | "qbittorrent"
-  | "ip-camera";
+  | "ip-camera"
+  | "rss";
 
 export interface WidgetConfig {
   id: string;
@@ -115,6 +116,15 @@ export interface IPCameraWidgetProps extends BaseWidgetProps {
   cameras: IPCameraConfig[];
   config: {
     refreshInterval?: number; // Not used for streaming, but kept for consistency
+  };
+}
+
+export interface RSSWidgetProps extends BaseWidgetProps {
+  config: {
+    refreshInterval: number;
+    view?: "full" | "concise" | "minimal";
+    wrap?: boolean;
+    timezone: string;
   };
 }
 

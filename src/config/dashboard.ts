@@ -9,12 +9,20 @@ function normalizeWidgetConfig<T>(config: T | T[] | undefined): T[] {
   return Array.isArray(config) ? config : [config];
 }
 
+// Map widget types to config keys (for widgets where they differ)
+const WIDGET_TYPE_TO_CONFIG_KEY: Record<string, keyof AppConfig["widgets"]> = {
+  "service-monitor": "service_status",
+  "ip-camera": "ip_camera",
+};
+
 // Helper function to get widget config by type
 function getWidgetConfig<T>(
   config: AppConfig,
-  widgetType: keyof AppConfig["widgets"]
+  widgetType: string
 ): T | T[] | undefined {
-  return config.widgets[widgetType] as T | T[] | undefined;
+  // Map widget type to config key if needed
+  const configKey = WIDGET_TYPE_TO_CONFIG_KEY[widgetType] || widgetType;
+  return config.widgets[configKey as keyof AppConfig["widgets"]] as T | T[] | undefined;
 }
 
 export const getDashboardConfig = (): DashboardConfig => {
@@ -32,9 +40,12 @@ export const getDashboardConfig = (): DashboardConfig => {
   const enabledWidgets: WidgetConfig[] = [];
 
   WidgetRegistry.getAll().forEach((def) => {
+    // Map widget type to config key if needed
+    const configKey = WIDGET_TYPE_TO_CONFIG_KEY[def.type] || def.type;
+    
     // Get the widget config (can be single object or array)
     const widgetConfigs = normalizeWidgetConfig(
-      getWidgetConfig(config, def.type as keyof AppConfig["widgets"])
+      getWidgetConfig(config, def.type)
     );
 
     // Process each widget instance
@@ -47,7 +58,7 @@ export const getDashboardConfig = (): DashboardConfig => {
           ...config,
           widgets: {
             ...config.widgets,
-            [def.type]: widgetConfig, // Replace with single instance
+            [configKey]: widgetConfig, // Use config key, not widget type
           },
         };
 

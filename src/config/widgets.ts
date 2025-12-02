@@ -56,8 +56,8 @@ WidgetRegistry.register({
   grid: {
     w: 3,
     h: 2,
-    minW: 3,
-    minH: 2,
+    minW: 1,
+    minH: 1,
   },
   options: {
     defaultX: 0,
@@ -83,8 +83,8 @@ WidgetRegistry.register({
   grid: {
     w: 4,
     h: 4,
-    minW: 3,
-    minH: 3,
+    minW: 2,
+    minH: 2,
   },
   options: {
     defaultX: 3,
@@ -118,8 +118,8 @@ WidgetRegistry.register({
   grid: {
     w: 3,
     h: 4,
-    minW: 3,
-    minH: 3,
+    minW: 2,
+    minH: 2,
   },
   options: {
     defaultX: 7,
@@ -143,8 +143,8 @@ WidgetRegistry.register({
   grid: {
     w: 4,
     h: 4,
-    minW: 3,
-    minH: 3,
+    minW: 2,
+    minH: 2,
   },
   options: {
     defaultX: 0,
@@ -168,7 +168,7 @@ WidgetRegistry.register({
   grid: {
     w: 3,
     h: 2,
-    minW: 3,
+    minW: 2,
     minH: 2,
   },
   options: {
@@ -194,7 +194,7 @@ WidgetRegistry.register({
   grid: {
     w: 3,
     h: 2,
-    minW: 3,
+    minW: 2,
     minH: 2,
   },
   options: {

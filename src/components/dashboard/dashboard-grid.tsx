@@ -305,6 +305,10 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
                 }
 
                 const isActive = widget.id === activeWidgetId;
+                
+                // Get current grid dimensions
+                const currentLayout = layouts[currentBreakpoint]?.find(l => l.i === widget.id);
+                const gridSize = currentLayout ? { w: currentLayout.w, h: currentLayout.h } : undefined;
 
                 return (
                   <WidgetWrapper
@@ -314,7 +318,7 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
                     className="pointer-events-auto"
                   >
                     <WidgetErrorBoundary>
-                      <WidgetComponent {...widget.props} />
+                      <WidgetComponent {...widget.props} gridSize={gridSize} />
                     </WidgetErrorBoundary>
                   </WidgetWrapper>
                 );

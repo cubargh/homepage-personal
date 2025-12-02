@@ -41,13 +41,23 @@ export interface DashboardConfig {
   widgets: WidgetConfig[];
 }
 
+// Grid Types
+export interface GridSize {
+  w: number;
+  h: number;
+}
+
+export interface BaseWidgetProps {
+  gridSize?: GridSize;
+}
+
 // Widget Component Props Interfaces
-export interface ServiceWidgetProps {
+export interface ServiceWidgetProps extends BaseWidgetProps {
   services: ServiceConfig[];
   config: { refreshInterval: number };
 }
 
-export interface FootballWidgetProps {
+export interface FootballWidgetProps extends BaseWidgetProps {
   config: {
     enabled: boolean;
     leagues: string[];
@@ -56,11 +66,11 @@ export interface FootballWidgetProps {
   };
 }
 
-export interface F1WidgetProps {
+export interface F1WidgetProps extends BaseWidgetProps {
   config: { enabled: boolean; refreshInterval: number; timezone: string };
 }
 
-export interface WeatherWidgetProps {
+export interface WeatherWidgetProps extends BaseWidgetProps {
   config: {
     lat: number;
     lon: number;
@@ -70,11 +80,11 @@ export interface WeatherWidgetProps {
   };
 }
 
-export interface CalendarWidgetProps {
+export interface CalendarWidgetProps extends BaseWidgetProps {
   config: { icsUrl: string; refreshInterval: number; timezone: string };
 }
 
-export interface JellyfinWidgetProps {
+export interface JellyfinWidgetProps extends BaseWidgetProps {
   config: {
     enabled: boolean;
     url: string;
@@ -82,7 +92,7 @@ export interface JellyfinWidgetProps {
   };
 }
 
-export interface SportsWidgetProps {
+export interface SportsWidgetProps extends BaseWidgetProps {
   f1Config: { enabled: boolean; refreshInterval: number; timezone: string };
   footballConfig: {
     enabled: boolean;
@@ -270,7 +280,7 @@ export interface JellyfinItem {
 }
 
 // Immich Types
-export interface ImmichWidgetProps {
+export interface ImmichWidgetProps extends BaseWidgetProps {
   config: {
     enabled: boolean;
     url: string;
@@ -285,7 +295,7 @@ export interface ImmichStats {
 }
 
 // Ghostfolio Types
-export interface GhostfolioWidgetProps {
+export interface GhostfolioWidgetProps extends BaseWidgetProps {
   config: {
     enabled: boolean;
     url: string;
@@ -306,7 +316,7 @@ export interface GhostfolioStats {
 }
 
 // Navidrome Types
-export interface NavidromeWidgetProps {
+export interface NavidromeWidgetProps extends BaseWidgetProps {
   config: {
     enabled: boolean;
     url: string;
@@ -335,7 +345,7 @@ export interface NavidromeNowPlaying {
 }
 
 // qBittorrent Types
-export interface QBittorrentWidgetProps {
+export interface QBittorrentWidgetProps extends BaseWidgetProps {
   config: {
     enabled: boolean;
     url: string;

@@ -3,12 +3,12 @@
 import useSWR from "swr";
 import { parseISO } from "date-fns";
 import { formatTime } from "@/lib/utils";
-import { WeatherData } from "@/types";
+import { WeatherData, WeatherWidgetProps } from "@/types";
 import { 
   CloudSun, Loader2, AlertTriangle, Droplets, Wind, MapPin,
   Sun, Cloud, CloudRain, CloudSnow, CloudLightning, CloudDrizzle, CloudFog, Moon
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { WidgetLayout } from "@/components/dashboard/widget-layout";
 
 const fetcher = async (url: string) => {
     const res = await fetch(url);
@@ -46,14 +46,7 @@ const getWeatherIcon = (code: string, className?: string) => {
   }
 };
 
-interface WeatherWidgetProps {
-  config: {
-    refreshInterval: number;
-    timezone: string;
-  };
-}
-
-export function WeatherWidget({ config }: WeatherWidgetProps) {
+export function WeatherWidget({ config, gridSize }: WeatherWidgetProps) {
   const { data, error, isLoading } = useSWR<WeatherData>(
     "/api/weather",
     fetcher,
@@ -62,106 +55,141 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
     }
   );
 
-  return (
-    <Card className="h-auto md:h-full flex flex-col overflow-hidden border-border/50">
-      <CardHeader className="hidden md:flex bg-secondary/10 py-3 px-4 h-[50px] shrink-0 border-b border-border/50">
-        <CardTitle className="flex items-center justify-between text-primary text-base w-full">
-            <div className="flex items-center space-x-2">
-                <CloudSun className="h-4 w-4" />
-                <span>Weather</span>
-            </div>
-            {data && (
-                <div className="flex items-center text-xs text-muted-foreground font-normal">
-                    <MapPin className="h-3 w-3 mr-1" />
-                    {data.location.city}, {data.location.country}
-                </div>
-            )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 p-0 h-full relative flex flex-col">
-        {error ? (
-             <div className="h-full flex flex-col items-center justify-center text-destructive/80 space-y-2 p-4">
-                <AlertTriangle className="h-8 w-8" />
-                <p className="text-sm">Weather Unavailable</p>
-                <p className="text-xs text-muted-foreground">Check API Key</p>
-            </div>
-        ) : isLoading || !data ? (
-            <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-2 p-4">
-                <Loader2 className="h-8 w-8 animate-spin" />
-                <p className="text-sm">Loading forecast...</p>
-            </div>
-        ) : (
-            <div className="flex flex-col h-full">
-                {/* Current Weather - Takes available vertical space */}
-                <div className="flex-1 flex flex-col justify-center p-4 md:px-6 relative bg-gradient-to-br from-blue-500/5 via-transparent to-transparent">
-                     {/* Mobile Title Overlay */}
-                     <div className="md:hidden absolute top-2 left-3 flex items-center space-x-1.5 text-primary/90 z-10">
-                        <CloudSun className="h-3 w-3" />
-                        <span className="text-[9px] font-bold uppercase tracking-widest">Weather</span>
-                     </div>
+  // Layout modes:
+  // - Minimal: 1x1 (icon + temp only)
+  // - Compact: 2x2 (icon + temp + condition, no forecast)
+  // - Standard: 3x3+ (full layout with forecast)
+  const isMinimal = gridSize ? (gridSize.w === 1 && gridSize.h === 1) : false;
+  const isCompact = gridSize ? (gridSize.w === 2 && gridSize.h === 2) : false;
+  const isStandard = gridSize ? (gridSize.w >= 3 || gridSize.h >= 3) : true;
 
-                     {/* Mobile Location Overlay */}
-                     <div className="md:hidden absolute top-2 right-3 flex items-center text-[9px] text-muted-foreground/70 z-10">
+  return (
+    <WidgetLayout
+      gridSize={gridSize}
+      title="Weather"
+      icon={<CloudSun className="h-4 w-4" />}
+      headerActions={data && !isMinimal && (
+        <div className="flex items-center text-xs text-muted-foreground font-normal">
+            <MapPin className="h-3 w-3 mr-1" />
+            {data.location.city}
+        </div>
+      )}
+      contentClassName={isMinimal ? "p-0" : isCompact ? "p-0 relative flex flex-col" : "p-0 relative flex flex-col"}
+    >
+      {error ? (
+        <div className="h-full flex flex-col items-center justify-center text-destructive/80 space-y-2 p-4">
+          <AlertTriangle className="h-8 w-8" />
+          {!isMinimal && (
+            <>
+              <p className="text-sm">Weather Unavailable</p>
+              <p className="text-xs text-muted-foreground">Check API Key</p>
+            </>
+          )}
+        </div>
+      ) : isLoading || !data ? (
+        <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-2 p-4">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          {!isMinimal && <p className="text-sm">Loading forecast...</p>}
+        </div>
+      ) : (
+        <div className="flex flex-col h-full w-full">
+          {isMinimal ? (
+             // 1x1 Minimal Layout
+             <div className="flex flex-col items-center justify-center h-full w-full bg-gradient-to-br from-blue-500/10 to-transparent p-2">
+                <div className="mb-1 drop-shadow-md scale-110">
+                    {getWeatherIcon(data.current.icon, "h-8 w-8")}
+                </div>
+                <div className="flex flex-col items-center">
+                    <span className="text-2xl font-bold tracking-tighter text-foreground leading-none">
+                        {Math.round(data.current.temp)}°
+                    </span>
+                    <span className="text-[10px] text-muted-foreground mt-0.5 truncate max-w-full px-1">
                         {data.location.city}
-                        <MapPin className="h-2.5 w-2.5 ml-0.5" />
-                     </div>
-                     
-                     <div className="flex flex-row items-center justify-between w-full mt-4 md:mt-0">
+                    </span>
+                </div>
+             </div>
+          ) : isCompact ? (
+             // 2x2 Compact Layout
+             <div className="flex flex-col items-center justify-center h-full w-full bg-gradient-to-br from-blue-500/5 via-transparent to-transparent p-2">
+                <div className="mb-1 drop-shadow-lg shrink-0">
+                    {getWeatherIcon(data.current.icon, "h-10 w-10")}
+                </div>
+                <div className="flex flex-col items-center gap-0.5 shrink-0">
+                    <span className="text-3xl font-bold tracking-tighter text-foreground leading-none">
+                        {Math.round(data.current.temp)}°
+                    </span>
+                    <span className="text-xs text-muted-foreground capitalize font-medium text-center px-1 truncate w-full">
+                        {data.current.description}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground/70 mt-0.5 truncate w-full px-1">
+                        {data.location.city}
+                    </span>
+                </div>
+             </div>
+          ) : (
+             // Standard Layout (3x3+)
+             <>
+                {/* Current Weather */}
+                <div className="flex-1 flex flex-col justify-center p-4 relative bg-gradient-to-br from-blue-500/5 via-transparent to-transparent">
+                     <div className="flex flex-row items-center justify-between w-full">
                         {/* Left: Icon + Temp + Condition */}
-                        <div className="flex items-center gap-3 md:gap-5">
-                            {/* Replaced img with Lucide icon helper */}
+                        <div className="flex items-center gap-3">
                             <div className="drop-shadow-lg">
-                                {getWeatherIcon(data.current.icon, "h-10 w-10 md:h-16 md:w-16")}
+                                {getWeatherIcon(data.current.icon, "h-12 w-12")}
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-3xl md:text-5xl font-bold tracking-tighter text-foreground">
+                                <span className="text-4xl font-bold tracking-tighter text-foreground">
                                     {Math.round(data.current.temp)}°
                                 </span>
-                                <span className="text-[10px] md:text-sm text-muted-foreground capitalize font-medium">
+                                <span className="text-xs text-muted-foreground capitalize font-medium">
                                     {data.current.description}
                                 </span>
                             </div>
                         </div>
 
-                        {/* Right: Details (Hidden on tiny screens, visible on desktop/tablet) */}
-                        <div className="flex flex-col gap-1.5 text-xs md:text-sm text-muted-foreground/70 font-medium text-right pl-4 border-l border-white/5 md:border-none md:pl-0">
-                            <div className="flex items-center justify-end gap-2">
-                                <Droplets className="h-3.5 w-3.5 text-blue-400/70" />
-                                <span>{data.current.humidity}%</span>
-                            </div>
-                            <div className="flex items-center justify-end gap-2">
-                                <Wind className="h-3.5 w-3.5 text-teal-400/70" />
-                                <span>{Math.round(data.current.windSpeed * 3.6)} <span className="text-[10px]">km/h</span></span>
-                            </div>
-                        </div>
+                        {/* Right: Details - Only show if width >= 3 */}
+                        {gridSize && gridSize.w >= 3 && (
+                          <div className="flex flex-col gap-1.5 text-xs text-muted-foreground/70 font-medium text-right pl-4 border-l border-white/5">
+                              <div className="flex items-center justify-end gap-2">
+                                  <Droplets className="h-3.5 w-3.5 text-blue-400/70" />
+                                  <span>{data.current.humidity}%</span>
+                              </div>
+                              <div className="flex items-center justify-end gap-2">
+                                  <Wind className="h-3.5 w-3.5 text-teal-400/70" />
+                                  <span>{Math.round(data.current.windSpeed * 3.6)} <span className="text-[10px]">km/h</span></span>
+                              </div>
+                          </div>
+                        )}
                      </div>
                 </div>
 
-                {/* Forecast - Fixed height at bottom */}
-                <div className="h-[80px] md:h-[100px] shrink-0 grid grid-cols-5 border-t border-white/5 bg-secondary/5">
-                    {data.forecast.slice(0, 5).map((day, i) => (
-                        <div 
-                            key={day.date} 
-                            className={`flex flex-col items-center justify-center md:justify-between py-1 md:py-3 hover:bg-white/5 transition-colors group gap-0.5 md:gap-0
-                                ${i !== 4 ? 'border-r border-white/5' : ''}
-                            `}
-                        >
-                            <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 group-hover:text-primary/80 transition-colors">
-                                {formatTime(parseISO(day.date), "EEE", config.timezone)}
-                            </span>
-                            {/* Replaced img with Lucide icon helper */}
-                            <div className="opacity-70 group-hover:opacity-100 transition-opacity">
-                                {getWeatherIcon(day.icon, "h-4 w-4 md:h-6 md:w-6")}
-                            </div>
-                             <div className="flex flex-col items-center font-mono text-[9px] md:text-xs leading-none">
-                                <span className="font-semibold text-foreground/90">{Math.round(day.temp_max)}°</span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )}
-      </CardContent>
-    </Card>
+                {/* Forecast Footer - Only show if height >= 3 */}
+                {gridSize && gridSize.h >= 3 && (
+                  <div className="h-[80px] shrink-0 grid grid-cols-5 border-t border-white/5 bg-secondary/5">
+                      {data.forecast.slice(0, 5).map((day, i) => (
+                          <div 
+                              key={day.date} 
+                              className={`flex flex-col items-center justify-center py-2 hover:bg-white/5 transition-colors group gap-0.5
+                                  ${i !== 4 ? 'border-r border-white/5' : ''}
+                              `}
+                          >
+                              <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/60 group-hover:text-primary/80 transition-colors">
+                                  {formatTime(parseISO(day.date), "EEE", config.timezone)}
+                              </span>
+                              <div className="opacity-70 group-hover:opacity-100 transition-opacity">
+                                  {getWeatherIcon(day.icon, "h-5 w-5")}
+                              </div>
+                               <div className="flex flex-col items-center font-mono text-xs leading-none">
+                                  <span className="font-semibold text-foreground/90">{Math.round(day.temp_max)}°</span>
+                              </div>
+                          </div>
+                      ))}
+                  </div>
+                )}
+             </>
+          )}
+        </div>
+      )}
+    </WidgetLayout>
   );
 }

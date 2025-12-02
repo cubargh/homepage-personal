@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Tooltip,
@@ -11,8 +9,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ServiceConfig, ServiceStatus } from "@/types";
+import { ServiceConfig, ServiceStatus, ServiceWidgetProps } from "@/types";
 import { Activity, Globe, ChevronDown, ChevronUp } from "lucide-react";
+import { WidgetLayout } from "@/components/dashboard/widget-layout";
+import { cn } from "@/lib/utils";
 
 const fetcher = async (url: string) => {
     const res = await fetch(url);
@@ -25,9 +25,10 @@ const fetcher = async (url: string) => {
 interface ServiceItemProps {
   service: ServiceConfig;
   refreshInterval: number;
+  compact?: boolean;
 }
 
-function ServiceItem({ service, refreshInterval }: ServiceItemProps) {
+function ServiceItem({ service, refreshInterval, compact }: ServiceItemProps) {
   const { data, error, isLoading } = useSWR<ServiceStatus>(
     `/api/status?url=${encodeURIComponent(service.url)}`,
     fetcher,
@@ -57,9 +58,15 @@ function ServiceItem({ service, refreshInterval }: ServiceItemProps) {
       rel="noopener noreferrer"
       className="block group h-full"
     >
-      <div className="flex items-center justify-between p-2 lg:p-3 border border-white/5 rounded-lg bg-white/5 hover:bg-white/10 hover:border-white/10 transition-all duration-200 h-full relative overflow-hidden group-hover:shadow-lg group-hover:shadow-primary/5">
+      <div className={cn(
+        "flex items-center justify-between border border-white/5 rounded-lg bg-white/5 hover:bg-white/10 hover:border-white/10 transition-all duration-200 h-full relative overflow-hidden group-hover:shadow-lg group-hover:shadow-primary/5",
+        compact ? "p-1.5" : "p-2 lg:p-3"
+      )}>
         <div className="flex items-center min-w-0 gap-3 flex-1 z-10">
-          <div className="relative w-8 h-8 lg:w-9 lg:h-9 flex items-center justify-center shrink-0 rounded-md bg-black/20 p-1 border border-white/5">
+          <div className={cn(
+            "relative flex items-center justify-center shrink-0 rounded-md bg-black/20 border border-white/5",
+            compact ? "w-6 h-6 p-0.5" : "w-8 h-8 lg:w-9 lg:h-9 p-1"
+          )}>
               {iconUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img 
@@ -73,12 +80,15 @@ function ServiceItem({ service, refreshInterval }: ServiceItemProps) {
                       }}
                   />
               ) : null}
-              <div className={`p-1.5 text-primary/80 ${iconUrl ? 'hidden' : ''}`}>
+              <div className={`text-primary/80 ${iconUrl ? 'hidden' : ''} ${compact ? 'p-0.5' : 'p-1.5'}`}>
                   <Globe className="h-full w-full" />
               </div>
           </div>
           <div className="min-w-0 flex-1 flex flex-col gap-0.5">
-            <p className="font-medium text-xs lg:text-sm text-foreground/90 group-hover:text-primary transition-colors truncate tracking-wide">{service.name}</p>
+            <p className={cn(
+              "font-medium text-foreground/90 group-hover:text-primary transition-colors truncate tracking-wide",
+              compact ? "text-[10px]" : "text-xs lg:text-sm"
+            )}>{service.name}</p>
             <div className="flex items-center gap-1.5">
                 {isLoading ? (
                     <span className="text-[10px] text-muted-foreground animate-pulse">Checking...</span>
@@ -91,27 +101,29 @@ function ServiceItem({ service, refreshInterval }: ServiceItemProps) {
           </div>
         </div>
         
-        <div className="flex items-center shrink-0 ml-2 z-10">
-          {isLoading ? (
-               <div className="h-2 w-2 rounded-full bg-muted animate-pulse" />
-          ) : (
-              <TooltipProvider>
-                  <Tooltip>
-                      <TooltipTrigger asChild>
-                          <div className={`relative flex h-2.5 w-2.5 items-center justify-center`}>
-                              {isUp && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>}
-                              <span className={`relative inline-flex rounded-full h-2 w-2 ${isUp ? 'bg-emerald-500' : 'bg-destructive'}`}></span>
-                          </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="left">
-                          <p className="font-mono text-xs">
-                              {data ? `Latency: ${data.latency}ms` : "N/A"}
-                          </p>
-                      </TooltipContent>
-                  </Tooltip>
-              </TooltipProvider>
-          )}
-        </div>
+        {!compact && (
+          <div className="flex items-center shrink-0 ml-2 z-10">
+            {isLoading ? (
+                <div className="h-2 w-2 rounded-full bg-muted animate-pulse" />
+            ) : (
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className={`relative flex h-2.5 w-2.5 items-center justify-center`}>
+                                {isUp && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>}
+                                <span className={`relative inline-flex rounded-full h-2 w-2 ${isUp ? 'bg-emerald-500' : 'bg-destructive'}`}></span>
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="left">
+                            <p className="font-mono text-xs">
+                                {data ? `Latency: ${data.latency}ms` : "N/A"}
+                            </p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            )}
+          </div>
+        )}
         
         {/* Subtle gradient glow on hover */}
         <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/0 to-primary/0 group-hover:via-primary/5 group-hover:to-primary/10 transition-all duration-500 opacity-0 group-hover:opacity-100" />
@@ -120,53 +132,33 @@ function ServiceItem({ service, refreshInterval }: ServiceItemProps) {
   );
 }
 
-interface ServiceWidgetProps {
-  services: ServiceConfig[];
-  config: {
-    refreshInterval: number;
-  };
-}
-
-export function ServiceWidget({ services, config }: ServiceWidgetProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-
-  const toggleCollapse = () => {
-      if (window.innerWidth < 768) {
-          setIsCollapsed(!isCollapsed);
-      }
-  };
+export function ServiceWidget({ services, config, gridSize }: ServiceWidgetProps) {
+  // Determine if we should use compact mode based on grid width
+  // If width is 1 or 2, use compact.
+  const isCompact = gridSize ? gridSize.w < 3 : false;
 
   return (
-    <Card className={`flex flex-col border-border/50 overflow-hidden transition-all duration-300 ${isCollapsed ? 'h-auto min-h-0' : 'h-full min-h-[33vh] lg:min-h-0'}`}>
-      <CardHeader 
-        className="pb-3 bg-gradient-to-b from-secondary/10 to-transparent cursor-pointer md:cursor-default group"
-        onClick={toggleCollapse}
-      >
-        <CardTitle className="flex items-center justify-between text-primary">
-            <div className="flex items-center space-x-2">
-                <Activity className="h-5 w-5" />
-                <span>Service Status</span>
-            </div>
-            {/* Show chevron only on mobile */}
-            <div className="md:hidden text-muted-foreground">
-                {isCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
-            </div>
-        </CardTitle>
-      </CardHeader>
-      {/* On mobile: hide if collapsed. On desktop: always flex/visible regardless of state */}
-      <CardContent className={`flex-1 overflow-hidden p-0 ${isCollapsed ? 'hidden md:block' : 'block'}`}>
-        <ScrollArea className="h-full px-4 pb-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <WidgetLayout
+      gridSize={gridSize}
+      title="Service Status"
+      icon={<Activity className="h-5 w-5" />}
+      contentClassName="p-0"
+    >
+        <ScrollArea className="h-full px-4 pb-4 pt-2">
+            <div className={cn(
+              "grid gap-3",
+              isCompact ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"
+            )}>
                 {services.map((service) => (
                 <ServiceItem 
                   key={service.url} 
                   service={service} 
-                  refreshInterval={config.refreshInterval} 
+                  refreshInterval={config.refreshInterval}
+                  compact={isCompact}
                 />
                 ))}
             </div>
         </ScrollArea>
-      </CardContent>
-    </Card>
+    </WidgetLayout>
   );
 }

@@ -54,7 +54,12 @@ export interface BaseWidgetProps {
 // Widget Component Props Interfaces
 export interface ServiceWidgetProps extends BaseWidgetProps {
   services: ServiceConfig[];
-  config: { refreshInterval: number };
+  config: { 
+    refreshInterval: number;
+    columns: number | "auto"; // Number of columns for the service grid, or "auto"
+    rows?: number | "auto"; // Number of rows to display, or "auto"
+    compactMode: boolean; // Whether to use compact mode
+  };
 }
 
 export interface FootballWidgetProps extends BaseWidgetProps {

@@ -28,6 +28,9 @@ widgets:
 
   service_status:
     enabled: true
+    columns: 2 # Number of columns for the service grid, or "auto" to calculate automatically
+    rows: "auto" # Number of rows to display, or "auto" to calculate automatically (defaults to "auto")
+    compactMode: false # Set to true for compact mode (icon + status only, no text)
     services:
       - name: Jellyfin
         url: "https://tv.example.com"

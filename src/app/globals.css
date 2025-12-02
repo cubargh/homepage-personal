@@ -43,6 +43,16 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* Hide scrollbar but keep scrolling functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
 :root {
   /* Default to Dark Mode values for :root to enforce dark theme look initially */
   --radius: 0.75rem; /* Increased radius for smoother look */
@@ -159,6 +169,8 @@
   bottom: 0;
   right: 0;
   cursor: se-resize;
+  z-index: 1000; /* Ensure resize handle is always on top of widget content */
+  pointer-events: auto; /* Ensure the handle can receive pointer events */
 }
 .react-resizable-handle::after {
   content: "";

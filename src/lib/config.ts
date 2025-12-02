@@ -33,6 +33,9 @@ export interface AppConfig {
     };
     service_status: {
       enabled: boolean;
+      columns: number | "auto"; // Number of columns for the service grid, or "auto" to calculate automatically
+      rows?: number | "auto"; // Number of rows to display, or "auto" to calculate automatically (defaults to showing all)
+      compactMode?: boolean; // Whether to use compact mode (icon + status only, no text)
       services: {
         name: string;
         url: string;

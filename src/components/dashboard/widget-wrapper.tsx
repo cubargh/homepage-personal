@@ -16,6 +16,10 @@ export const WidgetWrapper = forwardRef<HTMLDivElement, WidgetWrapperProps>(
         className={cn(
           // Base classes
           "relative h-full w-full",
+          // Ensure resize handle is not clipped
+          // Note: Widget content that needs scrolling uses overflow-y-auto on their own containers,
+          // so overflow-visible here doesn't affect widget scrolling behavior
+          "overflow-visible",
           
           // Transition Logic:
           // - By default, transition everything (smooth reordering)

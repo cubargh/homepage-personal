@@ -21,6 +21,9 @@ WidgetRegistry.register({
       services: config.widgets.service_status?.services || [],
       config: {
         refreshInterval: 60000, // 1 minute
+        columns: config.widgets.service_status?.columns ?? 2,
+        rows: config.widgets.service_status?.rows ?? "auto",
+        compactMode: config.widgets.service_status?.compactMode ?? false,
       },
     };
   },

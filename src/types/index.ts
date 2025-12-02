@@ -278,6 +278,7 @@ export interface CalendarEvent {
   start: string;
   end: string;
   allDay: boolean;
+  calendarColor?: string | null; // Custom hex color from config
 }
 
 // Jellyfin Types

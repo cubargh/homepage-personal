@@ -45,7 +45,7 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
-const CALENDAR_COLORS = [
+const DEFAULT_CALENDAR_COLORS = [
   "bg-primary/50 border-primary", // Cyan (Default)
   "bg-orange-500/50 border-orange-500",
   "bg-green-500/50 border-green-500",
@@ -54,7 +54,7 @@ const CALENDAR_COLORS = [
   "bg-yellow-500/50 border-yellow-500",
 ];
 
-const CALENDAR_TEXT_COLORS = [
+const DEFAULT_CALENDAR_TEXT_COLORS = [
   "text-primary", // Cyan (Default)
   "text-orange-500",
   "text-green-500",
@@ -63,12 +63,44 @@ const CALENDAR_TEXT_COLORS = [
   "text-yellow-500",
 ];
 
+// Helper to get calendar color classes or custom hex color
+// Accepts events with Date objects (as used in widget) or string dates (as from API)
+const getCalendarColor = (event: {
+  calendarIndex: number;
+  calendarColor?: string | null;
+}) => {
+  if (event.calendarColor) {
+    // Use custom hex color
+    return {
+      bg: event.calendarColor,
+      border: event.calendarColor,
+      text: event.calendarColor,
+    };
+  }
+  // Use default color scheme
+  const index = event.calendarIndex % DEFAULT_CALENDAR_COLORS.length;
+  return {
+    bg: DEFAULT_CALENDAR_COLORS[index].split(" ")[0],
+    border: DEFAULT_CALENDAR_COLORS[index].split(" ")[1],
+    text: DEFAULT_CALENDAR_TEXT_COLORS[index],
+  };
+};
+
 export function CalendarWidget({ config, gridSize }: CalendarWidgetProps) {
   const [view, setView] = useState("agenda");
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  // Determine layout modes based on gridSize
+  // Compact: height <= 2 rows (regardless of width)
+  // Standard: height > 2 rows
+  const isCompact = gridSize ? gridSize.h <= 2 : false;
+  const isStandard = !isCompact;
+
   const { data, isLoading, error } = useSWR<{
-    events: (CalendarEvent & { calendarIndex: number })[];
+    events: (CalendarEvent & {
+      calendarIndex: number;
+      calendarColor?: string | null;
+    })[];
   }>("/api/calendar", fetcher, { refreshInterval: config.refreshInterval });
 
   const events = useMemo(() => {
@@ -154,65 +186,79 @@ export function CalendarWidget({ config, gridSize }: CalendarWidgetProps) {
               {formattedDate}
             </span>
             <div className="flex flex-col gap-0.5 w-full px-0.5">
-              {dayEvents.slice(0, 3).map((e, idx) => (
-                <Tooltip key={e.id + idx}>
-                  <TooltipTrigger asChild>
+              {dayEvents.slice(0, 3).map((e, idx) => {
+                const color = getCalendarColor(e);
+                return (
+                  <Tooltip key={e.id + idx}>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={cn(
+                          "text-[8px] truncate w-full px-1 rounded-sm hidden md:block text-foreground cursor-default",
+                          e.calendarColor ? "" : color.bg.replace("border-", "") // Use bg color only for default colors
+                        )}
+                        style={
+                          e.calendarColor
+                            ? {
+                                backgroundColor: `${e.calendarColor}80`,
+                                borderColor: e.calendarColor,
+                              }
+                            : undefined
+                        }
+                      >
+                        {e.summary}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="top"
+                      align="center"
+                      className="max-w-[200px]"
+                    >
+                      <div className="flex flex-col gap-1">
+                        <p className="font-semibold text-xs break-words">
+                          {e.summary}
+                        </p>
+                        <div className="text-[10px] text-muted-foreground">
+                          {e.allDay
+                            ? "All Day"
+                            : `${formatInTz(e.start, "HH:mm")} - ${formatInTz(
+                                e.end,
+                                "HH:mm"
+                              )}`}
+                        </div>
+                        {e.description && (
+                          <p className="text-[10px] text-muted-foreground/80 line-clamp-3 break-words">
+                            {e.description}
+                          </p>
+                        )}
+                        {e.location && (
+                          <div className="flex items-center text-[10px] text-muted-foreground">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {e.location}
+                          </div>
+                        )}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+              {/* Mobile Dot indicator */}
+              {dayEvents.length > 0 &&
+                (() => {
+                  const color = getCalendarColor(dayEvents[0]);
+                  return (
                     <div
                       className={cn(
-                        "text-[8px] truncate w-full px-1 rounded-sm hidden md:block text-foreground cursor-default",
-                        CALENDAR_COLORS[
-                          e.calendarIndex % CALENDAR_COLORS.length
-                        ].replace("border-", "") // Use bg color only
+                        "md:hidden h-1 w-1 rounded-full mx-auto",
+                        dayEvents[0].calendarColor ? "" : color.bg.split(" ")[0]
                       )}
-                    >
-                      {e.summary}
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="top"
-                    align="center"
-                    className="max-w-[200px]"
-                  >
-                    <div className="flex flex-col gap-1">
-                      <p className="font-semibold text-xs break-words">
-                        {e.summary}
-                      </p>
-                      <div className="text-[10px] text-muted-foreground">
-                        {e.allDay
-                          ? "All Day"
-                          : `${formatInTz(e.start, "HH:mm")} - ${formatInTz(
-                              e.end,
-                              "HH:mm"
-                            )}`}
-                      </div>
-                      {e.description && (
-                        <p className="text-[10px] text-muted-foreground/80 line-clamp-3 break-words">
-                          {e.description}
-                        </p>
-                      )}
-                      {e.location && (
-                        <div className="flex items-center text-[10px] text-muted-foreground">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {e.location}
-                        </div>
-                      )}
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              ))}
-              {/* Mobile Dot indicator */}
-              {dayEvents.length > 0 && (
-                <div
-                  className={cn(
-                    "md:hidden h-1 w-1 rounded-full mx-auto",
-                    CALENDAR_COLORS[
-                      dayEvents[0].calendarIndex % CALENDAR_COLORS.length
-                    ]
-                      .replace("bg-", "bg-")
-                      .split(" ")[0]
-                  )}
-                />
-              )}
+                      style={
+                        dayEvents[0].calendarColor
+                          ? { backgroundColor: dayEvents[0].calendarColor }
+                          : undefined
+                      }
+                    />
+                  );
+                })()}
               {dayEvents.length > 3 && (
                 <span className="text-[8px] text-muted-foreground pl-1 hidden md:block">
                   +{dayEvents.length - 3} more
@@ -275,59 +321,65 @@ export function CalendarWidget({ config, gridSize }: CalendarWidgetProps) {
               </div>
               <ScrollArea className="flex-1 p-1">
                 <div className="flex flex-col gap-1">
-                  {dayEvents.map((e) => (
-                    <Tooltip key={e.id}>
-                      <TooltipTrigger asChild>
-                        <div
-                          className={cn(
-                            "text-[9px] p-1 bg-secondary/30 rounded border-l-2 truncate cursor-default",
-                            CALENDAR_COLORS[
-                              e.calendarIndex % CALENDAR_COLORS.length
-                            ].split(" ")[1] // Use border color
-                          )}
+                  {dayEvents.map((e) => {
+                    const color = getCalendarColor(e);
+                    return (
+                      <Tooltip key={e.id}>
+                        <TooltipTrigger asChild>
+                          <div
+                            className={cn(
+                              "text-[9px] p-1 bg-secondary/30 rounded border-l-2 truncate cursor-default",
+                              e.calendarColor ? "" : color.border // Use border color for default colors
+                            )}
+                            style={
+                              e.calendarColor
+                                ? { borderLeftColor: e.calendarColor }
+                                : undefined
+                            }
+                          >
+                            <div className="font-medium truncate">
+                              {e.summary}
+                            </div>
+                            {!e.allDay && (
+                              <div className="text-muted-foreground">
+                                {formatInTz(e.start, "HH:mm")}
+                              </div>
+                            )}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="top"
+                          align="center"
+                          className="max-w-[200px]"
                         >
-                          <div className="font-medium truncate">
-                            {e.summary}
-                          </div>
-                          {!e.allDay && (
-                            <div className="text-muted-foreground">
-                              {formatInTz(e.start, "HH:mm")}
-                            </div>
-                          )}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent
-                        side="top"
-                        align="center"
-                        className="max-w-[200px]"
-                      >
-                        <div className="flex flex-col gap-1">
-                          <p className="font-semibold text-xs break-words">
-                            {e.summary}
-                          </p>
-                          <div className="text-[10px] text-muted-foreground">
-                            {e.allDay
-                              ? "All Day"
-                              : `${formatInTz(e.start, "HH:mm")} - ${formatInTz(
-                                  e.end,
-                                  "HH:mm"
-                                )}`}
-                          </div>
-                          {e.description && (
-                            <p className="text-[10px] text-muted-foreground/80 line-clamp-3 break-words">
-                              {e.description}
+                          <div className="flex flex-col gap-1">
+                            <p className="font-semibold text-xs break-words">
+                              {e.summary}
                             </p>
-                          )}
-                          {e.location && (
-                            <div className="flex items-center text-[10px] text-muted-foreground">
-                              <MapPin className="h-3 w-3 mr-1" />
-                              {e.location}
+                            <div className="text-[10px] text-muted-foreground">
+                              {e.allDay
+                                ? "All Day"
+                                : `${formatInTz(
+                                    e.start,
+                                    "HH:mm"
+                                  )} - ${formatInTz(e.end, "HH:mm")}`}
                             </div>
-                          )}
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  ))}
+                            {e.description && (
+                              <p className="text-[10px] text-muted-foreground/80 line-clamp-3 break-words">
+                                {e.description}
+                              </p>
+                            )}
+                            {e.location && (
+                              <div className="flex items-center text-[10px] text-muted-foreground">
+                                <MapPin className="h-3 w-3 mr-1" />
+                                {e.location}
+                              </div>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
                 </div>
               </ScrollArea>
             </div>
@@ -358,10 +410,11 @@ export function CalendarWidget({ config, gridSize }: CalendarWidgetProps) {
                 <div
                   className={cn(
                     "flex flex-col items-center justify-center min-w-[60px] text-muted-foreground border-r border-border/30 pr-4",
-                    CALENDAR_TEXT_COLORS[
-                      e.calendarIndex % CALENDAR_TEXT_COLORS.length
-                    ]
+                    e.calendarColor ? "" : getCalendarColor(e).text
                   )}
+                  style={
+                    e.calendarColor ? { color: e.calendarColor } : undefined
+                  }
                 >
                   {e.allDay ? (
                     <span className="text-xs font-medium">All Day</span>
@@ -433,14 +486,22 @@ export function CalendarWidget({ config, gridSize }: CalendarWidgetProps) {
                     </div>
                   )}
                   <div className="flex gap-3 p-2 rounded hover:bg-secondary/10 transition-colors items-center">
-                    <div
-                      className={cn(
-                        "w-1 h-8 rounded-full shrink-0",
-                        CALENDAR_COLORS[
-                          e.calendarIndex % CALENDAR_COLORS.length
-                        ].split(" ")[0]
-                      )}
-                    />
+                    {(() => {
+                      const color = getCalendarColor(e);
+                      return (
+                        <div
+                          className={cn(
+                            "w-1 h-8 rounded-full shrink-0",
+                            e.calendarColor ? "" : color.bg.split(" ")[0]
+                          )}
+                          style={
+                            e.calendarColor
+                              ? { backgroundColor: e.calendarColor }
+                              : undefined
+                          }
+                        />
+                      );
+                    })()}
                     <div className="flex flex-col min-w-0 flex-1">
                       <div className="flex justify-between items-center gap-2">
                         <span
@@ -521,36 +582,94 @@ export function CalendarWidget({ config, gridSize }: CalendarWidgetProps) {
   return (
     <WidgetLayout
       gridSize={gridSize}
-      title="Calendar"
-      icon={<CalendarIcon className="h-5 w-5" />}
-      // We pass the entire control set as children of the header if needed,
-      // but WidgetLayout expects simple actions. For Calendar, the controls are quite large.
-      // Strategy: Custom Header content or put controls inside the content area top?
-      // Let's keep the controls inside the content area top as it was, but use WidgetLayout shell.
+      title={isCompact ? undefined : "Calendar"}
+      icon={isCompact ? undefined : <CalendarIcon className="h-5 w-5" />}
       contentClassName="p-0 flex flex-col"
     >
-      <div className="p-3 border-b border-border/50 bg-secondary/5 shrink-0">
-        {headerActions}
-      </div>
+      {isCompact ? (
+        // Compact Layout: Show only next upcoming event
+        <div className="h-full flex flex-col justify-center p-4">
+          {isLoading ? (
+            <div className="text-center text-muted-foreground text-sm">
+              Loading...
+            </div>
+          ) : error ? (
+            <div className="text-center text-destructive text-sm">
+              Failed to load
+            </div>
+          ) : (
+            (() => {
+              const now = new Date();
+              const nextEvent = events
+                .filter((e) => e.end >= now)
+                .sort((a, b) => a.start.getTime() - b.start.getTime())[0];
 
-      <div className="flex-1 overflow-hidden relative min-h-0">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-            Loading calendar...
+              if (!nextEvent) {
+                return (
+                  <div className="text-center text-muted-foreground text-sm">
+                    No upcoming events
+                  </div>
+                );
+              }
+
+              const color = getCalendarColor(nextEvent);
+              return (
+                <div className="flex flex-col gap-2">
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Next Event
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-1 h-12 rounded-full shrink-0"
+                      style={{
+                        backgroundColor: nextEvent.calendarColor || color.bg,
+                      }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm truncate">
+                        {nextEvent.summary}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {isSameDay(nextEvent.start, now)
+                          ? "Today"
+                          : formatInTz(nextEvent.start, "MMM d")}
+                        {!nextEvent.allDay &&
+                          ` • ${formatInTz(nextEvent.start, "HH:mm")}`}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()
+          )}
+        </div>
+      ) : (
+        // Standard Layout: Full calendar with all views
+        <>
+          <div className="p-3 border-b border-border/50 bg-secondary/5 shrink-0">
+            {headerActions}
           </div>
-        ) : error ? (
-          <div className="flex items-center justify-center h-full text-destructive text-sm">
-            Failed to load calendar
+
+          <div className="flex-1 overflow-hidden relative min-h-0">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                Loading calendar...
+              </div>
+            ) : error ? (
+              <div className="flex items-center justify-center h-full text-destructive text-sm">
+                Failed to load calendar
+              </div>
+            ) : (
+              <>
+                {view === "month" && renderMonthView()}
+                {view === "week" && renderWeekView()}
+                {view === "day" && renderDayView()}
+                {view === "agenda" && renderAgendaView()}
+              </>
+            )}
           </div>
-        ) : (
-          <>
-            {view === "month" && renderMonthView()}
-            {view === "week" && renderWeekView()}
-            {view === "day" && renderDayView()}
-            {view === "agenda" && renderAgendaView()}
-          </>
-        )}
-      </div>
+        </>
+      )}
     </WidgetLayout>
   );
 }

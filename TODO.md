@@ -8,7 +8,7 @@ This document tracks widgets that need to be revamped to use the new `WidgetLayo
 - **Weather** (`weather-widget.tsx`) - ✅ Revamped with minimal/compact/standard modes
 - **Ghostfolio** (`ghostfolio-widget.tsx`) - ✅ Revamped with compact/standard modes
 - **Immich** (`immich-widget.tsx`) - ✅ Revamped with compact/standard modes
-- **Calendar** (`calendar-widget.tsx`) - ✅ Uses WidgetLayout (may need compact/standard modes)
+- **Calendar** (`calendar-widget.tsx`) - ✅ Revamped with compact/standard modes and custom color support
 
 ## 📋 Widgets Pending Revamp
 

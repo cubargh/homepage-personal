@@ -11,16 +11,31 @@ export async function GET() {
   }
 
   try {
-    // Handle webcal:// protocol by replacing with https://
-    const urls = icsUrlsConfig.map(url => {
-        let cleanUrl = url.trim();
-        if (cleanUrl.startsWith('webcal://')) {
-            cleanUrl = 'https://' + cleanUrl.substring(9);
-        }
-        return cleanUrl;
-    }).filter(url => url.length > 0);
+    // Parse URLs and colors from config (format: "url" or "hexcolor;url")
+    const calendarConfigs = icsUrlsConfig.map((urlConfig) => {
+      const trimmed = urlConfig.trim();
+      const parts = trimmed.split(';');
+      let cleanUrl: string;
+      let color: string | null = null;
+      
+      if (parts.length === 2) {
+        // Format: "hexcolor;url"
+        color = parts[0].trim() || null;
+        cleanUrl = parts[1].trim();
+      } else {
+        // Format: "url" (no color)
+        cleanUrl = parts[0].trim();
+      }
+      
+      // Handle webcal:// protocol by replacing with https://
+      if (cleanUrl.startsWith('webcal://')) {
+        cleanUrl = 'https://' + cleanUrl.substring(9);
+      }
+      
+      return { url: cleanUrl, color };
+    }).filter(config => config.url.length > 0);
     
-    const allEvents = await Promise.all(urls.map(async (url, index) => {
+    const allEvents = await Promise.all(calendarConfigs.map(async ({ url, color }, index) => {
         try {
             const response = await fetch(url, { next: { revalidate: 300 } }); // Cache for 5 minutes
             if (!response.ok) {
@@ -40,7 +55,8 @@ export async function GET() {
                     start: event.start,
                     end: event.end,
                     allDay: event.datetype === 'date', 
-                    calendarIndex: index // Assign index for coloring
+                    calendarIndex: index, // Assign index for coloring
+                    calendarColor: color // Custom color from config
                 }));
         } catch (e) {
             console.error(`Error processing calendar ${index}:`, e);

@@ -25,6 +25,7 @@ widgets:
     enabled: true
     ics_urls:
       - "https://calendar.google.com/calendar/ical/..."
+      - "#ff5733;https://calendar.google.com/calendar/ical/..." # Hex color first, then URL
 
   service_status:
     enabled: true

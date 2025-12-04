@@ -26,7 +26,11 @@ export async function proxy(request: NextRequest) {
   const session = cookie?.value ? await decrypt(cookie.value) : null;
 
   if (!session) {
-    // Redirect to login if no valid session
+    // For API routes, return 401 instead of redirecting
+    if (path.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    // Redirect to login if no valid session (for non-API routes)
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

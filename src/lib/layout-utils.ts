@@ -7,10 +7,21 @@ import { GRID_COLS } from "@/config/grid";
  * It respects the x, y, w, h values from the config for the 'lg' breakpoint,
  * and generates responsive layouts for smaller breakpoints.
  */
-export function generateLayouts(config: DashboardConfig): Layouts {
-  const lgLayout: Layout[] = config.widgets.map((widget) => {
+export function generateLayouts(config: DashboardConfig, useDefaultSize: boolean = false): Layouts {
+  const lgLayout: Layout[] = config.widgets.map((widget, index) => {
     // Scale up default width/height/x/y from assumed 10-col baseline to new 20-col grid.
     const multiplier = 2;
+    
+    // If using default size, all widgets start at 2x2 in grid units
+    if (useDefaultSize) {
+      return {
+        i: widget.id,
+        x: (index % 10) * 2, // Arrange widgets in a grid, 2 columns apart
+        y: Math.floor(index / 10) * 2, // Stack widgets vertically, 2 rows apart
+        w: 2, // 2 columns wide
+        h: 2, // 2 rows tall
+      };
+    }
     
     return {
       i: widget.id,

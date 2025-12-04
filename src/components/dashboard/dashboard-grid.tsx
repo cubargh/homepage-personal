@@ -16,6 +16,7 @@ import { GridBackground } from "@/components/dashboard/grid-background";
 import { WidgetWrapper } from "@/components/dashboard/widget-wrapper";
 import { WidgetErrorBoundary } from "@/components/dashboard/error-boundary";
 import { GridSkeleton } from "@/components/dashboard/grid-skeleton";
+import { SettingsSidebar } from "@/components/dashboard/settings-sidebar";
 import { generateLayouts } from "@/lib/layout-utils";
 import {
   GRID_BREAKPOINTS,
@@ -23,6 +24,8 @@ import {
   GRID_MARGIN,
   TARGET_CELL_WIDTH,
 } from "@/config/grid";
+import { Button } from "@/components/ui/button";
+import { Settings } from "lucide-react";
 
 interface DashboardGridProps {
   dashboardConfig: DashboardConfig;
@@ -42,14 +45,27 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
   const [activeWidgetId, setActiveWidgetId] = useState<string | null>(null); // Specific widget being interacted with
   const [isResizing, setIsResizing] = useState(false); // Specific state for resizing action
 
-  // Settings & Visibility State
+  // Settings State
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const showDebug = dashboardConfig.debug || false;
+
+  // Check if we should use default 2x2 sizes (when localStorage was just cleared)
+  const useDefaultSizes =
+    typeof window !== "undefined" &&
+    sessionStorage.getItem("reset-to-default-sizes") === "true";
 
   // Memoize initial layouts based on config
   const defaultLayouts = useMemo(
-    () => generateLayouts(dashboardConfig),
-    [dashboardConfig]
+    () => generateLayouts(dashboardConfig, useDefaultSizes),
+    [dashboardConfig, useDefaultSizes]
   );
+
+  // Clear the reset flag after using it
+  useEffect(() => {
+    if (useDefaultSizes) {
+      sessionStorage.removeItem("reset-to-default-sizes");
+    }
+  }, [useDefaultSizes]);
 
   // Calculate required width from saved layouts to maintain column count
   const calculateWidthFromLayouts = (layouts: Layouts): number | null => {
@@ -313,6 +329,24 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
 
   return (
     <div className="flex flex-col gap-4 w-full h-full">
+      {/* Settings Button */}
+      <div className="fixed top-4 right-4 z-30">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setIsSettingsOpen(true)}
+          className="shadow-lg"
+        >
+          <Settings className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Settings Sidebar */}
+      <SettingsSidebar
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
+
       <div ref={containerRef} className="relative min-h-screen w-full">
         {!mounted ? (
           <GridSkeleton config={dashboardConfig} />

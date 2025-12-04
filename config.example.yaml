@@ -83,7 +83,7 @@ widgets:
     units: "metric"
 
   # Sports Widget
-  # Combines F1 and Football widgets in a single widget with tabs
+  # Combines F1, Football, and Padel widgets in a single widget with tabs
   sports:
     enabled: true
     f1:
@@ -91,6 +91,9 @@ widgets:
     football:
       enabled: true
       api_key: "your-football-data-api-key"
+    padel:
+      enabled: true
+      api_token: "your-padel-api-token"
 
   # Calendar Widget
   # Aggregates events from multiple ICS calendar feeds

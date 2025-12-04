@@ -270,6 +270,115 @@ export interface F1ApiConstructorChampionshipResponse {
   constructors_championship: F1ApiConstructorChampionshipItem[];
 }
 
+// Padel API Types
+export interface PadelPlayer {
+  id: number;
+  self: string;
+  name: string;
+  url?: string | null;
+  photo_url?: string | null;
+  category: string;
+  ranking: string;
+  points: number;
+  height?: number | null;
+  nationality: string;
+  birthplace?: string | null;
+  birthdate?: string | null;
+  age?: string | null;
+  hand?: "left" | "right" | null;
+  side: string;
+  links: string;
+  connections: {
+    matches: string;
+  };
+}
+
+export interface PadelPair {
+  id: number;
+  self: string;
+  name: string;
+  side?: "drive" | "backhand" | null;
+  connections: string;
+}
+
+export interface PadelMatch {
+  id: number;
+  self: string;
+  name: string;
+  url?: string | null;
+  category: string;
+  round: number;
+  round_name: string;
+  index: number;
+  played_at?: string | null;
+  schedule_label: string;
+  court: string;
+  court_order?: number | null;
+  status: string;
+  score: string | "hidden_free_plan";
+  winner: string | "hidden_free_plan";
+  started_time?: string | null;
+  duration: string;
+  players: {
+    team_1: PadelPair[];
+    team_2: PadelPair[];
+  };
+  connections: string;
+}
+
+export interface PadelLiveMatch {
+  id: number;
+  self: string;
+  channel: string;
+  sets: string;
+  connections: {
+    match: string;
+  };
+}
+
+export interface PadelTournament {
+  id: number;
+  self: string;
+  name: string;
+  url?: string | null;
+  location: string;
+  country: string;
+  level: string;
+  status: string;
+  start_date: string;
+  end_date: string;
+  links: string;
+  connections: string;
+}
+
+export interface PadelPaginatedResponse<T> {
+  data: T[];
+  links: {
+    first: string | null;
+    last: string | null;
+    prev: string | null;
+    next: string | null;
+  };
+  meta: {
+    current_page: number;
+    from: number | null;
+    last_page: number;
+    links: Array<{
+      url: string | null;
+      label: string;
+      active: boolean;
+    }>;
+    path: string | null;
+    per_page: number;
+    to: number | null;
+    total: number;
+  };
+}
+
+export type PadelMatchesResponse = PadelPaginatedResponse<PadelMatch>;
+export type PadelLiveMatchesResponse = PadelPaginatedResponse<PadelLiveMatch>;
+export type PadelTournamentsResponse = PadelPaginatedResponse<PadelTournament>;
+
 export interface WeatherData {
   location: {
     city: string;

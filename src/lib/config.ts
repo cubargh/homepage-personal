@@ -20,6 +20,10 @@ export interface SportsWidgetConfig {
     enabled: boolean;
     api_key: string;
   };
+  padel?: {
+    enabled: boolean;
+    api_token: string;
+  };
 }
 
 // Keep old interfaces for backward compatibility (deprecated)

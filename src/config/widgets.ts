@@ -161,7 +161,8 @@ WidgetRegistry.register({
       // Verify at least one sub-widget is enabled
       const f1Enabled = sportsConfig.f1?.enabled ?? false;
       const footballEnabled = sportsConfig.football?.enabled ?? false;
-      return f1Enabled || footballEnabled;
+      const padelEnabled = sportsConfig.padel?.enabled ?? false;
+      return f1Enabled || footballEnabled || padelEnabled;
     }
     // Backward compatibility: check old f1/football configs
     const footballConfig = getFirstEnabledWidgetConfig(config.widgets.football);
@@ -176,6 +177,7 @@ WidgetRegistry.register({
     if (sportsConfig?.enabled) {
       const f1Enabled = sportsConfig.f1?.enabled ?? false;
       const footballEnabled = sportsConfig.football?.enabled ?? false;
+      const padelEnabled = sportsConfig.padel?.enabled ?? false;
       
       return {
         f1Config: {
@@ -188,6 +190,11 @@ WidgetRegistry.register({
           api_key: sportsConfig.football?.api_key || "",
           leagues: ["PL", "PD", "BL1", "SA", "CL"],
           refreshInterval: 60000, // 1 minute
+          ...common,
+        },
+        padelConfig: {
+          enabled: padelEnabled,
+          refreshInterval: 60000 * 5, // 5 minutes
           ...common,
         },
       };
@@ -207,6 +214,11 @@ WidgetRegistry.register({
         api_key: footballConfig?.api_key || "",
         leagues: ["PL", "PD", "BL1", "SA", "CL"], // Hardcoded in original dashboard.ts
         refreshInterval: 60000, // 1 minute
+        ...common,
+      },
+      padelConfig: {
+        enabled: false,
+        refreshInterval: 60000 * 5, // 5 minutes
         ...common,
       },
     };

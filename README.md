@@ -9,6 +9,7 @@ A self-hosted personal dashboard built with Next.js, featuring widgets for weath
 - **Sports**:
   - **Formula 1**: Next race countdown, standings (F1 API).
   - **Football**: Live scores and fixtures (Football-Data.org).
+  - **Padel**: Upcoming matches and tournaments (Padel API).
 - **Media & Self-Hosted**:
   - **Jellyfin**: Library stats and latest movies/shows.
   - **Navidrome**: "Now Playing" with cover art and library stats.
@@ -28,6 +29,7 @@ A self-hosted personal dashboard built with Next.js, featuring widgets for weath
 - API Keys for:
   - [OpenWeatherMap](https://openweathermap.org/api)
   - [Football-Data.org](https://www.football-data.org/) (Optional)
+  - [Padel API](https://padelapi.org/) (Optional)
   - Your self-hosted services (Jellyfin, Navidrome, Immich, Ghostfolio)
 
 ### Installation

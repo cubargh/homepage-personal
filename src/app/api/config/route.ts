@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { decrypt } from "@/lib/auth";
+import { loadConfig } from "@/lib/config";
 import yaml from "js-yaml";
 import fs from "fs";
 import path from "path";
@@ -7,6 +8,19 @@ import { AppConfig } from "@/lib/config";
 
 // Helper function to verify authentication
 async function verifyAuth(request: NextRequest): Promise<boolean> {
+  // Check if authentication is enabled
+  try {
+    const config = loadConfig();
+    // If auth.enabled is explicitly false, allow access
+    if (config.server.auth.enabled === false) {
+      return true;
+    }
+    // If auth.enabled is not set, default to true for backward compatibility
+  } catch (error) {
+    // If config fails to load, default to requiring auth for security
+    console.error("Failed to load config in verifyAuth:", error);
+  }
+
   const cookie = request.cookies.get("session");
   if (!cookie?.value) {
     return false;

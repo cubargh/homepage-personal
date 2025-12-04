@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { decrypt } from "@/lib/auth";
+import { loadConfig } from "@/lib/config";
 
-export async function proxy(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // Define paths that don't require authentication
@@ -19,6 +20,19 @@ export async function proxy(request: NextRequest) {
 
   if (isPublicPath || isStaticAsset) {
     return NextResponse.next();
+  }
+
+  // Check if authentication is enabled
+  try {
+    const config = loadConfig();
+    // If auth.enabled is explicitly false, skip authentication
+    if (config.server.auth.enabled === false) {
+      return NextResponse.next();
+    }
+    // If auth.enabled is not set, default to true for backward compatibility
+  } catch (error) {
+    // If config fails to load, default to requiring auth for security
+    console.error("Failed to load config in proxy:", error);
   }
 
   // Check for session cookie

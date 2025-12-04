@@ -144,6 +144,7 @@ export interface AppConfig {
     timezone: string;
     debug?: boolean;
     auth: {
+      enabled?: boolean;
       passphrase: string;
       session_days: number;
     };

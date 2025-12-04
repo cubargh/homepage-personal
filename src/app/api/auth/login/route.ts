@@ -4,10 +4,16 @@ import { loadConfig } from "@/lib/config";
 
 export async function POST(request: NextRequest) {
   try {
+    const config = loadConfig();
+    
+    // If authentication is disabled, return error
+    if (config.server.auth.enabled === false) {
+      return NextResponse.json({ error: "Authentication is disabled" }, { status: 400 });
+    }
+
     const body = await request.json();
     const { passphrase } = body;
 
-    const config = loadConfig();
     const envPassphrase = config.server.auth.passphrase;
 
     if (passphrase !== envPassphrase) {

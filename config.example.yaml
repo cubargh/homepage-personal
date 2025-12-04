@@ -13,6 +13,9 @@ server:
   debug: false
 
   auth:
+    # Enable authentication (set to false to disable authentication)
+    enabled: true
+
     # Passphrase for session authentication (change this!)
     passphrase: "secret-passphrase-change-me"
 

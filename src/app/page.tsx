@@ -10,7 +10,7 @@ export default function Home() {
   const dashboardConfig = getDashboardConfig();
 
   return (
-    <main className="min-h-screen bg-background flex flex-col w-full max-w-full overflow-x-hidden">
+    <main className="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden" style={{ backgroundColor: 'var(--background, transparent)' }}>
       <DashboardGrid dashboardConfig={dashboardConfig} />
     </main>
   );

@@ -32,7 +32,11 @@ const SEARCH_ENGINE_URLS: Record<string, string> = {
   bing: "https://www.bing.com/search?q=",
 };
 
-export function Spotlight({ shortcuts, services, spotlightConfig }: SpotlightProps) {
+export function Spotlight({
+  shortcuts,
+  services,
+  spotlightConfig,
+}: SpotlightProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -51,25 +55,35 @@ export function Spotlight({ shortcuts, services, spotlightConfig }: SpotlightPro
     // Simple domain pattern: must contain at least one dot and valid characters
     // Examples: facebook.com, sub.example.com, localhost (special case)
     if (trimmed === "localhost") return true;
-    
+
     // Must have at least one dot to be considered a domain
     if (!trimmed.includes(".")) return false;
-    
+
     // Basic domain validation: alphanumeric, dots, hyphens
     // Must start and end with alphanumeric
-    const domainPattern = /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$/;
+    const domainPattern =
+      /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$/;
     return domainPattern.test(trimmed);
   };
 
   // Generate search URL based on config
-  const getSearchUrl = useCallback((searchQuery: string): string => {
-    if (spotlightConfig.search_engine === "custom" && spotlightConfig.custom_search_url) {
-      return spotlightConfig.custom_search_url.replace("{query}", encodeURIComponent(searchQuery));
-    }
-    const engine = spotlightConfig.search_engine || "google";
-    const baseUrl = SEARCH_ENGINE_URLS[engine] || SEARCH_ENGINE_URLS.google;
-    return baseUrl + encodeURIComponent(searchQuery);
-  }, [spotlightConfig]);
+  const getSearchUrl = useCallback(
+    (searchQuery: string): string => {
+      if (
+        spotlightConfig.search_engine === "custom" &&
+        spotlightConfig.custom_search_url
+      ) {
+        return spotlightConfig.custom_search_url.replace(
+          "{query}",
+          encodeURIComponent(searchQuery)
+        );
+      }
+      const engine = spotlightConfig.search_engine || "google";
+      const baseUrl = SEARCH_ENGINE_URLS[engine] || SEARCH_ENGINE_URLS.google;
+      return baseUrl + encodeURIComponent(searchQuery);
+    },
+    [spotlightConfig]
+  );
 
   // Generate results based on query
   const getResults = useCallback((): SpotlightItem[] => {
@@ -183,9 +197,14 @@ export function Spotlight({ shortcuts, services, spotlightConfig }: SpotlightPro
     setSelectedIndex(0);
   };
 
-  // Handle Enter key
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && results.length > 0 && selectedIndex >= 0 && selectedIndex < results.length) {
+  // Handle input keyboard events
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (
+      e.key === "Enter" &&
+      results.length > 0 &&
+      selectedIndex >= 0 &&
+      selectedIndex < results.length
+    ) {
       navigateTo(results[selectedIndex]);
     } else if (e.key === "ArrowDown" && results.length > 0) {
       e.preventDefault();
@@ -200,10 +219,23 @@ export function Spotlight({ shortcuts, services, spotlightConfig }: SpotlightPro
     }
   };
 
+  // Reset selected index when results change
+  useEffect(() => {
+    if (selectedIndex >= results.length && results.length > 0) {
+      setSelectedIndex(0);
+    }
+  }, [results.length, selectedIndex]);
+
   // Scroll selected item into view
   useEffect(() => {
-    if (resultsRef.current && results.length > 0) {
-      const selectedElement = resultsRef.current.children[selectedIndex] as HTMLElement;
+    if (
+      resultsRef.current &&
+      results.length > 0 &&
+      selectedIndex < results.length
+    ) {
+      const selectedElement = resultsRef.current.children[
+        selectedIndex
+      ] as HTMLElement;
       if (selectedElement) {
         selectedElement.scrollIntoView({
           block: "nearest",
@@ -271,82 +303,81 @@ export function Spotlight({ shortcuts, services, spotlightConfig }: SpotlightPro
           setSelectedIndex(0);
         }}
       />
-      
+
       {/* Spotlight Modal */}
       <div
         data-spotlight
         className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh] pointer-events-none"
       >
         <div className="w-full max-w-2xl mx-4 pointer-events-auto">
-        <Card className="border-2 shadow-2xl bg-background/95 backdrop-blur-sm">
-          <div className="p-4">
-            <div className="flex items-center gap-3 mb-4">
-              <Search className="w-5 h-5 text-muted-foreground" />
-              <Input
-                ref={inputRef}
-                type="text"
-                placeholder="Type to search shortcuts, services, or URLs..."
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setSelectedIndex(0);
-                }}
-                onKeyDown={handleKeyDown}
-                className="text-lg border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
-                autoFocus
-              />
+          <Card className="border-2 shadow-2xl bg-background/95 backdrop-blur-sm">
+            <div className="p-4">
+              <div className="flex items-center gap-3 mb-4">
+                <Search className="w-5 h-5 text-muted-foreground" />
+                <Input
+                  ref={inputRef}
+                  type="text"
+                  placeholder="Type to search shortcuts, services, or URLs..."
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setSelectedIndex(0);
+                  }}
+                  onKeyDown={handleInputKeyDown}
+                  className="text-lg border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
+                  autoFocus
+                />
+              </div>
+
+              {results.length > 0 && (
+                <div
+                  ref={resultsRef}
+                  className="max-h-[60vh] overflow-y-auto space-y-1"
+                >
+                  {results.map((item, index) => (
+                    <button
+                      key={item.id}
+                      onClick={() => navigateTo(item)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors",
+                        "hover:bg-card focus:bg-card focus:outline-none",
+                        index === selectedIndex && "bg-card"
+                      )}
+                    >
+                      <div className="flex-shrink-0 text-muted-foreground">
+                        {getIcon(item)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">
+                          {item.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {item.url}
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0 text-muted-foreground text-xs">
+                        {index === selectedIndex && "↵"}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {query.trim() && results.length === 0 && (
+                <div className="py-8 text-center text-muted-foreground">
+                  <p className="text-sm">No results found</p>
+                </div>
+              )}
+
+              {!query.trim() && (
+                <div className="py-8 text-center text-muted-foreground">
+                  <p className="text-sm">Start typing to search...</p>
+                </div>
+              )}
             </div>
-
-            {results.length > 0 && (
-              <div
-                ref={resultsRef}
-                className="max-h-[60vh] overflow-y-auto space-y-1"
-              >
-                {results.map((item, index) => (
-                  <button
-                    key={item.id}
-                    onClick={() => navigateTo(item)}
-                    className={cn(
-                      "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors",
-                      "hover:bg-accent focus:bg-accent focus:outline-none",
-                      index === selectedIndex && "bg-accent"
-                    )}
-                  >
-                    <div className="flex-shrink-0 text-muted-foreground">
-                      {getIcon(item)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">
-                        {item.name}
-                      </div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        {item.url}
-                      </div>
-                    </div>
-                    <div className="flex-shrink-0 text-muted-foreground text-xs">
-                      {index === selectedIndex && "↵"}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {query.trim() && results.length === 0 && (
-              <div className="py-8 text-center text-muted-foreground">
-                <p className="text-sm">No results found</p>
-              </div>
-            )}
-
-            {!query.trim() && (
-              <div className="py-8 text-center text-muted-foreground">
-                <p className="text-sm">Start typing to search...</p>
-              </div>
-            )}
-          </div>
-        </Card>
+          </Card>
+        </div>
       </div>
-    </div>
     </>
   );
 }
-

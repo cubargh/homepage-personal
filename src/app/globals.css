@@ -129,8 +129,15 @@
   }
   body {
     @apply bg-background text-foreground;
-    /* Subtle noise/gradient background */
-    background-image: radial-gradient(circle at top center, oklch(0.15 0 0), oklch(0.10 0 0));
+    /* Grid background: use theme color if set, otherwise use default gradient */
+    /* Note: --background is set by ThemeProvider when grid_background is configured */
+    background-color: var(--background, var(--theme-grid-background, oklch(0.05 0 0)));
+    /* Only show gradient if grid background is not explicitly set (uses default) */
+    background-image: var(--theme-grid-gradient, radial-gradient(
+      circle at top center,
+      oklch(0.15 0 0),
+      oklch(0.10 0 0)
+    ));
     background-attachment: fixed;
   }
 }

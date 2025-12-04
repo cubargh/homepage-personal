@@ -29,7 +29,11 @@ export const GridBackground = ({
       <svg 
         width="100%" 
         height="100%" 
-        className="text-primary opacity-30" // Cyan color via text-primary, low opacity
+        className="text-primary opacity-30" // Use primary color, low opacity
+        style={{
+          // Allow theme to override grid color if needed
+          color: "var(--primary, currentColor)",
+        }}
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>

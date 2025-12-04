@@ -117,6 +117,26 @@ export interface SpotlightConfig {
   custom_search_url?: string; // For custom search engine, e.g., "https://example.com/search?q="
 }
 
+export interface ThemeConfig {
+  // Grid background color (the background behind widgets)
+  grid_background?: string;
+
+  // Card background color (widget cards)
+  card_background?: string;
+
+  // Accent color (primary brand color, used for icons, links, interactive elements, highlights, grid lines, etc.)
+  accent?: string;
+
+  // Border color (widget borders, dividers)
+  border?: string;
+
+  // Text/foreground color
+  foreground?: string;
+
+  // Muted text color (secondary text)
+  muted_foreground?: string;
+}
+
 export interface AppConfig {
   server: {
     root_domain: string;
@@ -128,6 +148,7 @@ export interface AppConfig {
     };
   };
   spotlight?: SpotlightConfig;
+  theme?: ThemeConfig;
   widgets: {
     weather: WeatherWidgetConfig | WeatherWidgetConfig[];
     sports: SportsWidgetConfig | SportsWidgetConfig[];
@@ -148,7 +169,10 @@ export interface AppConfig {
 }
 
 // Re-export widget config utilities for convenience
-export { normalizeWidgetConfig, getFirstEnabledWidgetConfig } from "./widget-config-utils";
+export {
+  normalizeWidgetConfig,
+  getFirstEnabledWidgetConfig,
+} from "./widget-config-utils";
 
 // let configCache: AppConfig | null = null;
 

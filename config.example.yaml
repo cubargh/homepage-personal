@@ -19,6 +19,18 @@ server:
     # Number of days before session expires
     session_days: 7
 
+# Spotlight Search Configuration
+# Spotlight allows quick navigation by typing anywhere on the page
+spotlight:
+  # Search engine to use for web searches
+  # Options: google, duckduckgo, bing, custom
+  search_engine: "google"
+
+  # Custom search URL (only needed if search_engine is "custom")
+  # Use {query} as placeholder for the search query
+  # Example: "https://example.com/search?q={query}"
+  # custom_search_url: "https://example.com/search?q="
+
 widgets:
   # Weather Widget
   # Displays current weather and forecast using OpenWeatherMap API

@@ -112,6 +112,11 @@ export interface QBittorrentWidgetConfig {
   password?: string;
 }
 
+export interface SpotlightConfig {
+  search_engine?: "google" | "duckduckgo" | "bing" | "custom";
+  custom_search_url?: string; // For custom search engine, e.g., "https://example.com/search?q="
+}
+
 export interface AppConfig {
   server: {
     root_domain: string;
@@ -122,6 +127,7 @@ export interface AppConfig {
       session_days: number;
     };
   };
+  spotlight?: SpotlightConfig;
   widgets: {
     weather: WeatherWidgetConfig | WeatherWidgetConfig[];
     sports: SportsWidgetConfig | SportsWidgetConfig[];

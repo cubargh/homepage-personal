@@ -17,6 +17,7 @@ import { WidgetWrapper } from "@/components/dashboard/widget-wrapper";
 import { WidgetErrorBoundary } from "@/components/dashboard/error-boundary";
 import { GridSkeleton } from "@/components/dashboard/grid-skeleton";
 import { SettingsSidebar } from "@/components/dashboard/settings-sidebar";
+import { Spotlight } from "@/components/dashboard/spotlight";
 import { generateLayouts } from "@/lib/layout-utils";
 import {
   GRID_BREAKPOINTS,
@@ -26,6 +27,7 @@ import {
 } from "@/config/grid";
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
+import useSWR from "swr";
 
 interface DashboardGridProps {
   dashboardConfig: DashboardConfig;
@@ -33,6 +35,14 @@ interface DashboardGridProps {
 
 // Container padding to match Skeleton
 const CONTAINER_PADDING: [number, number] = [10, 10];
+
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error("Failed to fetch spotlight data");
+  }
+  return res.json();
+};
 
 export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,6 +58,16 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
   // Settings State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const showDebug = dashboardConfig.debug || false;
+
+  // Fetch spotlight data
+  const { data: spotlightData, error: spotlightError } = useSWR(
+    "/api/spotlight",
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
 
   // Check if we should use default 2x2 sizes (when localStorage was just cleared)
   const useDefaultSizes =
@@ -329,6 +349,17 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
 
   return (
     <div className="flex flex-col gap-4 w-full h-full">
+      {/* Spotlight */}
+      {spotlightData && !spotlightError && (
+        <Spotlight
+          shortcuts={spotlightData.shortcuts || []}
+          services={spotlightData.services || []}
+          spotlightConfig={
+            spotlightData.spotlight || { search_engine: "google" }
+          }
+        />
+      )}
+
       {/* Settings Button */}
       <div className="fixed top-4 right-4 z-30">
         <Button

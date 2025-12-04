@@ -31,6 +31,11 @@ spotlight:
   # Example: "https://example.com/search?q={query}"
   # custom_search_url: "https://example.com/search?q="
 
+  # Enable fuzzy search for better matching
+  # When enabled, partial matches work better (e.g., "gh" matches "GitHub", "jf" matches "Jellyfin")
+  # Default: false
+  fuzzy_search: false
+
 # Theme Configuration
 # Customize colors for your dashboard
 # Supports hex colors (#ffffff), rgb/rgba, oklch, hsl/hsla, and CSS named colors

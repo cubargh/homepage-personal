@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 interface SpotlightConfig {
   search_engine?: "google" | "duckduckgo" | "bing" | "custom";
   custom_search_url?: string;
+  fuzzy_search?: boolean;
 }
 
 interface SpotlightItem {
@@ -18,6 +19,9 @@ interface SpotlightItem {
   name: string;
   url: string;
   icon?: string;
+  matchScore?: number; // For fuzzy search scoring
+  matchIndices?: number[]; // Indices of matched characters for highlighting
+  isExactMatch?: boolean; // True if this is an exact match
 }
 
 interface SpotlightProps {
@@ -42,6 +46,156 @@ export function Spotlight({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const useFuzzySearch = spotlightConfig.fuzzy_search ?? false;
+
+  // Fuzzy search algorithm - checks if query matches text with character order flexibility
+  const fuzzyMatch = useCallback(
+    (
+      text: string,
+      query: string
+    ): {
+      match: boolean;
+      score: number;
+      indices: number[];
+      isExact: boolean;
+    } => {
+      const textLower = text.toLowerCase();
+      const queryLower = query.toLowerCase();
+
+      if (!queryLower) {
+        return { match: true, score: 0, indices: [], isExact: false };
+      }
+
+      // Exact match gets highest score
+      if (textLower === queryLower) {
+        return {
+          match: true,
+          score: 100,
+          indices: Array.from({ length: query.length }, (_, i) => i),
+          isExact: true,
+        };
+      }
+
+      // Starts with gets high score
+      if (textLower.startsWith(queryLower)) {
+        return {
+          match: true,
+          score: 90,
+          indices: Array.from({ length: query.length }, (_, i) => i),
+          isExact: false,
+        };
+      }
+
+      // Contains gets medium score
+      const containsIndex = textLower.indexOf(queryLower);
+      if (containsIndex !== -1) {
+        return {
+          match: true,
+          score: 70,
+          indices: Array.from(
+            { length: query.length },
+            (_, i) => containsIndex + i
+          ),
+          isExact: false,
+        };
+      }
+
+      // Fuzzy match: characters appear in order but not necessarily consecutive
+      let textIndex = 0;
+      let queryIndex = 0;
+      const indices: number[] = [];
+
+      while (textIndex < textLower.length && queryIndex < queryLower.length) {
+        if (textLower[textIndex] === queryLower[queryIndex]) {
+          indices.push(textIndex);
+          queryIndex++;
+        }
+        textIndex++;
+      }
+
+      if (queryIndex === queryLower.length) {
+        // Calculate score based on how close the matches are
+        const avgDistance =
+          indices.length > 1
+            ? indices.reduce(
+                (sum, idx, i) => sum + (i > 0 ? idx - indices[i - 1] : 0),
+                0
+              ) /
+              (indices.length - 1)
+            : 0;
+        const score = Math.max(30, 60 - avgDistance * 5); // Score decreases as distance increases
+        return { match: true, score, indices, isExact: false };
+      }
+
+      return { match: false, score: 0, indices: [], isExact: false };
+    },
+    []
+  );
+
+  // Highlight matching text in result
+  const highlightText = useCallback(
+    (text: string, indices: number[]): React.ReactNode => {
+      if (indices.length === 0) return text;
+
+      // Sort indices to ensure they're in order
+      const sortedIndices = [...indices].sort((a, b) => a - b);
+      const parts: React.ReactNode[] = [];
+      let lastIndex = 0;
+      let highlightStart = -1;
+      let highlightEnd = -1;
+
+      sortedIndices.forEach((idx) => {
+        if (highlightStart === -1) {
+          // Start new highlight
+          highlightStart = idx;
+          highlightEnd = idx;
+        } else if (idx === highlightEnd + 1) {
+          // Continue current highlight
+          highlightEnd = idx;
+        } else {
+          // End current highlight and start new one
+          if (highlightStart > lastIndex) {
+            parts.push(text.slice(lastIndex, highlightStart));
+          }
+          parts.push(
+            <span
+              key={`highlight-${highlightStart}`}
+              className="bg-primary/20 text-primary font-medium"
+            >
+              {text.slice(highlightStart, highlightEnd + 1)}
+            </span>
+          );
+          lastIndex = highlightEnd + 1;
+          highlightStart = idx;
+          highlightEnd = idx;
+        }
+      });
+
+      // Add final highlight
+      if (highlightStart !== -1) {
+        if (highlightStart > lastIndex) {
+          parts.push(text.slice(lastIndex, highlightStart));
+        }
+        parts.push(
+          <span
+            key={`highlight-${highlightStart}`}
+            className="bg-primary/20 text-primary font-medium"
+          >
+            {text.slice(highlightStart, highlightEnd + 1)}
+          </span>
+        );
+        lastIndex = highlightEnd + 1;
+      }
+
+      // Add remaining text
+      if (lastIndex < text.length) {
+        parts.push(text.slice(lastIndex));
+      }
+
+      return <>{parts}</>;
+    },
+    []
+  );
 
   // Check if a string is a valid URL (without protocol)
   const isValidUrl = (str: string): boolean => {
@@ -100,31 +254,70 @@ export function Spotlight({
         type: "url",
         name: `Go to ${originalQuery}`,
         url: `https://${originalQuery}`,
+        matchScore: 100,
+        matchIndices: [],
+        isExactMatch: true, // URLs are always exact matches
       });
     }
 
     // Filter shortcuts
     shortcuts.forEach((shortcut) => {
-      if (shortcut.name.toLowerCase().includes(trimmedQuery)) {
+      const shortcutNameLower = shortcut.name.toLowerCase();
+      const isExactMatch = shortcutNameLower === trimmedQuery;
+      const nameMatch = useFuzzySearch
+        ? fuzzyMatch(shortcut.name, trimmedQuery)
+        : {
+            match: shortcut.name.toLowerCase().includes(trimmedQuery),
+            score: isExactMatch
+              ? 100
+              : shortcut.name.toLowerCase().includes(trimmedQuery)
+              ? 50
+              : 0,
+            indices: [],
+            isExact: isExactMatch,
+          };
+
+      if (nameMatch.match) {
         results.push({
           id: `shortcut-${shortcut.url}`,
           type: "shortcut",
           name: shortcut.name,
           url: shortcut.url,
           icon: shortcut.icon,
+          matchScore: nameMatch.score,
+          matchIndices: nameMatch.indices,
+          isExactMatch: nameMatch.isExact,
         });
       }
     });
 
     // Filter services
     services.forEach((service) => {
-      if (service.name.toLowerCase().includes(trimmedQuery)) {
+      const serviceNameLower = service.name.toLowerCase();
+      const isExactMatch = serviceNameLower === trimmedQuery;
+      const nameMatch = useFuzzySearch
+        ? fuzzyMatch(service.name, trimmedQuery)
+        : {
+            match: service.name.toLowerCase().includes(trimmedQuery),
+            score: isExactMatch
+              ? 100
+              : service.name.toLowerCase().includes(trimmedQuery)
+              ? 50
+              : 0,
+            indices: [],
+            isExact: isExactMatch,
+          };
+
+      if (nameMatch.match) {
         results.push({
           id: `service-${service.url}`,
           type: "service",
           name: service.name,
           url: service.url,
           icon: service.icon,
+          matchScore: nameMatch.score,
+          matchIndices: nameMatch.indices,
+          isExactMatch: nameMatch.isExact,
         });
       }
     });
@@ -136,11 +329,21 @@ export function Spotlight({
         type: "search",
         name: `Search for "${originalQuery}"`,
         url: getSearchUrl(originalQuery),
+        matchScore: 10,
+        matchIndices: [],
+        isExactMatch: false, // Search is never an exact match
       });
     }
 
-    return results;
-  }, [query, shortcuts, services, getSearchUrl]);
+    // Sort: exact matches first, then by match score (highest first)
+    return results.sort((a, b) => {
+      // Prioritize exact matches
+      if (a.isExactMatch && !b.isExactMatch) return -1;
+      if (!a.isExactMatch && b.isExactMatch) return 1;
+      // If both are exact or both are not, sort by score
+      return (b.matchScore || 0) - (a.matchScore || 0);
+    });
+  }, [query, shortcuts, services, getSearchUrl, useFuzzySearch, fuzzyMatch]);
 
   const results = getResults();
 
@@ -160,6 +363,24 @@ export function Spotlight({
           setQuery("");
           setSelectedIndex(0);
         }
+        return;
+      }
+
+      // Open spotlight with Cmd+K (Mac) or Ctrl+K (Windows/Linux)
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.key === "k" &&
+        !e.shiftKey &&
+        !e.altKey
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOpen(true);
+        setQuery("");
+        setSelectedIndex(0);
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 0);
         return;
       }
 
@@ -327,6 +548,17 @@ export function Spotlight({
                   className="text-lg border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
                   autoFocus
                 />
+                <div className="flex-shrink-0 text-xs text-muted-foreground hidden sm:block">
+                  <kbd className="px-2 py-1 bg-muted rounded border border-border">
+                    {typeof navigator !== "undefined" &&
+                    navigator.platform.includes("Mac")
+                      ? "⌘"
+                      : "Ctrl"}
+                  </kbd>
+                  <kbd className="px-2 py-1 bg-muted rounded border border-border ml-1">
+                    K
+                  </kbd>
+                </div>
               </div>
 
               {results.length > 0 && (
@@ -349,7 +581,9 @@ export function Spotlight({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm truncate">
-                          {item.name}
+                          {item.matchIndices && item.matchIndices.length > 0
+                            ? highlightText(item.name, item.matchIndices)
+                            : item.name}
                         </div>
                         <div className="text-xs text-muted-foreground truncate">
                           {item.url}

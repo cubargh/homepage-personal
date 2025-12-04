@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { X, Save, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import CodeMirror from "@uiw/react-codemirror";
+import { yaml } from "@codemirror/lang-yaml";
+import { oneDark } from "@codemirror/theme-one-dark";
 
 interface SettingsSidebarProps {
   isOpen: boolean;
@@ -24,9 +24,9 @@ function ConfigEditor({
   const [success, setSuccess] = useState<string | null>(null);
   const [configPath, setConfigPath] = useState("");
   const [isExample, setIsExample] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const syntaxRef = useRef<HTMLDivElement>(null);
   const reloadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+  const [editorHeight, setEditorHeight] = useState(400);
 
   useEffect(() => {
     loadConfig();
@@ -47,6 +47,45 @@ function ConfigEditor({
       onFileInfoChange({ path: configPath, isExample });
     }
   }, [configPath, isExample, onFileInfoChange]);
+
+  // Measure editor container height
+  useEffect(() => {
+    const updateHeight = () => {
+      if (editorContainerRef.current) {
+        // Get the actual available height for the editor
+        const rect = editorContainerRef.current.getBoundingClientRect();
+        const height = Math.floor(rect.height);
+        if (height > 0 && height !== editorHeight) {
+          setEditorHeight(height);
+        }
+      }
+    };
+
+    // Initial measurement with multiple attempts to ensure it's measured after render
+    const timeoutId1 = setTimeout(updateHeight, 0);
+    const timeoutId2 = setTimeout(updateHeight, 100);
+    const timeoutId3 = setTimeout(updateHeight, 300);
+
+    // Update on window resize
+    window.addEventListener("resize", updateHeight);
+
+    // Use ResizeObserver for container size changes
+    const resizeObserver = new ResizeObserver(() => {
+      updateHeight();
+    });
+
+    if (editorContainerRef.current) {
+      resizeObserver.observe(editorContainerRef.current);
+    }
+
+    return () => {
+      clearTimeout(timeoutId1);
+      clearTimeout(timeoutId2);
+      clearTimeout(timeoutId3);
+      window.removeEventListener("resize", updateHeight);
+      resizeObserver.disconnect();
+    };
+  }, [editorHeight]);
 
   const loadConfig = async () => {
     try {
@@ -115,17 +154,6 @@ function ConfigEditor({
 
   const hasChanges = configContent !== originalContent;
 
-  const handleScroll = () => {
-    if (textareaRef.current && syntaxRef.current) {
-      const scrollTop = textareaRef.current.scrollTop;
-      syntaxRef.current.scrollTop = scrollTop;
-    }
-  };
-
-  const handleTextareaScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
-    handleScroll();
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -159,59 +187,33 @@ function ConfigEditor({
         </div>
       )}
 
-      {/* Editor with syntax highlighting */}
-      <div className="flex-1 relative border rounded-md overflow-hidden bg-[#1e1e1e]">
-        <div className="relative h-full overflow-auto">
-          {/* Syntax highlighted background */}
-          <div
-            ref={syntaxRef}
-            className="absolute inset-0 pointer-events-none overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-          >
-            <SyntaxHighlighter
-              language="yaml"
-              style={vscDarkPlus}
-              customStyle={{
-                margin: 0,
-                padding: "1rem",
-                background: "transparent",
-                fontSize: "0.875rem",
-                lineHeight: "1.5rem",
-                fontFamily:
-                  "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
-              }}
-              showLineNumbers={true}
-              lineNumberStyle={{
-                minWidth: "3em",
-                paddingRight: "1em",
-                color: "#858585",
-                userSelect: "none",
-              }}
-            >
-              {configContent || " "}
-            </SyntaxHighlighter>
-          </div>
-
-          {/* Editable textarea overlay */}
-          <textarea
-            ref={textareaRef}
-            value={configContent}
-            onChange={(e) => {
-              setConfigContent(e.target.value);
-              setError(null);
-              setSuccess(null);
-            }}
-            onScroll={handleTextareaScroll}
-            className="relative w-full h-full p-4 font-mono text-sm bg-transparent text-transparent caret-white resize-none focus:outline-none focus:ring-0 border-0"
-            spellCheck={false}
-            style={{
-              minHeight: "100%",
-              lineHeight: "1.5rem",
-              tabSize: 2,
-              fontFamily:
-                "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
-            }}
-          />
-        </div>
+      {/* Editor with CodeMirror */}
+      <div
+        ref={editorContainerRef}
+        className="flex-1 border rounded-md min-h-0 overflow-hidden"
+      >
+        <CodeMirror
+          value={configContent}
+          height={editorHeight > 0 ? `${editorHeight}px` : "400px"}
+          extensions={[yaml()]}
+          theme={oneDark}
+          onChange={(value) => {
+            setConfigContent(value);
+            setError(null);
+            setSuccess(null);
+          }}
+          basicSetup={{
+            lineNumbers: true,
+            foldGutter: true,
+            dropCursor: false,
+            allowMultipleSelections: false,
+            indentOnInput: true,
+            bracketMatching: true,
+            closeBrackets: true,
+            autocompletion: false,
+            highlightSelectionMatches: false,
+          }}
+        />
       </div>
 
       {/* Footer with actions */}
@@ -268,6 +270,18 @@ export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
   } | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
+  // Prevent body scroll when sidebar is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
 
@@ -310,9 +324,18 @@ export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed top-0 left-0 h-full w-[800px] bg-background border-r z-50 transform transition-transform duration-300 ease-in-out shadow-xl flex flex-col",
+          "fixed top-0 left-0 h-full w-[800px] bg-background border-r z-50 transform transition-transform duration-300 ease-in-out shadow-xl flex flex-col overflow-hidden",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
+        onWheel={(e) => {
+          // Only stop propagation if NOT scrolling within CodeMirror
+          const target = e.target as HTMLElement;
+          const isInCodeMirror =
+            target.closest(".cm-scroller") || target.closest(".cm-editor");
+          if (!isInCodeMirror) {
+            e.stopPropagation();
+          }
+        }}
       >
         <div className="flex items-center justify-between p-4 border-b shrink-0">
           <div>
@@ -346,7 +369,18 @@ export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-hidden p-4">
+        <div
+          className="flex-1 overflow-hidden p-4"
+          onWheel={(e) => {
+            // Only stop propagation if NOT scrolling within CodeMirror
+            const target = e.target as HTMLElement;
+            const isInCodeMirror =
+              target.closest(".cm-scroller") || target.closest(".cm-editor");
+            if (!isInCodeMirror) {
+              e.stopPropagation();
+            }
+          }}
+        >
           <ConfigEditor onFileInfoChange={setFileInfo} />
         </div>
       </div>

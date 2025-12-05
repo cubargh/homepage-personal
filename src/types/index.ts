@@ -69,6 +69,7 @@ export interface ServiceWidgetProps extends BaseWidgetProps {
     columns: number | "auto"; // Number of columns for the service grid, or "auto"
     rows?: number | "auto"; // Number of rows to display, or "auto"
     compactMode: boolean; // Whether to use compact mode
+    click_behavior?: "new_tab" | "same_tab"; // How links should open
   };
 }
 
@@ -78,6 +79,7 @@ export interface ShortcutsWidgetProps extends BaseWidgetProps {
     columns: number | "auto"; // Number of columns for the shortcuts grid, or "auto"
     rows?: number | "auto"; // Number of rows to display, or "auto"
     compactMode: boolean; // Whether to use compact mode
+    click_behavior?: "new_tab" | "same_tab"; // How links should open
   };
 }
 

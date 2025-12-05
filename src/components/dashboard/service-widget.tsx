@@ -32,6 +32,7 @@ interface ServiceItemProps {
   compactMode: boolean;
   columns?: number; // Number of columns (to check if = 1)
   rows?: number; // Number of rows (to check if = 1)
+  clickBehavior?: "new_tab" | "same_tab";
 }
 
 function ServiceItem({
@@ -40,6 +41,7 @@ function ServiceItem({
   compactMode,
   columns,
   rows,
+  clickBehavior = "new_tab",
 }: ServiceItemProps) {
   const { data, isLoading } = useSWR<ServiceStatus>(
     `/api/status?url=${encodeURIComponent(service.url)}`,
@@ -63,11 +65,14 @@ function ServiceItem({
     }
   }
 
+  const linkProps = clickBehavior === "new_tab" 
+    ? { target: "_blank" as const, rel: "noopener noreferrer" }
+    : {};
+
   return (
     <a
       href={service.url}
-      target="_blank"
-      rel="noopener noreferrer"
+      {...linkProps}
       className="block group"
       style={{
         display: "flex",
@@ -387,6 +392,7 @@ export function ServiceWidget({
                     compactMode={compactMode}
                     columns={columns}
                     rows={numRows}
+                    clickBehavior={config.click_behavior}
                   />
                 </div>
               );

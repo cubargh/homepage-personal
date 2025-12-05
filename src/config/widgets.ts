@@ -34,6 +34,7 @@ WidgetRegistry.register({
         columns: widgetConfig?.columns ?? 2,
         rows: widgetConfig?.rows ?? "auto",
         compactMode: widgetConfig?.compactMode ?? false,
+        click_behavior: widgetConfig?.click_behavior ?? "new_tab",
       },
     };
   },
@@ -66,6 +67,7 @@ WidgetRegistry.register({
         columns: widgetConfig?.columns ?? 2,
         rows: widgetConfig?.rows ?? "auto",
         compactMode: widgetConfig?.compactMode ?? false,
+        click_behavior: widgetConfig?.click_behavior ?? "new_tab",
       },
     };
   },

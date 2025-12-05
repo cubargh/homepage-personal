@@ -16,6 +16,7 @@ interface ShortcutItemProps {
   compactMode: boolean;
   columns?: number; // Number of columns (to check if = 1)
   rows?: number; // Number of rows (to check if = 1)
+  clickBehavior?: "new_tab" | "same_tab";
 }
 
 function ShortcutItem({
@@ -23,6 +24,7 @@ function ShortcutItem({
   compactMode,
   columns,
   rows,
+  clickBehavior = "new_tab",
 }: ShortcutItemProps) {
   // Logic to determine icon URL
   let iconUrl: string | null = null;
@@ -36,11 +38,14 @@ function ShortcutItem({
     }
   }
 
+  const linkProps = clickBehavior === "new_tab" 
+    ? { target: "_blank" as const, rel: "noopener noreferrer" }
+    : {};
+
   return (
     <a
       href={shortcut.url}
-      target="_blank"
-      rel="noopener noreferrer"
+      {...linkProps}
       className="block group"
       style={{
         display: "flex",
@@ -282,6 +287,7 @@ export function ShortcutsWidget({
                   compactMode={compactMode}
                   columns={columns}
                   rows={numRows}
+                  clickBehavior={config.click_behavior}
                 />
               </div>
             );

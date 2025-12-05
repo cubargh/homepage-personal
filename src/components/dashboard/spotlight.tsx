@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { ShortcutConfig, ServiceConfig } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Search, Globe, Link2, ExternalLink } from "lucide-react";
+import { Search, Globe, Link2, ExternalLink, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SpotlightConfig {
@@ -411,8 +411,16 @@ export function Spotlight({
   }, [isOpen]);
 
   // Handle navigation
-  const navigateTo = (item: SpotlightItem) => {
-    window.open(item.url, "_blank", "noopener,noreferrer");
+  const navigateTo = (item: SpotlightItem, openInNewTab: boolean = false) => {
+    if (openInNewTab) {
+      const newWindow = window.open(item.url, "_blank", "noopener,noreferrer");
+      // Try to focus the new window/tab (browser may prevent this due to security)
+      if (newWindow) {
+        newWindow.focus();
+      }
+    } else {
+      window.location.href = item.url;
+    }
     setIsOpen(false);
     setQuery("");
     setSelectedIndex(0);
@@ -426,7 +434,9 @@ export function Spotlight({
       selectedIndex >= 0 &&
       selectedIndex < results.length
     ) {
-      navigateTo(results[selectedIndex]);
+      // Check if Ctrl/Cmd+Enter for new tab
+      const openInNewTab = e.ctrlKey || e.metaKey;
+      navigateTo(results[selectedIndex], openInNewTab);
     } else if (e.key === "ArrowDown" && results.length > 0) {
       e.preventDefault();
       setSelectedIndex((prev) => (prev + 1) % results.length);
@@ -567,32 +577,52 @@ export function Spotlight({
                   className="max-h-[60vh] overflow-y-auto space-y-1"
                 >
                   {results.map((item, index) => (
-                    <button
+                    <div
                       key={item.id}
-                      onClick={() => navigateTo(item)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors",
-                        "hover:bg-card focus:bg-card focus:outline-none",
+                        "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors group",
+                        "hover:bg-card",
                         index === selectedIndex && "bg-card"
                       )}
                     >
-                      <div className="flex-shrink-0 text-muted-foreground">
-                        {getIcon(item)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">
-                          {item.matchIndices && item.matchIndices.length > 0
-                            ? highlightText(item.name, item.matchIndices)
-                            : item.name}
+                      <button
+                        onClick={() => navigateTo(item, false)}
+                        className={cn(
+                          "flex-1 flex items-center gap-3 text-left focus:outline-none min-w-0"
+                        )}
+                      >
+                        <div className="flex-shrink-0 text-muted-foreground">
+                          {getIcon(item)}
                         </div>
-                        <div className="text-xs text-muted-foreground truncate">
-                          {item.url}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">
+                            {item.matchIndices && item.matchIndices.length > 0
+                              ? highlightText(item.name, item.matchIndices)
+                              : item.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            {item.url}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex-shrink-0 text-muted-foreground text-xs">
-                        {index === selectedIndex && "↵"}
-                      </div>
-                    </button>
+                        <div className="flex-shrink-0 text-muted-foreground text-xs">
+                          {index === selectedIndex && "↵"}
+                        </div>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigateTo(item, true);
+                        }}
+                        className={cn(
+                          "flex-shrink-0 p-1.5 rounded hover:bg-muted transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none",
+                          index === selectedIndex && "opacity-100"
+                        )}
+                        title="Open in new tab"
+                        aria-label="Open in new tab"
+                      >
+                        <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}

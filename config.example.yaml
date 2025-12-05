@@ -111,6 +111,7 @@ widgets:
     columns: 2
     rows: "auto"
     compactMode: false
+    click_behavior: "new_tab" # "new_tab" or "same_tab"
     services:
       - name: Jellyfin
         url: "https://tv.example.com"
@@ -124,6 +125,7 @@ widgets:
     columns: 2
     rows: "auto"
     compactMode: false
+    click_behavior: "new_tab" # "new_tab" or "same_tab"
     shortcuts:
       - name: GitHub
         url: "https://github.com"

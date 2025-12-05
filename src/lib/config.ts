@@ -46,6 +46,7 @@ export interface ServiceStatusWidgetConfig {
   columns: number | "auto";
   rows?: number | "auto";
   compactMode?: boolean;
+  click_behavior?: "new_tab" | "same_tab";
   services: {
     name: string;
     url: string;
@@ -58,6 +59,7 @@ export interface ShortcutsWidgetConfig {
   columns: number | "auto";
   rows?: number | "auto";
   compactMode?: boolean;
+  click_behavior?: "new_tab" | "same_tab";
   shortcuts: {
     name: string;
     url: string;

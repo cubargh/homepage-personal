@@ -87,6 +87,16 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
     }
   }, [useDefaultSizes]);
 
+  // Force focus on page load to prevent Firefox from focusing the search box
+  useEffect(() => {
+    if (mounted && containerRef.current) {
+      // Request focus with a small delay to ensure DOM is ready
+      setTimeout(() => {
+        containerRef.current?.focus();
+      }, 100);
+    }
+  }, [mounted]);
+
   // Calculate required width from saved layouts to maintain column count
   const calculateWidthFromLayouts = (layouts: Layouts): number | null => {
     const lgItems = layouts.lg || [];
@@ -378,7 +388,11 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
         onClose={() => setIsSettingsOpen(false)}
       />
 
-      <div ref={containerRef} className="relative min-h-screen w-full">
+      <div
+        ref={containerRef}
+        className="relative min-h-screen w-full outline-none"
+        tabIndex={-1}
+      >
         {!mounted ? (
           <GridSkeleton config={dashboardConfig} />
         ) : (

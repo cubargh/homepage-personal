@@ -226,3 +226,77 @@ widgets:
     enabled: true
     url: "https://speedtest.example.com"
     api_token: "your-api-token-here"
+
+  # Google Tasks Widget
+  # Displays and manages tasks from Google Tasks
+  # Supports creating, completing, and deleting tasks
+  # Requires OAuth 2.0 credentials (client_id, client_secret, refresh_token)
+  #
+  # How to get OAuth credentials:
+  # 1. Go to Google Cloud Console: https://console.cloud.google.com/
+  # 2. Create a new project or select an existing one
+  # 3. Enable the Google Tasks API:
+  #    - Navigate to "APIs & Services" > "Library"
+  #    - Search for "Google Tasks API"
+  #    - Click "Enable"
+  # 4. Configure OAuth consent screen (if not already done):
+  #    - Go to "APIs & Services" > "OAuth consent screen"
+  #    - If your app is in "Testing" mode, you need to add test users:
+  #      - Scroll down to "Test users" section
+  #      - Click "+ ADD USERS"
+  #      - Add your Google account email address
+  #      - Click "ADD"
+  #    - This allows you to authorize the app during the OAuth flow
+  # 5. Create OAuth 2.0 credentials:
+  #    - Go to "APIs & Services" > "Credentials"
+  #    - Click "Create Credentials" > "OAuth client ID"
+  #    - IMPORTANT: Choose "Web application" as application type (NOT "Desktop app")
+  #      This is required for OAuth Playground to work properly
+  #    - Name it (e.g., "Homepage Tasks Widget")
+  #    - In "Authorized redirect URIs" section, click "+ ADD URI"
+  #    - Add: https://developers.google.com/oauthplayground
+  #    - Click "Create"
+  #    - Save the Client ID and Client Secret
+  #    - Note: Even though this is a "Web application", it works fine for server-side use
+  #      The refresh token will work the same way
+  # 7. Get a refresh token:
+  #    Option A: Use Google OAuth 2.0 Playground (easiest):
+  #      - Go to https://developers.google.com/oauthplayground/
+  #      - Click the gear icon (⚙️) in top right
+  #      - Check "Use your own OAuth credentials"
+  #      - Enter your Client ID and Client Secret
+  #      - In the left panel, find "Tasks API v1"
+  #      - Select scope: https://www.googleapis.com/auth/tasks
+  #        (IMPORTANT: Use this scope, NOT tasks.readonly, to enable create/delete/update)
+  #      - Click "Authorize APIs"
+  #      - Sign in and grant permissions
+  #      - Click "Exchange authorization code for tokens"
+  #      - Copy the "Refresh token" value
+  #
+  #    Option B: Use a script (more advanced):
+  #      - Use the OAuth 2.0 flow to get authorization code
+  #      - Exchange it for access token and refresh token
+  #      - See: https://developers.google.com/identity/protocols/oauth2
+  #
+  # 8. Configure the widget:
+  #    - Set enabled: true
+  #    - Add your client_id, client_secret, and refresh_token
+  #    - Optionally specify tasklist_id (defaults to "@default" for "My Tasks")
+  #
+  # Note: The refresh token doesn't expire unless revoked, so you only need to set it once.
+  # The widget will automatically refresh access tokens as needed.
+  #
+  # Features:
+  # - View incomplete and completed tasks
+  # - Create new tasks
+  # - Mark tasks as complete/incomplete
+  # - Delete tasks
+  # - Open tasks in Google Tasks (external link)
+  tasks:
+    enabled: false
+    client_id: "your-google-oauth-client-id.apps.googleusercontent.com"
+    client_secret: "your-google-oauth-client-secret"
+    refresh_token: "your-refresh-token-here"
+    # Optional: specific task list ID (defaults to "@default" for "My Tasks")
+    # To find task list IDs, you can use the Google Tasks API or check the URL when viewing a list in Google Tasks
+    # tasklist_id: "@default"

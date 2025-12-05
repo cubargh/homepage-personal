@@ -14,6 +14,7 @@ import { QBittorrentWidget } from "@/components/dashboard/qbittorrent-widget";
 import { IPCameraWidget } from "@/components/dashboard/ip-camera-widget";
 import { RSSWidget } from "@/components/dashboard/rss-widget";
 import { SpeedtestTrackerWidget } from "@/components/dashboard/speedtest-tracker-widget";
+import { TasksWidget } from "@/components/dashboard/tasks-widget";
 import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
 import type { ServiceStatusWidgetConfig, SpeedtestTrackerWidgetConfig } from "@/lib/config";
 
@@ -545,5 +546,38 @@ WidgetRegistry.register({
     defaultX: 0,
     defaultY: 0,
     defaultId: "speedtest-tracker",
+  },
+});
+
+// Register Google Tasks
+WidgetRegistry.register({
+  type: "tasks",
+  component: TasksWidget,
+  isEnabled: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.tasks);
+    return widgetConfig?.enabled ?? false;
+  },
+  getProps: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.tasks);
+    if (!widgetConfig) {
+      throw new Error("Tasks widget config not found");
+    }
+    return {
+      config: {
+        refreshInterval: 60000 * 5, // 5 minutes
+        timezone: config.server.timezone,
+      },
+    };
+  },
+  grid: {
+    w: 3,
+    h: 4,
+    minW: 2,
+    minH: 2,
+  },
+  options: {
+    defaultX: 3,
+    defaultY: 6,
+    defaultId: "tasks",
   },
 });

@@ -33,7 +33,8 @@ export type WidgetType =
   | "qbittorrent"
   | "ip-camera"
   | "rss"
-  | "speedtest-tracker";
+  | "speedtest-tracker"
+  | "tasks";
 
 export interface WidgetConfig {
   id: string;
@@ -552,4 +553,22 @@ export interface SpeedtestTrackerData {
   upload: number;
   ping: number;
   createdAt: string | null;
+}
+
+// Google Tasks Types
+export interface TasksWidgetProps extends BaseWidgetProps {
+  config: {
+    refreshInterval: number;
+    timezone: string;
+  };
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  status: "needsAction" | "completed";
+  due: string | null;
+  notes: string | null;
+  updated: string;
+  completed: boolean;
 }

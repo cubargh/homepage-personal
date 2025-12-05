@@ -124,6 +124,14 @@ export interface SpeedtestTrackerWidgetConfig {
   api_token: string;
 }
 
+export interface TasksWidgetConfig {
+  enabled: boolean;
+  client_id: string;
+  client_secret: string;
+  refresh_token: string;
+  tasklist_id?: string; // Optional: specific task list ID, defaults to "@default" (My Tasks)
+}
+
 export interface SpotlightConfig {
   search_engine?: "google" | "duckduckgo" | "bing" | "custom";
   custom_search_url?: string; // For custom search engine, e.g., "https://example.com/search?q="
@@ -180,6 +188,7 @@ export interface AppConfig {
     navidrome: NavidromeWidgetConfig | NavidromeWidgetConfig[];
     qbittorrent: QBittorrentWidgetConfig | QBittorrentWidgetConfig[];
     speedtest_tracker: SpeedtestTrackerWidgetConfig | SpeedtestTrackerWidgetConfig[];
+    tasks: TasksWidgetConfig | TasksWidgetConfig[];
   };
 }
 

@@ -20,6 +20,7 @@ A self-hosted personal dashboard built with Next.js, featuring widgets for weath
 - **Network**:
   - **Speedtest Tracker**: Latest download, upload, and ping metrics from your Speedtest Tracker instance.
 - **Calendar**: Upcoming events from ICS feeds.
+- **Tasks**: Google Tasks integration - view, create, complete, and delete tasks directly from your dashboard. Features date-based due dates with visual indicators for today, tomorrow, and overdue tasks.
 - **Customizable**: Configured via a simple YAML file.
 - **Authentication**: Simple passphrase-based access.
 
@@ -34,6 +35,7 @@ A self-hosted personal dashboard built with Next.js, featuring widgets for weath
   - [Padel API](https://padelapi.org/) (Optional)
   - Your self-hosted services (Jellyfin, Navidrome, Immich, Ghostfolio)
   - [Speedtest Tracker](https://docs.speedtest-tracker.dev/api/responses/results) API token with `results:read` scope (Optional)
+  - [Google Tasks API](https://developers.google.com/workspace/tasks/reference/rest) OAuth 2.0 credentials (Optional)
 
 ### Installation
 

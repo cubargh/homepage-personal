@@ -13,8 +13,9 @@ import { NavidromeWidget } from "@/components/dashboard/navidrome-widget";
 import { QBittorrentWidget } from "@/components/dashboard/qbittorrent-widget";
 import { IPCameraWidget } from "@/components/dashboard/ip-camera-widget";
 import { RSSWidget } from "@/components/dashboard/rss-widget";
+import { SpeedtestTrackerWidget } from "@/components/dashboard/speedtest-tracker-widget";
 import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
-import type { ServiceStatusWidgetConfig } from "@/lib/config";
+import type { ServiceStatusWidgetConfig, SpeedtestTrackerWidgetConfig } from "@/lib/config";
 
 // Register Service Monitor
 WidgetRegistry.register({
@@ -509,4 +510,38 @@ WidgetRegistry.register({
     };
   },
   grid: { w: 3, h: 2 },
+});
+
+// Register Speedtest Tracker
+WidgetRegistry.register({
+  type: "speedtest-tracker",
+  component: SpeedtestTrackerWidget,
+  isEnabled: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.speedtest_tracker);
+    return widgetConfig?.enabled ?? false;
+  },
+  getProps: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.speedtest_tracker) as SpeedtestTrackerWidgetConfig | undefined;
+    if (!widgetConfig) {
+      throw new Error("Speedtest Tracker widget config not found");
+    }
+    return {
+      config: {
+        url: widgetConfig.url,
+        api_token: widgetConfig.api_token,
+        refreshInterval: 60000 * 5, // 5 minutes
+      },
+    };
+  },
+  grid: {
+    w: 3,
+    h: 2,
+    minW: 1,
+    minH: 1,
+  },
+  options: {
+    defaultX: 0,
+    defaultY: 0,
+    defaultId: "speedtest-tracker",
+  },
 });

@@ -32,7 +32,8 @@ export type WidgetType =
   | "navidrome"
   | "qbittorrent"
   | "ip-camera"
-  | "rss";
+  | "rss"
+  | "speedtest-tracker";
 
 export interface WidgetConfig {
   id: string;
@@ -533,4 +534,20 @@ export interface QBittorrentData {
   transfer: QBittorrentTransferInfo;
   seeding: QBittorrentTorrent[];
   leeching: QBittorrentTorrent[];
+}
+
+// Speedtest Tracker Types
+export interface SpeedtestTrackerWidgetProps extends BaseWidgetProps {
+  config: {
+    url: string;
+    api_token: string;
+    refreshInterval: number;
+  };
+}
+
+export interface SpeedtestTrackerData {
+  download: number;
+  upload: number;
+  ping: number;
+  createdAt: string | null;
 }

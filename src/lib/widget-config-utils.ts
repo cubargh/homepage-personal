@@ -15,3 +15,5 @@ export function getFirstEnabledWidgetConfig<T extends { enabled: boolean }>(
   return configs.find((c) => c.enabled);
 }
 
+
+

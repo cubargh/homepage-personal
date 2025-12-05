@@ -215,3 +215,12 @@ widgets:
     url: "http://qbittorrent.example.com"
     user: "admin"
     password: "password"
+
+  # Speedtest Tracker Widget
+  # Displays latest download, upload, and ping data from Speedtest Tracker
+  # Requires API token with 'results:read' scope
+  # See: https://docs.speedtest-tracker.dev/api/responses/results
+  speedtest_tracker:
+    enabled: true
+    url: "https://speedtest.example.com"
+    api_token: "your-api-token-here"

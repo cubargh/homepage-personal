@@ -116,6 +116,12 @@ export interface QBittorrentWidgetConfig {
   password?: string;
 }
 
+export interface SpeedtestTrackerWidgetConfig {
+  enabled: boolean;
+  url: string;
+  api_token: string;
+}
+
 export interface SpotlightConfig {
   search_engine?: "google" | "duckduckgo" | "bing" | "custom";
   custom_search_url?: string; // For custom search engine, e.g., "https://example.com/search?q="
@@ -171,6 +177,7 @@ export interface AppConfig {
     ghostfolio: GhostfolioWidgetConfig | GhostfolioWidgetConfig[];
     navidrome: NavidromeWidgetConfig | NavidromeWidgetConfig[];
     qbittorrent: QBittorrentWidgetConfig | QBittorrentWidgetConfig[];
+    speedtest_tracker: SpeedtestTrackerWidgetConfig | SpeedtestTrackerWidgetConfig[];
   };
 }
 

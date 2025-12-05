@@ -17,6 +17,8 @@ A self-hosted personal dashboard built with Next.js, featuring widgets for weath
   - **qBittorrent**: Active downloads, upload/download speeds, and seeding stats.
 - **Finance**:
   - **Ghostfolio**: Portfolio performance metrics (Today, Month, Year, Total).
+- **Network**:
+  - **Speedtest Tracker**: Latest download, upload, and ping metrics from your Speedtest Tracker instance.
 - **Calendar**: Upcoming events from ICS feeds.
 - **Customizable**: Configured via a simple YAML file.
 - **Authentication**: Simple passphrase-based access.
@@ -31,6 +33,7 @@ A self-hosted personal dashboard built with Next.js, featuring widgets for weath
   - [Football-Data.org](https://www.football-data.org/) (Optional)
   - [Padel API](https://padelapi.org/) (Optional)
   - Your self-hosted services (Jellyfin, Navidrome, Immich, Ghostfolio)
+  - [Speedtest Tracker](https://docs.speedtest-tracker.dev/api/responses/results) API token with `results:read` scope (Optional)
 
 ### Installation
 

@@ -13,6 +13,7 @@ function normalizeWidgetConfig<T>(config: T | T[] | undefined): T[] {
 const WIDGET_TYPE_TO_CONFIG_KEY: Record<string, keyof AppConfig["widgets"]> = {
   "service-monitor": "service_status",
   "ip-camera": "ip_camera",
+  "speedtest-tracker": "speedtest_tracker",
 };
 
 // Helper function to get widget config by type

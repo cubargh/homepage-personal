@@ -169,6 +169,11 @@ export interface AppConfig {
       session_days: number;
     };
   };
+  // Page title and favicon configuration
+  page?: {
+    title?: string; // Browser tab title (default: "Personal Dashboard")
+    favicon?: string; // Path to favicon file (relative to public/) or full URL (default: "/favicon.ico")
+  };
   spotlight?: SpotlightConfig;
   theme?: ThemeConfig;
   widgets: {

@@ -1,6 +1,20 @@
 # Homepage Personal Dashboard Configuration
 # This file contains all configuration options for the dashboard widgets and server settings.
 
+# Page Configuration
+# Customize the browser tab title and favicon
+page:
+  # Browser tab title (shown in the browser tab)
+  # title: "My Dashboard"
+  
+  # Favicon path or URL
+  # Options:
+  #   - Relative path: "/favicon.ico" (file in public/ directory)
+  #   - Full URL: "https://example.com/favicon.ico"
+  #   - Custom path: "/custom-icon.png" (file in public/ directory)
+  # Default: "/favicon.ico"
+  # favicon: "/favicon.ico"
+
 server:
   # Root domain for your services (used for generating service URLs)
   root_domain: "example.com"

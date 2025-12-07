@@ -104,6 +104,15 @@ theme:
   # muted_foreground: "#999999"
   # muted_foreground: "#6b7280"
 
+  # Widget corner radius (border radius for widget cards)
+  # Examples:
+  #   widget_corner_radius: "0.75rem"  # Default (rounded-xl equivalent)
+  #   widget_corner_radius: "0.5rem"   # Smaller radius (rounded-lg equivalent)
+  #   widget_corner_radius: "8px"     # Pixel value
+  #   widget_corner_radius: "0"       # Square corners (no rounding)
+  # Default: "0.75rem" if not specified
+  # widget_corner_radius: "0.75rem"
+
 widgets:
   # Weather Widget
   # Displays current weather and forecast using OpenWeatherMap API

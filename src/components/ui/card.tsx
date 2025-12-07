@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const cardVariants = cva(
-  "rounded-xl border bg-card text-card-foreground shadow-sm transition-all",
+  "border bg-card text-card-foreground shadow-sm transition-all",
   {
     variants: {
       variant: {
@@ -22,13 +22,19 @@ const cardVariants = cva(
 const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof cardVariants>
->(({ className, variant, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(cardVariants({ variant }), className)}
-    {...props}
-  />
-))
+>(({ className, variant, style, ...props }, ref) => {
+  return (
+    <div
+      ref={ref}
+      className={cn(cardVariants({ variant }), className)}
+      style={{
+        borderRadius: "var(--widget-corner-radius, 0.75rem)",
+        ...style,
+      }}
+      {...props}
+    />
+  );
+})
 Card.displayName = "Card"
 
 const CardHeader = React.forwardRef<

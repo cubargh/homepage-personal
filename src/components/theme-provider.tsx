@@ -103,6 +103,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (theme.muted_foreground) {
       root.style.setProperty("--muted-foreground", normalizeColor(theme.muted_foreground));
     }
+    
+    if (theme.widget_corner_radius) {
+      root.style.setProperty("--widget-corner-radius", theme.widget_corner_radius);
+    }
 
     // Cleanup function to reset styles when component unmounts or theme changes
     return () => {
@@ -132,6 +136,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       }
       if (theme.muted_foreground) {
         root.style.removeProperty("--muted-foreground");
+      }
+      if (theme.widget_corner_radius) {
+        root.style.removeProperty("--widget-corner-radius");
       }
     };
   }, [data]);

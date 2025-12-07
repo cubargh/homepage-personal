@@ -1,5 +1,6 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { Move, Maximize2 } from "lucide-react";
 
 interface WidgetWrapperProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
@@ -9,6 +10,8 @@ interface WidgetWrapperProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export const WidgetWrapper = forwardRef<HTMLDivElement, WidgetWrapperProps>(
   ({ children, className, style, isActive, isResizing, ...props }, ref) => {
+    const [isHovered, setIsHovered] = useState(false);
+
     return (
       <div
         ref={ref}
@@ -35,6 +38,8 @@ export const WidgetWrapper = forwardRef<HTMLDivElement, WidgetWrapperProps>(
           
           className
         )}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         {...props}
       >
         {/* Inner container to handle select-none and full height */}
@@ -46,6 +51,26 @@ export const WidgetWrapper = forwardRef<HTMLDivElement, WidgetWrapperProps>(
           }}
         >
           {children}
+        </div>
+
+        {/* Drag Handle - Top Right */}
+        <div 
+          className={cn(
+            "widget-drag-handle absolute top-[2px] right-[2px] w-5 h-5 flex items-center justify-center cursor-move z-[1001] transition-opacity duration-200",
+            (isHovered || isActive) ? "opacity-70" : "opacity-0"
+          )}
+        >
+          <Move className="w-2.5 h-2.5 text-foreground" />
+        </div>
+
+        {/* Resize Handle Icon Overlay - Bottom Right */}
+        <div 
+          className={cn(
+            "widget-resize-handle-icon absolute bottom-[2px] right-[2px] w-5 h-5 flex items-center justify-center pointer-events-none z-[1001] transition-opacity duration-200",
+            (isHovered || isActive) ? "opacity-70" : "opacity-0"
+          )}
+        >
+          <Maximize2 className="w-2.5 h-2.5 text-foreground rotate-45" />
         </div>
       </div>
     );

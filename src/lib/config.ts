@@ -183,6 +183,9 @@ export interface ThemeConfig {
 
   // Muted text color (secondary text)
   muted_foreground?: string;
+
+  // Widget corner radius (e.g., "0.5rem", "8px", "0" for square corners)
+  widget_corner_radius?: string;
 }
 
 export interface AppConfig {

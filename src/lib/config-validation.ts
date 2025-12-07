@@ -81,16 +81,17 @@ const AppConfigSchema = z.object({
       fuzzy_search: z.boolean().optional(),
     })
     .optional(),
-  theme: z
-    .object({
-      grid_background: z.string().optional(),
-      card_background: z.string().optional(),
-      accent: z.string().optional(),
-      border: z.string().optional(),
-      foreground: z.string().optional(),
-      muted_foreground: z.string().optional(),
-    })
-    .optional(),
+      theme: z
+        .object({
+          grid_background: z.string().optional(),
+          card_background: z.string().optional(),
+          accent: z.string().optional(),
+          border: z.string().optional(),
+          foreground: z.string().optional(),
+          muted_foreground: z.string().optional(),
+          widget_corner_radius: z.string().optional(),
+        })
+        .optional(),
   widgets: z.object({
     weather: z.union([WeatherWidgetConfigSchema, z.array(WeatherWidgetConfigSchema)]),
     sports: z.union([SportsWidgetConfigSchema, z.array(SportsWidgetConfigSchema)]),

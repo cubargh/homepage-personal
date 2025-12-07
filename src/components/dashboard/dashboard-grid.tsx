@@ -422,7 +422,8 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
               // Always Draggable/Resizable
               isDraggable={true}
               isResizable={true}
-              draggableCancel=".no-drag, button, a, input, textarea, select, [role='button']"
+              draggableHandle=".widget-drag-handle"
+              draggableCancel=".no-drag, button, a, input, textarea, select, [role='button'], .react-resizable-handle"
               // Visuals
               margin={GRID_MARGIN}
               containerPadding={{

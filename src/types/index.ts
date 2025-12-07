@@ -34,7 +34,8 @@ export type WidgetType =
   | "ip-camera"
   | "rss"
   | "speedtest-tracker"
-  | "tasks";
+  | "tasks"
+  | "clock";
 
 export interface WidgetConfig {
   id: string;
@@ -104,6 +105,16 @@ export interface WeatherWidgetProps extends BaseWidgetProps {
     units: "metric" | "imperial";
     refreshInterval: number;
     timezone: string;
+  };
+}
+
+export interface ClockWidgetProps extends BaseWidgetProps {
+  config: {
+    timezone: string;
+    format?: "12h" | "24h";
+    showSeconds?: boolean;
+    showDate?: boolean;
+    showDay?: boolean;
   };
 }
 

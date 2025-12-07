@@ -15,6 +15,7 @@ import { IPCameraWidget } from "@/components/dashboard/ip-camera-widget";
 import { RSSWidget } from "@/components/dashboard/rss-widget";
 import { SpeedtestTrackerWidget } from "@/components/dashboard/speedtest-tracker-widget";
 import { TasksWidget } from "@/components/dashboard/tasks-widget";
+import { ClockWidget } from "@/components/dashboard/clock-widget";
 import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
 import type { ServiceStatusWidgetConfig, SpeedtestTrackerWidgetConfig } from "@/lib/config";
 
@@ -579,5 +580,38 @@ WidgetRegistry.register({
     defaultX: 3,
     defaultY: 6,
     defaultId: "tasks",
+  },
+});
+
+// Register Clock
+WidgetRegistry.register({
+  type: "clock",
+  component: ClockWidget,
+  isEnabled: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.clock);
+    return widgetConfig?.enabled ?? false;
+  },
+  getProps: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.clock);
+    return {
+      config: {
+        timezone: config.server.timezone,
+        format: widgetConfig?.format || "24h",
+        showSeconds: widgetConfig?.showSeconds !== false, // Default to true
+        showDate: widgetConfig?.showDate !== false, // Default to true
+        showDay: widgetConfig?.showDay !== false, // Default to true
+      },
+    };
+  },
+  grid: {
+    w: 2,
+    h: 2,
+    minW: 1,
+    minH: 1,
+  },
+  options: {
+    defaultX: 6,
+    defaultY: 0,
+    defaultId: "clock",
   },
 });

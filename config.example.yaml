@@ -6,7 +6,7 @@
 page:
   # Browser tab title (shown in the browser tab)
   # title: "My Dashboard"
-  
+
   # Favicon path or URL
   # Options:
   #   - Relative path: "/favicon.ico" (file in public/ directory)
@@ -314,3 +314,21 @@ widgets:
     # Optional: specific task list ID (defaults to "@default" for "My Tasks")
     # To find task list IDs, you can use the Google Tasks API or check the URL when viewing a list in Google Tasks
     # tasklist_id: "@default"
+
+  # Clock Widget
+  # Displays the current time and date in your configured timezone
+  # Updates every second automatically (or every minute if seconds are hidden)
+  clock:
+    enabled: true
+    # Time format: "12h" (AM/PM) or "24h" (24-hour format)
+    # Default: "24h"
+    format: "24h" # Options: "12h" | "24h"
+    # Show seconds in time display
+    # Default: true
+    showSeconds: true
+    # Show date below time
+    # Default: true
+    showDate: true
+    # Show day of week (only shown in standard layout, 3x3+)
+    # Default: true
+    showDay: true

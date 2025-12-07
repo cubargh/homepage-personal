@@ -132,6 +132,23 @@ export interface TasksWidgetConfig {
   tasklist_id?: string; // Optional: specific task list ID, defaults to "@default" (My Tasks)
 }
 
+export interface ClockWidgetConfig {
+  enabled: boolean;
+  // 12-hour format (with AM/PM) or 24-hour format
+  // Options: "12h" | "24h"
+  // Default: "24h"
+  format?: "12h" | "24h";
+  // Show seconds in time display
+  // Default: true
+  showSeconds?: boolean;
+  // Show date below time
+  // Default: true
+  showDate?: boolean;
+  // Show day of week
+  // Default: true (only in standard layout)
+  showDay?: boolean;
+}
+
 export interface SpotlightConfig {
   search_engine?: "google" | "duckduckgo" | "bing" | "custom";
   custom_search_url?: string; // For custom search engine, e.g., "https://example.com/search?q="
@@ -192,8 +209,11 @@ export interface AppConfig {
     ghostfolio: GhostfolioWidgetConfig | GhostfolioWidgetConfig[];
     navidrome: NavidromeWidgetConfig | NavidromeWidgetConfig[];
     qbittorrent: QBittorrentWidgetConfig | QBittorrentWidgetConfig[];
-    speedtest_tracker: SpeedtestTrackerWidgetConfig | SpeedtestTrackerWidgetConfig[];
+    speedtest_tracker:
+      | SpeedtestTrackerWidgetConfig
+      | SpeedtestTrackerWidgetConfig[];
     tasks: TasksWidgetConfig | TasksWidgetConfig[];
+    clock: ClockWidgetConfig | ClockWidgetConfig[];
   };
 }
 

@@ -53,6 +53,67 @@
   display: none; /* Chrome, Safari and Opera */
 }
 
+/* Custom scrollbar styling for all scrollbars */
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.3 0 0);
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.4 0 0);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: oklch(0.5 0 0);
+  background-clip: padding-box;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.3 0 0) transparent;
+}
+
+*:hover {
+  scrollbar-color: oklch(0.4 0 0) transparent;
+}
+
+/* ScrollArea component styling to match native scrollbars */
+[data-slot="scroll-area-scrollbar"] {
+  width: 8px !important;
+}
+
+[data-slot="scroll-area-scrollbar"][data-orientation="horizontal"] {
+  height: 8px !important;
+}
+
+[data-slot="scroll-area-thumb"] {
+  background-color: oklch(0.3 0 0) !important;
+  border-radius: 4px !important;
+}
+
+[data-slot="scroll-area-thumb"]:hover {
+  background-color: oklch(0.4 0 0) !important;
+}
+
+[data-slot="scroll-area-thumb"]:active {
+  background-color: oklch(0.5 0 0) !important;
+}
+
 :root {
   /* Default to Dark Mode values for :root to enforce dark theme look initially */
   --radius: 0.75rem; /* Increased radius for smoother look */

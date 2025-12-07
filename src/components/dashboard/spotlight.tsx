@@ -197,7 +197,7 @@ export function Spotlight({
     []
   );
 
-  // Check if a string is a valid URL (without protocol)
+  // Check if a string is a valid URL (with or without protocol)
   const isValidUrl = (str: string): boolean => {
     // Remove leading/trailing whitespace
     const trimmed = str.trim();
@@ -205,6 +205,18 @@ export function Spotlight({
 
     // Check if it contains spaces (URLs shouldn't)
     if (trimmed.includes(" ")) return false;
+
+    // Check if it starts with http:// or https://
+    const lowerTrimmed = trimmed.toLowerCase();
+    if (lowerTrimmed.startsWith("http://") || lowerTrimmed.startsWith("https://")) {
+      // Try to parse as URL to validate
+      try {
+        new URL(trimmed);
+        return true;
+      } catch {
+        return false;
+      }
+    }
 
     // Simple domain pattern: must contain at least one dot and valid characters
     // Examples: facebook.com, sub.example.com, localhost (special case)
@@ -249,11 +261,19 @@ export function Spotlight({
     // Check if it's a URL (use original query for display, trimmed for validation)
     const originalQuery = query.trim();
     if (isValidUrl(trimmedQuery)) {
+      // Determine the URL to use - if it already has a protocol, use it as-is
+      // Otherwise, prepend https://
+      const lowerOriginal = originalQuery.toLowerCase();
+      const urlToUse = 
+        lowerOriginal.startsWith("http://") || lowerOriginal.startsWith("https://")
+          ? originalQuery
+          : `https://${originalQuery}`;
+      
       results.push({
         id: "url",
         type: "url",
         name: `Go to ${originalQuery}`,
-        url: `https://${originalQuery}`,
+        url: urlToUse,
         matchScore: 100,
         matchIndices: [],
         isExactMatch: true, // URLs are always exact matches

@@ -7,6 +7,13 @@ import { Rss, ExternalLink, Calendar, User, ChevronRight, RefreshCw } from "luci
 import { WidgetLayout } from "@/components/dashboard/widget-layout";
 import { cn, formatTime } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
@@ -140,36 +147,24 @@ export function RSSWidget({ config, gridSize }: RSSWidgetProps) {
   // Standard mode: Show list of items
   const headerActions = (
     <div className="flex items-center gap-2">
-      {/* Feed filter buttons */}
+      {/* Feed filter dropdown */}
       {data?.feeds && data.feeds.length > 1 && (
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setSelectedFeed(null)}
-            className={cn(
-              "text-xs px-2 py-1 rounded transition-colors",
-              selectedFeed === null
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-            )}
-          >
-            All
-          </button>
-          {data.feeds.map((feed) => (
-            <button
-              key={feed.feedUrl}
-              onClick={() => setSelectedFeed(feed.feedUrl)}
-              className={cn(
-                "text-xs px-2 py-1 rounded transition-colors truncate max-w-[100px]",
-                selectedFeed === feed.feedUrl
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-              )}
-              title={feed.feedTitle}
-            >
-              {feed.feedTitle}
-            </button>
-          ))}
-        </div>
+        <Select
+          value={selectedFeed || "all"}
+          onValueChange={(value) => setSelectedFeed(value === "all" ? null : value)}
+        >
+          <SelectTrigger className="h-8 w-[140px] text-xs">
+            <SelectValue placeholder="Select feed" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Feeds</SelectItem>
+            {data.feeds.map((feed) => (
+              <SelectItem key={feed.feedUrl} value={feed.feedUrl}>
+                {feed.feedTitle}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       )}
       
       {/* Refresh button */}

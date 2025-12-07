@@ -94,7 +94,6 @@ export function CalendarWidget({ config, gridSize }: CalendarWidgetProps) {
   // Compact: height <= 2 rows (regardless of width)
   // Standard: height > 2 rows
   const isCompact = gridSize ? gridSize.h <= 2 : false;
-  const isStandard = !isCompact;
 
   const { data, isLoading, error } = useSWR<{
     events: (CalendarEvent & {
@@ -532,51 +531,51 @@ export function CalendarWidget({ config, gridSize }: CalendarWidgetProps) {
     );
   };
 
-  // Determine header actions based on view
+  // Header actions: navigation controls in the title area
   const headerActions = (
-    <div className="flex flex-col w-full gap-2">
-      <div className="flex items-center justify-between w-full">
-        <div
-          className={cn(
-            "flex items-center gap-1 bg-secondary/20 rounded-md p-0.5",
-            view === "agenda" && "invisible"
-          )}
-        >
-          <button onClick={prev} className="p-1 hover:bg-secondary/40 rounded">
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <span className="text-xs font-medium min-w-[100px] text-center">
-            {view === "month" && format(currentDate, "MMMM yyyy")}
-            {view === "week" &&
-              `${format(startOfWeek(currentDate), "MMM d")} - ${format(
-                endOfWeek(currentDate),
-                "MMM d"
-              )}`}
-            {view === "day" && format(currentDate, "MMM d, yyyy")}
-            {view === "agenda" && format(currentDate, "MMMM yyyy")}
-          </span>
-          <button onClick={next} className="p-1 hover:bg-secondary/40 rounded">
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-      <Tabs value={view} onValueChange={setView} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 h-7 bg-secondary/30">
-          <TabsTrigger value="agenda" className="text-[10px] h-full px-1">
-            <List className="h-3 w-3 mr-1 md:mr-2" /> Agenda
-          </TabsTrigger>
-          <TabsTrigger value="day" className="text-[10px] h-full px-1">
-            <Rows className="h-3 w-3 mr-1 md:mr-2" /> Day
-          </TabsTrigger>
-          <TabsTrigger value="week" className="text-[10px] h-full px-1">
-            <Columns className="h-3 w-3 mr-1 md:mr-2" /> Week
-          </TabsTrigger>
-          <TabsTrigger value="month" className="text-[10px] h-full px-1">
-            <LayoutGrid className="h-3 w-3 mr-1 md:mr-2" /> Month
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+    <div
+      className={cn(
+        "flex items-center gap-1 bg-secondary/20 rounded-md p-0.5",
+        view === "agenda" && "invisible"
+      )}
+    >
+      <button onClick={prev} className="p-1 hover:bg-secondary/40 rounded">
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      <span className="text-xs font-medium min-w-[100px] text-center">
+        {view === "month" && format(currentDate, "MMMM yyyy")}
+        {view === "week" &&
+          `${format(startOfWeek(currentDate), "MMM d")} - ${format(
+            endOfWeek(currentDate),
+            "MMM d"
+          )}`}
+        {view === "day" && format(currentDate, "MMM d, yyyy")}
+        {view === "agenda" && format(currentDate, "MMMM yyyy")}
+      </span>
+      <button onClick={next} className="p-1 hover:bg-secondary/40 rounded">
+        <ChevronRight className="h-4 w-4" />
+      </button>
     </div>
+  );
+
+  // Tabs for content area
+  const viewTabs = (
+    <Tabs value={view} onValueChange={setView} className="w-full">
+      <TabsList className="grid w-full grid-cols-4 h-7 bg-secondary/30">
+        <TabsTrigger value="agenda" className="text-[10px] h-full px-1">
+          <List className="h-3 w-3 mr-1 md:mr-2" /> Agenda
+        </TabsTrigger>
+        <TabsTrigger value="day" className="text-[10px] h-full px-1">
+          <Rows className="h-3 w-3 mr-1 md:mr-2" /> Day
+        </TabsTrigger>
+        <TabsTrigger value="week" className="text-[10px] h-full px-1">
+          <Columns className="h-3 w-3 mr-1 md:mr-2" /> Week
+        </TabsTrigger>
+        <TabsTrigger value="month" className="text-[10px] h-full px-1">
+          <LayoutGrid className="h-3 w-3 mr-1 md:mr-2" /> Month
+        </TabsTrigger>
+      </TabsList>
+    </Tabs>
   );
 
   return (
@@ -584,6 +583,7 @@ export function CalendarWidget({ config, gridSize }: CalendarWidgetProps) {
       gridSize={gridSize}
       title={isCompact ? undefined : "Calendar"}
       icon={isCompact ? undefined : <CalendarIcon className="h-5 w-5" />}
+      headerActions={isCompact ? undefined : headerActions}
       contentClassName="p-0 flex flex-col"
     >
       {isCompact ? (
@@ -647,7 +647,7 @@ export function CalendarWidget({ config, gridSize }: CalendarWidgetProps) {
         // Standard Layout: Full calendar with all views
         <>
           <div className="p-3 border-b border-border/50 bg-secondary/5 shrink-0">
-            {headerActions}
+            {viewTabs}
           </div>
 
           <div className="flex-1 overflow-hidden relative min-h-0">

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadConfig } from "@/lib/config";
 import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
+import { withErrorHandling, requireConfig } from "@/lib/api-handler";
+import { ApiError, ApiErrorCode } from "@/lib/api-error";
 
 interface GoogleTasksConfig {
   enabled: boolean;
@@ -67,13 +69,27 @@ async function getAccessToken(
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `Failed to refresh access token: ${response.status} ${errorText}`
+    const errorText = await response.text().catch(() => "Unknown error");
+    throw new ApiError(
+      `Failed to refresh access token: ${response.status}`,
+      response.status,
+      ApiErrorCode.UNAUTHORIZED,
+      errorText
     );
   }
 
-  const data: AccessTokenResponse = await response.json();
+  let data: AccessTokenResponse;
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw new ApiError(
+      "Failed to parse access token response",
+      502,
+      ApiErrorCode.UPSTREAM_ERROR,
+      error instanceof Error ? error.message : "Unknown parsing error"
+    );
+  }
+
   return data.access_token;
 }
 
@@ -91,13 +107,27 @@ async function fetchTaskLists(accessToken: string): Promise<GoogleTaskList[]> {
   );
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `Failed to fetch task lists: ${response.status} ${errorText}`
+    const errorText = await response.text().catch(() => "Unknown error");
+    throw new ApiError(
+      `Failed to fetch task lists: ${response.status}`,
+      response.status,
+      ApiErrorCode.UPSTREAM_ERROR,
+      errorText
     );
   }
 
-  const data = await response.json();
+  let data: { items?: GoogleTaskList[] };
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw new ApiError(
+      "Failed to parse task lists response",
+      502,
+      ApiErrorCode.UPSTREAM_ERROR,
+      error instanceof Error ? error.message : "Unknown parsing error"
+    );
+  }
+
   return data.items || [];
 }
 
@@ -119,19 +149,39 @@ async function fetchTasks(
   );
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `Failed to fetch tasks: ${response.status} ${errorText}`
+    const errorText = await response.text().catch(() => "Unknown error");
+    throw new ApiError(
+      `Failed to fetch tasks: ${response.status}`,
+      response.status,
+      ApiErrorCode.UPSTREAM_ERROR,
+      errorText
     );
   }
 
-  const data: GoogleTasksResponse = await response.json();
+  let data: GoogleTasksResponse;
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw new ApiError(
+      "Failed to parse tasks response",
+      502,
+      ApiErrorCode.UPSTREAM_ERROR,
+      error instanceof Error ? error.message : "Unknown parsing error"
+    );
+  }
+
   return data.items || [];
 }
 
 /**
  * Create a new task
  */
+interface GoogleTaskCreateBody {
+  title: string;
+  notes?: string;
+  due?: string;
+}
+
 async function createTask(
   accessToken: string,
   taskListId: string,
@@ -139,7 +189,7 @@ async function createTask(
   notes?: string,
   due?: string
 ): Promise<GoogleTask> {
-  const taskBody: any = {
+  const taskBody: GoogleTaskCreateBody = {
     title,
   };
   if (notes) taskBody.notes = notes;
@@ -158,13 +208,28 @@ async function createTask(
   );
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `Failed to create task: ${response.status} ${errorText}`
+    const errorText = await response.text().catch(() => "Unknown error");
+    throw new ApiError(
+      `Failed to create task: ${response.status}`,
+      response.status,
+      ApiErrorCode.UPSTREAM_ERROR,
+      errorText
     );
   }
 
-  return await response.json();
+  let task: GoogleTask;
+  try {
+    task = await response.json();
+  } catch (error) {
+    throw new ApiError(
+      "Failed to parse task creation response",
+      502,
+      ApiErrorCode.UPSTREAM_ERROR,
+      error instanceof Error ? error.message : "Unknown parsing error"
+    );
+  }
+
+  return task;
 }
 
 /**
@@ -178,7 +243,7 @@ async function updateTask(
     status?: "needsAction" | "completed";
     title?: string;
     notes?: string;
-    due?: string;
+    due?: string | null;
   }
 ): Promise<GoogleTask> {
   const response = await fetch(
@@ -194,13 +259,28 @@ async function updateTask(
   );
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `Failed to update task: ${response.status} ${errorText}`
+    const errorText = await response.text().catch(() => "Unknown error");
+    throw new ApiError(
+      `Failed to update task: ${response.status}`,
+      response.status,
+      ApiErrorCode.UPSTREAM_ERROR,
+      errorText
     );
   }
 
-  return await response.json();
+  let task: GoogleTask;
+  try {
+    task = await response.json();
+  } catch (error) {
+    throw new ApiError(
+      "Failed to parse task update response",
+      502,
+      ApiErrorCode.UPSTREAM_ERROR,
+      error instanceof Error ? error.message : "Unknown parsing error"
+    );
+  }
+
+  return task;
 }
 
 /**
@@ -222,221 +302,175 @@ async function deleteTask(
   );
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `Failed to delete task: ${response.status} ${errorText}`
+    const errorText = await response.text().catch(() => "Unknown error");
+    throw new ApiError(
+      `Failed to delete task: ${response.status}`,
+      response.status,
+      ApiErrorCode.UPSTREAM_ERROR,
+      errorText
     );
   }
 }
 
-export async function GET(request: NextRequest) {
-  const config = loadConfig();
-  const tasksConfig = getFirstEnabledWidgetConfig(
-    config.widgets.tasks
-  ) as GoogleTasksConfig | undefined;
-
-  if (!tasksConfig || !tasksConfig.enabled) {
-    return NextResponse.json(
-      { error: "Tasks widget is not enabled" },
-      { status: 400 }
-    );
-  }
-
+/**
+ * Shared function to get access token and determine task list ID
+ */
+async function getAuthAndTaskList(
+  tasksConfig: GoogleTasksConfig
+): Promise<{ accessToken: string; taskListId: string }> {
   const { client_id, client_secret, refresh_token, tasklist_id } = tasksConfig;
 
   if (!client_id || !client_secret || !refresh_token) {
-    return NextResponse.json(
-      {
-        error:
-          "Missing required OAuth credentials. Please configure client_id, client_secret, and refresh_token.",
-      },
-      { status: 400 }
+    throw new ApiError(
+      "Missing required OAuth credentials. Please configure client_id, client_secret, and refresh_token.",
+      400,
+      ApiErrorCode.MISSING_CONFIG
     );
   }
 
-  try {
-    // Get access token
-    const accessToken = await getAccessToken(
-      client_id,
-      client_secret,
-      refresh_token
-    );
+  // Get access token
+  const accessToken = await getAccessToken(
+    client_id,
+    client_secret,
+    refresh_token
+  );
 
-    // Determine which task list to use
-    let targetTaskListId = tasklist_id || "@default"; // Default to "My Tasks"
+  // Determine which task list to use
+  let targetTaskListId = tasklist_id || "@default"; // Default to "My Tasks"
 
-    // If no specific task list ID is provided, fetch the default one
-    if (!tasklist_id) {
-      const taskLists = await fetchTaskLists(accessToken);
-      const defaultList = taskLists.find((list) => list.id === "@default");
-      if (defaultList) {
-        targetTaskListId = defaultList.id;
-      }
+  // If no specific task list ID is provided, fetch the default one
+  if (!tasklist_id) {
+    const taskLists = await fetchTaskLists(accessToken);
+    const defaultList = taskLists.find((list) => list.id === "@default");
+    if (defaultList) {
+      targetTaskListId = defaultList.id;
     }
-
-    // Fetch tasks from the selected task list (including completed for full list)
-    const tasks = await fetchTasks(accessToken, targetTaskListId, true);
-
-    // Transform tasks to a simpler format
-    const transformedTasks = tasks.map((task) => ({
-      id: task.id,
-      title: task.title,
-      status: task.status,
-      due: task.due || null,
-      notes: task.notes || null,
-      updated: task.updated,
-      completed: task.status === "completed",
-    }));
-
-    return NextResponse.json({
-      tasks: transformedTasks,
-      taskListId: targetTaskListId,
-    });
-  } catch (error) {
-    console.error("Google Tasks API error:", error);
-    return NextResponse.json(
-      {
-        error: `Failed to fetch tasks: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
-      },
-      { status: 500 }
-    );
   }
+
+  return { accessToken, taskListId: targetTaskListId };
 }
 
-export async function POST(request: NextRequest) {
+export const GET = withErrorHandling(async (request: NextRequest) => {
   const config = loadConfig();
-  const tasksConfig = getFirstEnabledWidgetConfig(
-    config.widgets.tasks
-  ) as GoogleTasksConfig | undefined;
+  const tasksConfig = requireConfig(
+    getFirstEnabledWidgetConfig(config.widgets.tasks) as GoogleTasksConfig | undefined,
+    "Tasks widget is not enabled"
+  );
 
-  if (!tasksConfig || !tasksConfig.enabled) {
-    return NextResponse.json(
-      { error: "Tasks widget is not enabled" },
-      { status: 400 }
-    );
+  if (!tasksConfig.enabled) {
+    throw new ApiError("Tasks widget is not enabled", 400, ApiErrorCode.BAD_REQUEST);
   }
 
-  const { client_id, client_secret, refresh_token, tasklist_id } = tasksConfig;
+  const { accessToken, taskListId } = await getAuthAndTaskList(tasksConfig);
 
-  if (!client_id || !client_secret || !refresh_token) {
-    return NextResponse.json(
-      {
-        error:
-          "Missing required OAuth credentials. Please configure client_id, client_secret, and refresh_token.",
-      },
-      { status: 400 }
-    );
+  // Fetch tasks from the selected task list (including completed for full list)
+  const tasks = await fetchTasks(accessToken, taskListId, true);
+
+  // Transform tasks to a simpler format
+  const transformedTasks = tasks.map((task) => ({
+    id: task.id,
+    title: task.title,
+    status: task.status,
+    due: task.due || null,
+    notes: task.notes || null,
+    updated: task.updated,
+    completed: task.status === "completed",
+  }));
+
+  return NextResponse.json({
+    tasks: transformedTasks,
+    taskListId,
+  });
+});
+
+export const POST = withErrorHandling(async (request: NextRequest) => {
+  const config = loadConfig();
+  const tasksConfig = requireConfig(
+    getFirstEnabledWidgetConfig(config.widgets.tasks) as GoogleTasksConfig | undefined,
+    "Tasks widget is not enabled"
+  );
+
+  if (!tasksConfig.enabled) {
+    throw new ApiError("Tasks widget is not enabled", 400, ApiErrorCode.BAD_REQUEST);
   }
 
-  try {
-    const body = await request.json();
-    const { action, taskId, title, notes, due, status } = body;
+  const body = await request.json();
+  const { action, taskId, title, notes, due, status } = body;
 
-    // Get access token
-    const accessToken = await getAccessToken(
-      client_id,
-      client_secret,
-      refresh_token
-    );
+  const { accessToken, taskListId: targetTaskListId } = await getAuthAndTaskList(tasksConfig);
 
-    // Determine which task list to use
-    let targetTaskListId = tasklist_id || "@default";
-    if (!tasklist_id) {
-      const taskLists = await fetchTaskLists(accessToken);
-      const defaultList = taskLists.find((list) => list.id === "@default");
-      if (defaultList) {
-        targetTaskListId = defaultList.id;
+  switch (action) {
+    case "create":
+      if (!title) {
+        throw new ApiError("Title is required", 400, ApiErrorCode.VALIDATION_ERROR);
       }
-    }
+      const newTask = await createTask(
+        accessToken,
+        targetTaskListId,
+        title,
+        notes,
+        due
+      );
+      return NextResponse.json({
+        success: true,
+        task: {
+          id: newTask.id,
+          title: newTask.title,
+          status: newTask.status,
+          due: newTask.due || null,
+          notes: newTask.notes || null,
+          updated: newTask.updated,
+          completed: newTask.status === "completed",
+        },
+      });
 
-    switch (action) {
-      case "create":
-        if (!title) {
-          return NextResponse.json(
-            { error: "Title is required" },
-            { status: 400 }
-          );
-        }
-        const newTask = await createTask(
-          accessToken,
-          targetTaskListId,
-          title,
-          notes,
-          due
-        );
-        return NextResponse.json({
-          success: true,
-          task: {
-            id: newTask.id,
-            title: newTask.title,
-            status: newTask.status,
-            due: newTask.due || null,
-            notes: newTask.notes || null,
-            updated: newTask.updated,
-            completed: newTask.status === "completed",
-          },
-        });
+    case "update":
+      if (!taskId) {
+        throw new ApiError("Task ID is required", 400, ApiErrorCode.VALIDATION_ERROR);
+      }
+      const updates: {
+        status?: "needsAction" | "completed";
+        title?: string;
+        notes?: string;
+        due?: string | null;
+      } = {};
+      if (status !== undefined) updates.status = status;
+      if (title !== undefined) updates.title = title;
+      if (notes !== undefined) updates.notes = notes;
+      if (due !== undefined) updates.due = due || null;
 
-      case "update":
-        if (!taskId) {
-          return NextResponse.json(
-            { error: "Task ID is required" },
-            { status: 400 }
-          );
-        }
-        const updates: any = {};
-        if (status !== undefined) updates.status = status;
-        if (title !== undefined) updates.title = title;
-        if (notes !== undefined) updates.notes = notes;
-        if (due !== undefined) updates.due = due || null;
+      const updatedTask = await updateTask(
+        accessToken,
+        targetTaskListId,
+        taskId,
+        updates
+      );
+      return NextResponse.json({
+        success: true,
+        task: {
+          id: updatedTask.id,
+          title: updatedTask.title,
+          status: updatedTask.status,
+          due: updatedTask.due || null,
+          notes: updatedTask.notes || null,
+          updated: updatedTask.updated,
+          completed: updatedTask.status === "completed",
+        },
+      });
 
-        const updatedTask = await updateTask(
-          accessToken,
-          targetTaskListId,
-          taskId,
-          updates
-        );
-        return NextResponse.json({
-          success: true,
-          task: {
-            id: updatedTask.id,
-            title: updatedTask.title,
-            status: updatedTask.status,
-            due: updatedTask.due || null,
-            notes: updatedTask.notes || null,
-            updated: updatedTask.updated,
-            completed: updatedTask.status === "completed",
-          },
-        });
+    case "delete":
+      if (!taskId) {
+        throw new ApiError("Task ID is required", 400, ApiErrorCode.VALIDATION_ERROR);
+      }
+      await deleteTask(accessToken, targetTaskListId, taskId);
+      return NextResponse.json({ success: true });
 
-      case "delete":
-        if (!taskId) {
-          return NextResponse.json(
-            { error: "Task ID is required" },
-            { status: 400 }
-          );
-        }
-        await deleteTask(accessToken, targetTaskListId, taskId);
-        return NextResponse.json({ success: true });
-
-      default:
-        return NextResponse.json(
-          { error: "Invalid action. Use 'create', 'update', or 'delete'" },
-          { status: 400 }
-        );
-    }
-  } catch (error) {
-    console.error("Google Tasks API error:", error);
-    return NextResponse.json(
-      {
-        error: `Failed to perform action: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
-      },
-      { status: 500 }
-    );
+    default:
+      throw new ApiError(
+        "Invalid action. Use 'create', 'update', or 'delete'",
+        400,
+        ApiErrorCode.BAD_REQUEST
+      );
   }
-}
+});
 

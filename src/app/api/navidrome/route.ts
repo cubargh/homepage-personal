@@ -1,30 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadConfig } from "@/lib/config";
 import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
+import { withErrorHandling, requireConfig } from "@/lib/api-handler";
+import { ApiError, ApiErrorCode } from "@/lib/api-error";
+import { cached } from "@/lib/cache";
 import md5 from "crypto-js/md5";
 
-export async function GET(request: NextRequest) {
-  const config = loadConfig();
-  const navidromeConfig = getFirstEnabledWidgetConfig(config.widgets.navidrome);
-
-  if (
-    !navidromeConfig ||
-    !navidromeConfig.url ||
-    !navidromeConfig.user ||
-    !navidromeConfig.password
-  ) {
-    return NextResponse.json(
-      { error: "Navidrome configuration missing or disabled" },
-      { status: 500 }
-    );
-  }
-
-  const { url, user, password } = navidromeConfig;
-  
-  // Clean base URL
-  const baseUrl = url.replace(/\/$/, "");
-  
-  // Generate auth parameters for Subsonic API
+function buildAuthParams(user: string, password: string): string {
   const salt = Math.random().toString(36).substring(7);
   const authToken = md5(password + salt).toString();
   
@@ -32,129 +14,143 @@ export async function GET(request: NextRequest) {
     u: user,
     t: authToken,
     s: salt,
-    v: "1.16.1", // API Version
-    c: "personal-dashboard", // Client name
-    f: "json" // Format
+    v: "1.16.1",
+    c: "personal-dashboard",
+    f: "json",
   });
   
-  const queryString = params.toString();
+  return params.toString();
+}
+
+async function getArtistCount(baseUrl: string, user: string, queryString: string): Promise<number> {
+  // Cache artist count for 1 hour since it's expensive to fetch
+  // Use stable cache key based on baseUrl and user, not queryString (which changes every request)
+  const cacheKey = `navidrome:artistCount:${baseUrl}:${user}`;
+  
+  return cached(
+    cacheKey,
+    async () => {
+      const artistsUrl = `${baseUrl}/rest/getArtists?${queryString}`;
+      const artistsRes = await fetch(artistsUrl);
+      
+      if (!artistsRes.ok) {
+        // If fetch fails, return 0 rather than throwing
+        // Log for debugging but don't throw to avoid breaking the widget
+        console.warn(`Failed to fetch artist count from Navidrome: ${artistsRes.status}`);
+        return 0;
+      }
+      
+      const artistsData = await artistsRes.json();
+      let artistCount = 0;
+      const index = artistsData["subsonic-response"]?.artists?.index;
+      
+      if (Array.isArray(index)) {
+        index.forEach((idx: { artist?: unknown[] }) => {
+          if (Array.isArray(idx.artist)) {
+            artistCount += idx.artist.length;
+          }
+        });
+      }
+      
+      return artistCount;
+    },
+    3600000 // 1 hour cache
+  );
+}
+
+export const GET = withErrorHandling(async (request: NextRequest) => {
+  const config = loadConfig();
+  const navidromeConfig = requireConfig(
+    getFirstEnabledWidgetConfig(config.widgets.navidrome),
+    "Navidrome configuration missing or disabled"
+  );
+
+  if (!navidromeConfig.url || !navidromeConfig.user || !navidromeConfig.password) {
+    throw new ApiError(
+      "Navidrome configuration incomplete",
+      500,
+      ApiErrorCode.MISSING_CONFIG
+    );
+  }
+
+  const { url, user, password } = navidromeConfig;
+  const baseUrl = url.replace(/\/$/, "");
+  const queryString = buildAuthParams(user, password);
+
+  // Fetch now playing and scan status in parallel
+  const [nowPlayingRes, scanRes] = await Promise.all([
+    fetch(`${baseUrl}/rest/getNowPlaying?${queryString}`),
+    fetch(`${baseUrl}/rest/getScanStatus?${queryString}`),
+  ]);
+
+  if (!nowPlayingRes.ok || !scanRes.ok) {
+    throw new ApiError(
+      "Failed to fetch Navidrome data",
+      502,
+      ApiErrorCode.UPSTREAM_ERROR
+    );
+  }
+
+  interface SubsonicResponse {
+    "subsonic-response"?: {
+      nowPlaying?: {
+        entry?: Array<{
+          id: string;
+          title: string;
+          artist: string;
+          album: string;
+          coverArt?: string;
+          duration: number;
+          minutesAgo: number;
+          username: string;
+        }>;
+      };
+      scanStatus?: {
+        scanning?: boolean;
+        count?: number;
+      };
+    };
+  }
+
+  let nowPlayingData: SubsonicResponse;
+  let scanData: SubsonicResponse;
 
   try {
-    // 1. Fetch Scan Status to get counts (Song, Album, Artist counts are often in getScanStatus or we use search3)
-    // getScanStatus is usually lightweight and returns folderCount, but maybe not total songs.
-    // Actually, Navidrome's getMusicFolders or similar might be better, or search3 with empty query?
-    // Let's use 'getScanStatus' which often returns counts in some implementations, 
-    // but Subsonic API docs say getScanStatus returns scan status.
-    // A better way for stats is usually:
-    // - getMusicFolders (might not have counts)
-    // - getAlbumList (pagination)
-    // - search3 with * (might be heavy)
-    
-    // Navidrome documentation says: "getScanStatus: Also returns the extra fields lastScan and folderCount"
-    // It doesn't explicitly promise song/album counts.
-    
-    // Alternative: Use 'getIndexes' or standard lists.
-    // But actually, for a "dashboard" summary, many clients use:
-    // - getAlbumList type=newest (for albums)
-    // - getRandomSongs (for songs count? No)
-    
-    // Wait, let's look at standard Subsonic ways to get stats.
-    // usually clients just iterate or cache.
-    // BUT, we can cheat.
-    // 'getMusicFolders' often lists folders.
-    // 'getAlbumList' with size=1 gives total count? No.
-    
-    // Let's try to fetch recent stuff and infer or just just display "Recent".
-    // The user requested: "amount of songs, amount of albums, amount of artists"
-    // Navidrome does not natively expose a "getStats" endpoint in Subsonic API (it's not standard).
-    
-    // However, we can do:
-    // 1. getArtists (returns list of artists, we can count them) - might be huge.
-    // 2. getAlbumList type=alphabetical (returns list of albums) - might be huge.
-    
-    // Actually, let's try to be efficient.
-    // If we can't get exact counts cheaply, maybe we skip them or cache heavily.
-    // But wait, is there an extension?
-    // Navidrome might assume standard Subsonic.
-    
-    // Let's check getNowPlaying first.
-    const nowPlayingUrl = `${baseUrl}/rest/getNowPlaying?${queryString}`;
-    const nowPlayingRes = await fetch(nowPlayingUrl);
-    const nowPlayingData = await nowPlayingRes.json();
-    
-    // For counts, let's try a "search3" for empty string or something generic, but that returns limited results.
-    // A common trick is `getArtists` to count artists.
-    // `getAlbumList` with `type=newest` `size=1` doesn't give total.
-    
-    // Let's implement 'getNowPlaying' correctly first.
-    const nowPlaying = nowPlayingData["subsonic-response"]?.nowPlaying?.entry?.[0];
-    
-    // For stats, honestly, querying ALL artists/albums every refresh is bad.
-    // Maybe we just show "Now Playing" and "Recent Albums" instead of counts if counts are hard?
-    // User specifically asked for "amount of songs...".
-    
-    // Let's try to find a way. 
-    // `getScanStatus` in Navidrome:
-    // "Also returns the extra fields lastScan and folderCount"
-    // Maybe it returns count?
-    const scanStatusUrl = `${baseUrl}/rest/getScanStatus?${queryString}`;
-    const scanRes = await fetch(scanStatusUrl);
-    const scanData = await scanRes.json();
-    
-    // If scanData has counts, great. If not, we might have to fetch lists (expensive).
-    // Let's try to fetch lists once per hour or something? cache control?
-    // For now, let's fetch `getArtists` (ignored in response for now) and `getAlbumList` (newest) to verify connection.
-    
-    // Actually, many Subsonic servers return `count` in the list response attributes.
-    // Let's fetch `getArtists`.
-    // <artists ignoredArticles="The El La Los Las Le Les" index="A"> ... </artists>
-    // It usually returns an index.
-    
-    // NOTE: For this implementation, to avoid 10MB JSON payloads, we will try to be smart.
-    // But since the user asked for it, and this is a personal dashboard, maybe the library isn't Spotify-sized.
-    // We will try to fetch counts via list lengths if necessary, but maybe just 'Now Playing' is safe.
-    // Let's try to get at least one count.
-    
-    // Let's rely on 'getNowPlaying' for the main feature.
-    // And maybe 'getAlbumList' type=newest size=1 to get recent.
-    
-    // 3. Get Artists Count
-    // Since Navidrome/Subsonic doesn't provide a direct count, we fetch getArtists (which returns all artists) and count them.
-    // This might be heavy for very large libraries, but it's the only standard way.
-    const artistsUrl = `${baseUrl}/rest/getArtists?${queryString}`;
-    const artistsRes = await fetch(artistsUrl);
-    const artistsData = await artistsRes.json();
-    
-    let artistCount = 0;
-    const index = artistsData["subsonic-response"]?.artists?.index;
-    if (Array.isArray(index)) {
-      index.forEach((idx: any) => {
-        if (Array.isArray(idx.artist)) {
-          artistCount += idx.artist.length;
-        }
-      });
-    }
-
-    return NextResponse.json({
-      scanStatus: {
-        ...scanData["subsonic-response"]?.scanStatus,
-        artistCount: artistCount
-      },
-      nowPlaying: nowPlaying ? {
-        id: nowPlaying.id,
-        title: nowPlaying.title,
-        artist: nowPlaying.artist,
-        album: nowPlaying.album,
-        coverArt: nowPlaying.coverArt,
-        duration: nowPlaying.duration, // seconds
-        minutesAgo: nowPlaying.minutesAgo,
-        player: nowPlaying.username
-      } : null,
-    });
-
+    [nowPlayingData, scanData] = await Promise.all([
+      nowPlayingRes.json(),
+      scanRes.json(),
+    ]);
   } catch (error) {
-    console.error("Navidrome API Error:", error);
-    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
+    throw new ApiError(
+      "Failed to parse Navidrome API response",
+      502,
+      ApiErrorCode.UPSTREAM_ERROR,
+      error instanceof Error ? error.message : "Unknown parsing error"
+    );
   }
-}
+
+  const nowPlaying = nowPlayingData["subsonic-response"]?.nowPlaying?.entry?.[0];
+  
+  // Get artist count with caching (this is expensive, so cache it)
+  const artistCount = await getArtistCount(baseUrl, user, queryString);
+
+  return NextResponse.json({
+    scanStatus: {
+      ...scanData["subsonic-response"]?.scanStatus,
+      artistCount,
+    },
+    nowPlaying: nowPlaying
+      ? {
+          id: nowPlaying.id,
+          title: nowPlaying.title,
+          artist: nowPlaying.artist,
+          album: nowPlaying.album,
+          coverArt: nowPlaying.coverArt,
+          duration: nowPlaying.duration,
+          minutesAgo: nowPlaying.minutesAgo,
+          player: nowPlaying.username,
+        }
+      : null,
+  });
+});
 

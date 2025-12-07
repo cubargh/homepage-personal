@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { spawn } from "child_process";
+import { ApiError, ApiErrorCode } from "@/lib/api-error";
 
 /**
  * API endpoint to proxy/transcode RTSP streams
@@ -14,7 +15,17 @@ export async function GET(request: NextRequest) {
 
   if (!url) {
     return Response.json(
-      { error: "URL parameter is required" },
+      { error: "URL parameter is required", code: ApiErrorCode.BAD_REQUEST },
+      { status: 400 }
+    );
+  }
+
+  // Basic URL validation
+  try {
+    new URL(url);
+  } catch {
+    return Response.json(
+      { error: "Invalid URL format", code: ApiErrorCode.VALIDATION_ERROR },
       { status: 400 }
     );
   }

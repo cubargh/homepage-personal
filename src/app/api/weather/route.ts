@@ -1,99 +1,158 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadConfig } from "@/lib/config";
 import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
+import { withErrorHandling, requireConfig } from "@/lib/api-handler";
+import { ApiError, ApiErrorCode } from "@/lib/api-error";
 import { addDays, isSameDay, parseISO } from "date-fns";
 
 const BASE_URL = "https://api.openweathermap.org/data/2.5";
 
-export async function GET(request: NextRequest) {
-  const config = loadConfig();
-  const weatherConfig = getFirstEnabledWidgetConfig(config.widgets.weather);
-  
-  if (!weatherConfig) {
-    return NextResponse.json({ error: "Weather configuration missing or disabled" }, { status: 500 });
-  }
+interface WeatherApiCurrent {
+  name: string;
+  sys: { country: string };
+  main: {
+    temp: number;
+    humidity: number;
+  };
+  wind: { speed: number };
+  weather: Array<{
+    main: string;
+    description: string;
+    icon: string;
+  }>;
+}
 
-  const API_KEY = weatherConfig.api_key;
-  const lat = weatherConfig.lat;
-  const lon = weatherConfig.lon;
-  const units = weatherConfig.units;
+interface WeatherApiForecastItem {
+  dt_txt: string;
+  main: {
+    temp_min: number;
+    temp_max: number;
+  };
+  weather: Array<{
+    main: string;
+    icon: string;
+  }>;
+}
 
-  if (!API_KEY) {
-    return NextResponse.json({ error: "API Configuration Missing" }, { status: 500 });
-  }
+interface WeatherApiForecast {
+  list: WeatherApiForecastItem[];
+}
 
-  try {
-    const [currentRes, forecastRes] = await Promise.all([
-      fetch(`${BASE_URL}/weather?lat=${lat}&lon=${lon}&units=${units}&appid=${API_KEY}`, { next: { revalidate: 1800 } }),
-      fetch(`${BASE_URL}/forecast?lat=${lat}&lon=${lon}&units=${units}&appid=${API_KEY}`, { next: { revalidate: 1800 } })
-    ]);
+interface DailyForecast {
+  date: string;
+  temp_min: number;
+  temp_max: number;
+  condition: string;
+  icon: string;
+}
 
-    if (!currentRes.ok || !forecastRes.ok) {
-        return NextResponse.json({ error: "Upstream Error" }, { status: 502 });
-    }
+const FORECAST_DAYS = 5;
 
-    const currentData = await currentRes.json();
-    const forecastData = await forecastRes.json();
+function processForecast(forecastData: WeatherApiForecast): DailyForecast[] {
+  const dailyForecast: DailyForecast[] = [];
+  const today = new Date();
 
-    // Process forecast to get next 5 days (1 data point per day, e.g., noon)
-    const dailyForecast: any[] = [];
-    const today = new Date();
-    
-    // Simple logic: pick the forecast item closest to 12:00 PM for the next 5 days
-    for (let i = 1; i <= 5; i++) {
-        const targetDate = addDays(today, i);
-        const dayForecasts = forecastData.list.filter((item: any) => 
-            isSameDay(parseISO(item.dt_txt), targetDate)
-        );
-        
-        // Find closest to noon
-        const noonForecast = dayForecasts.reduce((prev: any, curr: any) => {
-            const prevDiff = Math.abs(parseInt(prev.dt_txt.split(" ")[1].split(":")[0]) - 12);
-            const currDiff = Math.abs(parseInt(curr.dt_txt.split(" ")[1].split(":")[0]) - 12);
-            return currDiff < prevDiff ? curr : prev;
-        }, dayForecasts[0]);
+  // Process forecast to get next N days
+  for (let i = 1; i <= FORECAST_DAYS; i++) {
+    const targetDate = addDays(today, i);
+    const dayForecasts = forecastData.list.filter((item) =>
+      isSameDay(parseISO(item.dt_txt), targetDate)
+    );
 
-        if (noonForecast) {
-            dailyForecast.push({
-                date: noonForecast.dt_txt,
-                temp_min: noonForecast.main.temp_min, // Note: standard forecast API 3h steps doesn't give daily min/max easily without aggregation. 
-                // For simplicity in a widget, 'temp' at noon is good, or we can aggregate min/max from all points of that day.
-                // Let's aggregate for better accuracy.
-                temp_max: Math.max(...dayForecasts.map((f: any) => f.main.temp_max)),
-                // Recalculate min correctly
-                real_temp_min: Math.min(...dayForecasts.map((f: any) => f.main.temp_min)),
-                condition: noonForecast.weather[0].main,
-                icon: noonForecast.weather[0].icon
-            });
-        }
-    }
-    
-    // Correct the shape
-    const processedForecast = dailyForecast.map(item => ({
-        date: item.date,
-        temp_min: item.real_temp_min,
-        temp_max: item.temp_max,
-        condition: item.condition,
-        icon: item.icon
-    }));
+    if (dayForecasts.length === 0) continue;
 
-    return NextResponse.json({
-        location: {
-            city: currentData.name,
-            country: currentData.sys.country
-        },
-        current: {
-            temp: currentData.main.temp,
-            humidity: currentData.main.humidity,
-            windSpeed: currentData.wind.speed,
-            condition: currentData.weather[0].main,
-            description: currentData.weather[0].description,
-            icon: currentData.weather[0].icon,
-        },
-        forecast: processedForecast
+    // Find forecast closest to noon (12:00 PM)
+    const noonForecast = dayForecasts.reduce((prev, curr) => {
+      const prevHour = parseInt(prev.dt_txt.split(" ")[1].split(":")[0]);
+      const currHour = parseInt(curr.dt_txt.split(" ")[1].split(":")[0]);
+      const prevDiff = Math.abs(prevHour - 12);
+      const currDiff = Math.abs(currHour - 12);
+      return currDiff < prevDiff ? curr : prev;
     });
 
-  } catch (error) {
-    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
+    // Aggregate min/max from all forecasts for that day
+    const tempMin = Math.min(...dayForecasts.map((f) => f.main.temp_min));
+    const tempMax = Math.max(...dayForecasts.map((f) => f.main.temp_max));
+
+    dailyForecast.push({
+      date: noonForecast.dt_txt,
+      temp_min: tempMin,
+      temp_max: tempMax,
+      condition: noonForecast.weather[0]?.main || "",
+      icon: noonForecast.weather[0]?.icon || "",
+    });
   }
+
+  return dailyForecast;
 }
+
+export const GET = withErrorHandling(async (request: NextRequest) => {
+  const config = loadConfig();
+  const weatherConfig = requireConfig(
+    getFirstEnabledWidgetConfig(config.widgets.weather),
+    "Weather configuration missing or disabled"
+  );
+
+  const { api_key, lat, lon, units } = weatherConfig;
+
+  if (!api_key) {
+    throw new ApiError("API Configuration Missing", 500, ApiErrorCode.MISSING_CONFIG);
+  }
+
+  const [currentRes, forecastRes] = await Promise.all([
+    fetch(
+      `${BASE_URL}/weather?lat=${lat}&lon=${lon}&units=${units}&appid=${api_key}`,
+      { next: { revalidate: 1800 } }
+    ),
+    fetch(
+      `${BASE_URL}/forecast?lat=${lat}&lon=${lon}&units=${units}&appid=${api_key}`,
+      { next: { revalidate: 1800 } }
+    ),
+  ]);
+
+  if (!currentRes.ok || !forecastRes.ok) {
+    throw new ApiError("Upstream Error", 502, ApiErrorCode.UPSTREAM_ERROR);
+  }
+
+  let currentData: WeatherApiCurrent;
+  let forecastData: WeatherApiForecast;
+  
+  try {
+    currentData = (await currentRes.json()) as WeatherApiCurrent;
+    forecastData = (await forecastRes.json()) as WeatherApiForecast;
+  } catch (error) {
+    throw new ApiError(
+      "Failed to parse weather API response",
+      502,
+      ApiErrorCode.UPSTREAM_ERROR,
+      error instanceof Error ? error.message : "Unknown parsing error"
+    );
+  }
+  
+  // Validate response structure
+  if (!currentData?.main?.temp || !forecastData?.list) {
+    throw new ApiError(
+      "Invalid weather API response structure",
+      502,
+      ApiErrorCode.UPSTREAM_ERROR
+    );
+  }
+
+  const processedForecast = processForecast(forecastData);
+
+  return NextResponse.json({
+    location: {
+      city: currentData.name,
+      country: currentData.sys.country,
+    },
+    current: {
+      temp: currentData.main.temp,
+      humidity: currentData.main.humidity,
+      windSpeed: currentData.wind.speed,
+      condition: currentData.weather[0]?.main || "",
+      description: currentData.weather[0]?.description || "",
+      icon: currentData.weather[0]?.icon || "",
+    },
+    forecast: processedForecast,
+  });
+});

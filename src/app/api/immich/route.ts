@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadConfig } from "@/lib/config";
 import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
+import { withErrorHandling, requireConfig } from "@/lib/api-handler";
+import { ApiError, ApiErrorCode } from "@/lib/api-error";
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandling(async (request: NextRequest) => {
   const config = loadConfig();
-  const immichConfig = getFirstEnabledWidgetConfig(config.widgets.immich);
+  const immichConfig = requireConfig(
+    getFirstEnabledWidgetConfig(config.widgets.immich),
+    "Immich configuration missing or disabled"
+  );
 
-  if (!immichConfig || !immichConfig.api_key || !immichConfig.url) {
-    return NextResponse.json(
-      { error: "Immich configuration missing or disabled" },
-      { status: 500 }
+  if (!immichConfig.api_key || !immichConfig.url) {
+    throw new ApiError(
+      "Immich configuration incomplete",
+      500,
+      ApiErrorCode.MISSING_CONFIG
     );
   }
 
@@ -19,28 +25,35 @@ export async function GET(request: NextRequest) {
   const baseUrl = url.replace(/\/api\/?$/, "").replace(/\/$/, "");
   const apiUrl = `${baseUrl}/api/server/statistics`;
 
-  try {
-    const response = await fetch(apiUrl, {
-      headers: {
-        "x-api-key": api_key,
-        Accept: "application/json",
-      },
-      next: { revalidate: 3600 }, // Cache for 1 hour
-    });
+  const response = await fetch(apiUrl, {
+    headers: {
+      "x-api-key": api_key,
+      Accept: "application/json",
+    },
+    next: { revalidate: 3600 }, // Cache for 1 hour
+  });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Immich API Error:", response.status, errorText);
-      return NextResponse.json(
-        { error: "Upstream Error" },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error("Immich Internal Error:", error);
-    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "Unknown error");
+    throw new ApiError(
+      "Upstream Error",
+      response.status,
+      ApiErrorCode.UPSTREAM_ERROR,
+      errorText
+    );
   }
-}
+
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw new ApiError(
+      "Failed to parse Immich API response",
+      502,
+      ApiErrorCode.UPSTREAM_ERROR,
+      error instanceof Error ? error.message : "Unknown parsing error"
+    );
+  }
+
+  return NextResponse.json(data);
+});

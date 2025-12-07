@@ -1,63 +1,68 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadConfig } from "@/lib/config";
 import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
+import { requireConfig } from "@/lib/api-handler";
+import { ApiError, ApiErrorCode } from "@/lib/api-error";
 import md5 from "crypto-js/md5";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const config = loadConfig();
-  const navidromeConfig = getFirstEnabledWidgetConfig(config.widgets.navidrome);
-  const { id } = await params;
-
-  if (
-    !navidromeConfig ||
-    !navidromeConfig.url ||
-    !navidromeConfig.user ||
-    !navidromeConfig.password
-  ) {
-    return new NextResponse("Navidrome configuration missing", { status: 500 });
-  }
-
-  const { url, user, password } = navidromeConfig;
-  
-  const baseUrl = url.replace(/\/$/, "");
+function buildAuthParams(user: string, password: string): string {
   const salt = Math.random().toString(36).substring(7);
   const authToken = md5(password + salt).toString();
-  
-  const queryParams = new URLSearchParams({
+
+  const params = new URLSearchParams({
     u: user,
     t: authToken,
     s: salt,
     v: "1.16.1",
     c: "personal-dashboard",
-    id: id // Cover Art ID - in Navidrome this is usually e.g. "mf-..."
   });
 
-  // Important: Navidrome sometimes uses "id" or "coverArt" depending on context. 
-  // Subsonic 'getCoverArt' expects 'id'.
-  // The ID from nowPlaying.coverArt might be "mf-xxxx". 
-  // Check if the ID needs to be passed differently.
-  // The logs showed "coverArt: 'mf-XYqCWQT755nJNw7pSP0Qqy_69250e9a'"
-  // This should be the correct ID to pass to getCoverArt.
+  return params.toString();
+}
 
-  const imageUrl = `${baseUrl}/rest/getCoverArt?${queryParams.toString()}`;
-  
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id } = await params;
+    const config = loadConfig();
+    const navidromeConfig = requireConfig(
+      getFirstEnabledWidgetConfig(config.widgets.navidrome),
+      "Navidrome configuration missing"
+    );
+
+    if (!navidromeConfig.url || !navidromeConfig.user || !navidromeConfig.password) {
+      throw new ApiError(
+        "Navidrome configuration incomplete",
+        500,
+        ApiErrorCode.MISSING_CONFIG
+      );
+    }
+
+    const { url, user, password } = navidromeConfig;
+    const baseUrl = url.replace(/\/$/, "");
+    const authParams = buildAuthParams(user, password);
+
+    const queryParams = new URLSearchParams(authParams);
+    queryParams.set("id", id); // Cover Art ID
+
+    const imageUrl = `${baseUrl}/rest/getCoverArt?${queryParams.toString()}`;
+
     const response = await fetch(imageUrl);
 
     if (!response.ok) {
-      console.error(`Navidrome Proxy Error: Upstream ${response.status} ${response.statusText}`);
-      return new NextResponse("Failed to fetch image", { status: response.status });
+      throw new ApiError(
+        "Failed to fetch image",
+        response.status,
+        ApiErrorCode.UPSTREAM_ERROR
+      );
     }
 
     const contentType = response.headers.get("content-type");
-    const contentLength = response.headers.get("content-length");
-    
+
     if (!contentType?.startsWith("image/")) {
-       console.error("Navidrome Proxy Error: Response is not an image", contentType);
-       // Still return it, maybe it's a weird mime type, but log it
+      console.warn("Navidrome Proxy Warning: Response may not be an image", contentType);
     }
 
     const arrayBuffer = await response.arrayBuffer();
@@ -70,6 +75,9 @@ export async function GET(
       },
     });
   } catch (error) {
+    if (error instanceof ApiError) {
+      return new NextResponse(error.message, { status: error.statusCode });
+    }
     console.error("Navidrome Image Proxy Error:", error);
     return new NextResponse("Internal Error", { status: 500 });
   }

@@ -1,6 +1,7 @@
 import yaml from "js-yaml";
 import fs from "fs";
 import path from "path";
+import { validateConfig } from "./config-validation";
 
 // Base widget config types
 export interface WeatherWidgetConfig {
@@ -232,42 +233,111 @@ export {
   getFirstEnabledWidgetConfig,
 } from "./widget-config-utils";
 
-// let configCache: AppConfig | null = null;
+let configCache: AppConfig | null = null;
+let configCacheTime: number = 0;
+let configPath: string | null = null;
+let isWatching = false;
 
-export function loadConfig(): AppConfig {
-  // if (configCache) {
-  //   return configCache;
-  // }
+function getConfigPath(): string {
+  return process.env.CONFIG_FILE || path.join(process.cwd(), "config.yaml");
+}
 
-  const configPath =
-    process.env.CONFIG_FILE || path.join(process.cwd(), "config.yaml");
-
-  try {
-    if (!fs.existsSync(configPath)) {
-      // Fallback to example if no config exists in dev, or just throw
-      const examplePath = path.join(process.cwd(), "config.example.yaml");
-      if (
-        process.env.NODE_ENV === "development" &&
-        fs.existsSync(examplePath)
-      ) {
-        console.warn(
-          `Config file not found at ${configPath}. Loading config.example.yaml for development.`
-        );
-        const fileContents = fs.readFileSync(examplePath, "utf8");
-        const config = yaml.load(fileContents) as AppConfig;
-        // configCache = config;
-        return config;
+function loadConfigFromFile(filePath: string): AppConfig {
+  if (!fs.existsSync(filePath)) {
+    // Fallback to example if no config exists in dev, or just throw
+    const examplePath = path.join(process.cwd(), "config.example.yaml");
+    if (process.env.NODE_ENV === "development" && fs.existsSync(examplePath)) {
+      console.warn(
+        `Config file not found at ${filePath}. Loading config.example.yaml for development.`
+      );
+      const fileContents = fs.readFileSync(examplePath, "utf8");
+      const config = yaml.load(fileContents) as AppConfig;
+      // Validate config in development
+      if (process.env.NODE_ENV === "development") {
+        try {
+          return validateConfig(config);
+        } catch (e) {
+          console.warn("Config validation warning:", e);
+          return config;
+        }
       }
-      throw new Error(`Config file not found at ${configPath}`);
+      return config;
     }
+    throw new Error(`Config file not found at ${filePath}`);
+  }
 
-    const fileContents = fs.readFileSync(configPath, "utf8");
-    const config = yaml.load(fileContents) as AppConfig;
+  const fileContents = fs.readFileSync(filePath, "utf8");
+  const config = yaml.load(fileContents) as AppConfig;
 
-    // configCache = config;
-    return config;
+  // Validate config
+  try {
+    return validateConfig(config);
   } catch (e) {
-    console.error(`Failed to load config from ${configPath}`, e);
+    // In production, log error but don't fail
+    if (process.env.NODE_ENV === "production") {
+      console.error("Config validation error:", e);
+      return config;
+    }
+    // In development, throw to help catch issues early
     throw e;
   }
+}
+
+function setupFileWatcher(filePath: string) {
+  if (isWatching || process.env.NODE_ENV === "production") {
+    return;
+  }
+
+  try {
+    fs.watchFile(filePath, { interval: 1000 }, (curr, prev) => {
+      if (curr.mtime !== prev.mtime) {
+        console.log(`Config file changed, clearing cache: ${filePath}`);
+        configCache = null;
+        configCacheTime = 0;
+      }
+    });
+    isWatching = true;
+  } catch (error) {
+    // File watching may fail in some environments, continue without it
+    console.warn("Failed to set up config file watcher:", error);
+  }
+}
+
+export function loadConfig(): AppConfig {
+  const currentConfigPath = getConfigPath();
+  const cacheMaxAge = process.env.NODE_ENV === "production" ? 60000 : 0; // 1 minute in production, no cache in dev
+
+  // Check if cache is valid
+  if (
+    configCache &&
+    configPath === currentConfigPath &&
+    (cacheMaxAge === 0 || Date.now() - configCacheTime < cacheMaxAge)
+  ) {
+    return configCache;
+  }
+
+  // Setup file watcher in development
+  if (
+    process.env.NODE_ENV === "development" &&
+    configPath !== currentConfigPath
+  ) {
+    setupFileWatcher(currentConfigPath);
+  }
+
+  try {
+    const config = loadConfigFromFile(currentConfigPath);
+    configCache = config;
+    configCacheTime = Date.now();
+    configPath = currentConfigPath;
+    return config;
+  } catch (e) {
+    console.error(`Failed to load config from ${currentConfigPath}`, e);
+    throw e;
+  }
+}
+
+// Function to clear cache manually if needed
+export function clearConfigCache(): void {
+  configCache = null;
+  configCacheTime = 0;
 }

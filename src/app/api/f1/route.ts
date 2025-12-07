@@ -1,38 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withErrorHandling, requireQueryParam } from "@/lib/api-handler";
+import { ApiError, ApiErrorCode } from "@/lib/api-error";
 
 const F1_API_DEV_BASE = "https://f1api.dev/api";
+const ALLOWED_PATHS = [
+  "current/next",
+  "current/drivers-championship",
+  "current/constructors-championship",
+] as const;
 
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const path = searchParams.get("path");
+export const GET = withErrorHandling(async (request: NextRequest) => {
+  const path = requireQueryParam(request, "path");
 
-  if (!path) {
-    return NextResponse.json({ error: "Path is required" }, { status: 400 });
-  }
-
-  // Allowed paths
-  // - current/next
-  // - current/drivers-championship
-  // - current/constructors-championship
-  
-  if (!["current/next", "current/drivers-championship", "current/constructors-championship"].includes(path)) {
-       return NextResponse.json({ error: "Endpoint not supported" }, { status: 501 });
+  if (!ALLOWED_PATHS.includes(path as typeof ALLOWED_PATHS[number])) {
+    throw new ApiError("Endpoint not supported", 501, ApiErrorCode.INTERNAL_ERROR);
   }
 
   const url = `${F1_API_DEV_BASE}/${path}`;
 
-  try {
-    const response = await fetch(url, {
-        next: { revalidate: 3600 } // Cache for 1 hour
-    });
+  const response = await fetch(url, {
+    next: { revalidate: 3600 }, // Cache for 1 hour
+  });
 
-    if (!response.ok) {
-        return NextResponse.json({ error: "Upstream Error" }, { status: response.status });
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
+  if (!response.ok) {
+    throw new ApiError("Upstream Error", response.status, ApiErrorCode.UPSTREAM_ERROR);
   }
-}
+
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw new ApiError(
+      "Failed to parse F1 API response",
+      502,
+      ApiErrorCode.UPSTREAM_ERROR,
+      error instanceof Error ? error.message : "Unknown parsing error"
+    );
+  }
+
+  return NextResponse.json(data);
+});

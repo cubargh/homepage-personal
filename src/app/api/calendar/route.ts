@@ -2,91 +2,129 @@ import { NextResponse } from "next/server";
 import ical from "node-ical";
 import { loadConfig, CalendarWidgetConfig } from "@/lib/config";
 import { normalizeWidgetConfig } from "@/lib/widget-config-utils";
+import { withErrorHandling } from "@/lib/api-handler";
+import { ApiError, ApiErrorCode } from "@/lib/api-error";
 
-export async function GET() {
+interface CalendarEvent {
+  id: string;
+  summary: string;
+  description?: string;
+  location?: string;
+  start: Date;
+  end: Date;
+  allDay: boolean;
+  calendarIndex: number;
+  calendarColor: string | null;
+}
+
+function parseCalendarConfig(urlConfig: string): { url: string; color: string | null } {
+  const trimmed = urlConfig.trim();
+  const parts = trimmed.split(";");
+  let cleanUrl: string;
+  let color: string | null = null;
+
+  if (parts.length === 2) {
+    color = parts[0].trim() || null;
+    cleanUrl = parts[1].trim();
+  } else {
+    cleanUrl = parts[0].trim();
+  }
+
+  // Handle webcal:// protocol by replacing with https://
+  if (cleanUrl.startsWith("webcal://")) {
+    cleanUrl = "https://" + cleanUrl.substring(9);
+  }
+
+  return { url: cleanUrl, color };
+}
+
+async function fetchCalendarEvents(
+  url: string,
+  color: string | null,
+  index: number
+): Promise<CalendarEvent[]> {
+  try {
+    const response = await fetch(url, { next: { revalidate: 300 } });
+    if (!response.ok) {
+      console.error(`Failed to fetch ICS file: ${url}`);
+      return [];
+    }
+
+    const icsData = await response.text();
+    const events = await ical.async.parseICS(icsData);
+
+    let eventCounter = 0;
+    return Object.values(events)
+      .filter((event): event is ical.VEvent => event.type === "VEVENT")
+      .map((event) => {
+        eventCounter++;
+        // Use uid if available, otherwise generate unique ID with index, counter, and random
+        const id = (event as ical.VEvent).uid || `${index}-${eventCounter}-${Math.random().toString(36).substring(2, 9)}`;
+        return {
+          id,
+          summary: event.summary || "",
+          description: event.description,
+          location: event.location,
+          start: event.start instanceof Date ? event.start : new Date(event.start),
+          end: event.end instanceof Date ? event.end : new Date(event.end),
+          allDay: event.datetype === "date",
+          calendarIndex: index,
+          calendarColor: color,
+        };
+      });
+  } catch (e) {
+    console.error(`Error processing calendar ${index}:`, e);
+    return [];
+  }
+}
+
+export const GET = withErrorHandling(async () => {
   const config = loadConfig();
-  
-  // Handle both single config and array of configs
+
   const calendarConfigs = normalizeWidgetConfig<CalendarWidgetConfig>(
     config.widgets.calendar
   ).filter((c) => c.enabled);
 
   if (calendarConfigs.length === 0) {
-    return NextResponse.json({ error: "Calendar ICS URL not configured" }, { status: 500 });
+    throw new ApiError(
+      "Calendar ICS URL not configured",
+      500,
+      ApiErrorCode.MISSING_CONFIG
+    );
   }
 
-  try {
-    // Aggregate all ICS URLs from all calendar widget instances
-    const allIcsUrls: string[] = [];
-    calendarConfigs.forEach((calendarConfig) => {
-      if (calendarConfig.ics_urls) {
-        allIcsUrls.push(...calendarConfig.ics_urls);
-      }
-    });
-
-    if (allIcsUrls.length === 0) {
-      return NextResponse.json({ error: "Calendar ICS URL not configured" }, { status: 500 });
+  // Aggregate all ICS URLs from all calendar widget instances
+  const allIcsUrls: string[] = [];
+  calendarConfigs.forEach((calendarConfig) => {
+    if (calendarConfig.ics_urls) {
+      allIcsUrls.push(...calendarConfig.ics_urls);
     }
+  });
 
-    // Parse URLs and colors from config (format: "url" or "hexcolor;url")
-    const parsedConfigs = allIcsUrls.map((urlConfig) => {
-      const trimmed = urlConfig.trim();
-      const parts = trimmed.split(';');
-      let cleanUrl: string;
-      let color: string | null = null;
-      
-      if (parts.length === 2) {
-        // Format: "hexcolor;url"
-        color = parts[0].trim() || null;
-        cleanUrl = parts[1].trim();
-      } else {
-        // Format: "url" (no color)
-        cleanUrl = parts[0].trim();
-      }
-      
-      // Handle webcal:// protocol by replacing with https://
-      if (cleanUrl.startsWith('webcal://')) {
-        cleanUrl = 'https://' + cleanUrl.substring(9);
-      }
-      
-      return { url: cleanUrl, color };
-    }).filter(config => config.url.length > 0);
-    
-    const allEvents = await Promise.all(parsedConfigs.map(async ({ url, color }, index) => {
-        try {
-            const response = await fetch(url, { next: { revalidate: 300 } }); // Cache for 5 minutes
-            if (!response.ok) {
-                console.error(`Failed to fetch ICS file: ${url}`);
-                return [];
-            }
-            const icsData = await response.text();
-            const events = await ical.async.parseICS(icsData);
-
-            return Object.values(events)
-                .filter((event: any) => event.type === 'VEVENT')
-                .map((event: any) => ({
-                    id: event.uid,
-                    summary: event.summary,
-                    description: event.description,
-                    location: event.location,
-                    start: event.start,
-                    end: event.end,
-                    allDay: event.datetype === 'date', 
-                    calendarIndex: index, // Assign index for coloring
-                    calendarColor: color // Custom color from config
-                }));
-        } catch (e) {
-            console.error(`Error processing calendar ${index}:`, e);
-            return [];
-        }
-    }));
-
-    // Flatten array of arrays
-    const flatEvents = allEvents.flat().sort((a: any, b: any) => new Date(a.start).getTime() - new Date(b.start).getTime());
-
-    return NextResponse.json({ events: flatEvents });
-  } catch (error) {
-    console.error("Calendar fetch error:", error);
-    return NextResponse.json({ error: `Failed to fetch calendar data: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
+  if (allIcsUrls.length === 0) {
+    throw new ApiError(
+      "Calendar ICS URL not configured",
+      500,
+      ApiErrorCode.MISSING_CONFIG
+    );
   }
-}
+
+  // Parse URLs and colors from config
+  const parsedConfigs = allIcsUrls
+    .map(parseCalendarConfig)
+    .filter((config) => config.url.length > 0);
+
+  // Fetch all calendars in parallel
+  const allEvents = await Promise.all(
+    parsedConfigs.map(({ url, color }, index) =>
+      fetchCalendarEvents(url, color, index)
+    )
+  );
+
+  // Flatten and sort events
+  const flatEvents = allEvents
+    .flat()
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
+
+  return NextResponse.json({ events: flatEvents });
+});

@@ -1,28 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadConfig } from "@/lib/config";
 import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
+import { requireConfig } from "@/lib/api-handler";
+import { ApiError, ApiErrorCode } from "@/lib/api-error";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const config = loadConfig();
-  const jfConfig = getFirstEnabledWidgetConfig(config.widgets.jellyfin);
-
-  if (!jfConfig || !jfConfig.api_key || !jfConfig.url) {
-    return new NextResponse("Config missing", { status: 500 });
-  }
-
-  const { url, api_key } = jfConfig;
-  const searchParams = request.nextUrl.searchParams;
-  const type = searchParams.get("type") || "Primary";
-
-  // Construct Jellyfin Image URL
-  // /Items/{Id}/Images/{Type}
-  const imageUrl = `${url}/Items/${id}/Images/${type}`;
-
   try {
+    const { id } = await params;
+    const config = loadConfig();
+    const jfConfig = requireConfig(
+      getFirstEnabledWidgetConfig(config.widgets.jellyfin),
+      "Jellyfin configuration missing"
+    );
+
+    if (!jfConfig.api_key || !jfConfig.url) {
+      throw new ApiError(
+        "Jellyfin configuration incomplete",
+        500,
+        ApiErrorCode.MISSING_CONFIG
+      );
+    }
+
+    const { url, api_key } = jfConfig;
+    const searchParams = request.nextUrl.searchParams;
+    const type = searchParams.get("type") || "Primary";
+
+    // Construct Jellyfin Image URL
+    const imageUrl = `${url}/Items/${id}/Images/${type}`;
+
     const response = await fetch(imageUrl, {
       headers: {
         "X-Emby-Token": api_key,
@@ -30,7 +38,11 @@ export async function GET(
     });
 
     if (!response.ok) {
-      return new NextResponse("Image not found", { status: response.status });
+      throw new ApiError(
+        "Image not found",
+        response.status,
+        ApiErrorCode.NOT_FOUND
+      );
     }
 
     const contentType = response.headers.get("Content-Type") || "image/jpeg";
@@ -44,6 +56,9 @@ export async function GET(
       },
     });
   } catch (error) {
+    if (error instanceof ApiError) {
+      return new NextResponse(error.message, { status: error.statusCode });
+    }
     console.error("Jellyfin Image Proxy Error:", error);
     return new NextResponse("Internal Error", { status: 500 });
   }

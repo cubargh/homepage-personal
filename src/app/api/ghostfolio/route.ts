@@ -1,54 +1,58 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadConfig } from "@/lib/config";
 import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
+import { withErrorHandling, requireConfig } from "@/lib/api-handler";
+import { ApiError, ApiErrorCode } from "@/lib/api-error";
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandling(async (request: NextRequest) => {
   const config = loadConfig();
-  const ghostfolioConfig = getFirstEnabledWidgetConfig(config.widgets.ghostfolio);
+  const ghostfolioConfig = requireConfig(
+    getFirstEnabledWidgetConfig(config.widgets.ghostfolio),
+    "Ghostfolio configuration missing or disabled"
+  );
 
-  if (
-    !ghostfolioConfig ||
-    !ghostfolioConfig.public_token ||
-    !ghostfolioConfig.url
-  ) {
-    return NextResponse.json(
-      { error: "Ghostfolio configuration missing or disabled" },
-      { status: 500 }
+  if (!ghostfolioConfig.public_token || !ghostfolioConfig.url) {
+    throw new ApiError(
+      "Ghostfolio configuration incomplete",
+      500,
+      ApiErrorCode.MISSING_CONFIG
     );
   }
 
   const { url, public_token } = ghostfolioConfig;
 
-  // Example: https://your-ghostfolio-instance.com/api/v1/portfolio/public/YOUR-PUBLIC-ID
-  // The user guide says: https://your-ghostfolio-instance.com/api/v1/public/YOUR-PUBLIC-ID/portfolio
-  // Let's verify the endpoint structure from the prompt.
-  // Prompt says: https://your-ghostfolio-instance.com/api/v1/public/YOUR-PUBLIC-ID/portfolio
-
   // Clean base URL
   const baseUrl = url.replace(/\/$/, "");
   const apiUrl = `${baseUrl}/api/v1/public/${public_token}/portfolio`;
 
-  try {
-    const response = await fetch(apiUrl, {
-      headers: {
-        Accept: "application/json",
-      },
-      next: { revalidate: 300 }, // Cache for 5 minutes
-    });
+  const response = await fetch(apiUrl, {
+    headers: {
+      Accept: "application/json",
+    },
+    next: { revalidate: 300 }, // Cache for 5 minutes
+  });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Ghostfolio API Error:", response.status, errorText);
-      return NextResponse.json(
-        { error: "Upstream Error" },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error("Ghostfolio Internal Error:", error);
-    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "Unknown error");
+    throw new ApiError(
+      "Upstream Error",
+      response.status,
+      ApiErrorCode.UPSTREAM_ERROR,
+      errorText
+    );
   }
-}
+
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw new ApiError(
+      "Failed to parse Ghostfolio API response",
+      502,
+      ApiErrorCode.UPSTREAM_ERROR,
+      error instanceof Error ? error.message : "Unknown parsing error"
+    );
+  }
+
+  return NextResponse.json(data);
+});

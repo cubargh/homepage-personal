@@ -347,6 +347,43 @@ export function Spotlight({
 
   const results = getResults();
 
+  // Handle paste events globally
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      // Don't handle paste if user is typing in an input, textarea, or contenteditable
+      // (let default paste behavior work in those cases)
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Get pasted text
+      const pastedText = e.clipboardData?.getData("text/plain")?.trim();
+      if (!pastedText) return;
+
+      // Open spotlight with pasted content (or update query if already open)
+      e.preventDefault();
+      e.stopPropagation();
+      setIsOpen(true);
+      setQuery(pastedText);
+      setSelectedIndex(0);
+      setTimeout(() => {
+        inputRef.current?.focus();
+        // Select all text so user can easily replace it if needed
+        inputRef.current?.select();
+      }, 0);
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => {
+      window.removeEventListener("paste", handlePaste);
+    };
+  }, []);
+
   // Handle keyboard events globally
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

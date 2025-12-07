@@ -7,9 +7,16 @@ import { Card } from "@/components/ui/card";
 import { Search, Globe, Link2, ExternalLink, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+interface SearchProvider {
+  name: string;
+  url: string;
+  icon?: string;
+}
+
 interface SpotlightConfig {
-  search_engine?: "google" | "duckduckgo" | "bing" | "custom";
-  custom_search_url?: string;
+  search_providers?: SearchProvider[];
+  search_engine?: "google" | "duckduckgo" | "bing" | "custom"; // Legacy, for backward compatibility
+  custom_search_url?: string; // Legacy, for backward compatibility
   fuzzy_search?: boolean;
 }
 
@@ -34,6 +41,17 @@ const SEARCH_ENGINE_URLS: Record<string, string> = {
   google: "https://www.google.com/search?q=",
   duckduckgo: "https://duckduckgo.com/?q=",
   bing: "https://www.bing.com/search?q=",
+};
+
+// Get default search providers for backward compatibility
+const getDefaultSearchProviders = (): SearchProvider[] => {
+  return [
+    {
+      name: "Google",
+      url: "https://www.google.com/search?q={query}",
+      icon: "google",
+    },
+  ];
 };
 
 export function Spotlight({
@@ -232,23 +250,43 @@ export function Spotlight({
     return domainPattern.test(trimmed);
   };
 
-  // Generate search URL based on config
+  // Get search providers from config (new format) or convert legacy format
+  const getSearchProviders = useCallback((): SearchProvider[] => {
+    // New format: use search_providers array
+    if (spotlightConfig.search_providers && spotlightConfig.search_providers.length > 0) {
+      return spotlightConfig.search_providers;
+    }
+
+    // Legacy format: convert old search_engine config to new format
+    if (spotlightConfig.search_engine === "custom" && spotlightConfig.custom_search_url) {
+      return [
+        {
+          name: "Custom Search",
+          url: spotlightConfig.custom_search_url,
+          icon: "globe",
+        },
+      ];
+    }
+
+    const engine = spotlightConfig.search_engine || "google";
+    const engineName = engine.charAt(0).toUpperCase() + engine.slice(1);
+    const baseUrl = SEARCH_ENGINE_URLS[engine] || SEARCH_ENGINE_URLS.google;
+    
+    return [
+      {
+        name: engineName,
+        url: baseUrl + "{query}",
+        icon: engine,
+      },
+    ];
+  }, [spotlightConfig]);
+
+  // Generate search URL from provider
   const getSearchUrl = useCallback(
-    (searchQuery: string): string => {
-      if (
-        spotlightConfig.search_engine === "custom" &&
-        spotlightConfig.custom_search_url
-      ) {
-        return spotlightConfig.custom_search_url.replace(
-          "{query}",
-          encodeURIComponent(searchQuery)
-        );
-      }
-      const engine = spotlightConfig.search_engine || "google";
-      const baseUrl = SEARCH_ENGINE_URLS[engine] || SEARCH_ENGINE_URLS.google;
-      return baseUrl + encodeURIComponent(searchQuery);
+    (provider: SearchProvider, searchQuery: string): string => {
+      return provider.url.replace("{query}", encodeURIComponent(searchQuery));
     },
-    [spotlightConfig]
+    []
   );
 
   // Generate results based on query
@@ -342,16 +380,20 @@ export function Spotlight({
       }
     });
 
-    // Add search option if query doesn't match URL pattern
+    // Add search options if query doesn't match URL pattern
     if (!isValidUrl(trimmedQuery)) {
-      results.push({
-        id: "search",
-        type: "search",
-        name: `Search for "${originalQuery}"`,
-        url: getSearchUrl(originalQuery),
-        matchScore: 10,
-        matchIndices: [],
-        isExactMatch: false, // Search is never an exact match
+      const searchProviders = getSearchProviders();
+      searchProviders.forEach((provider, index) => {
+        results.push({
+          id: `search-${index}`,
+          type: "search",
+          name: `Search ${provider.name} for "${originalQuery}"`,
+          url: getSearchUrl(provider, originalQuery),
+          icon: provider.icon,
+          matchScore: 10,
+          matchIndices: [],
+          isExactMatch: false, // Search is never an exact match
+        });
       });
     }
 
@@ -363,7 +405,7 @@ export function Spotlight({
       // If both are exact or both are not, sort by score
       return (b.matchScore || 0) - (a.matchScore || 0);
     });
-  }, [query, shortcuts, services, getSearchUrl, useFuzzySearch, fuzzyMatch]);
+  }, [query, shortcuts, services, getSearchProviders, getSearchUrl, useFuzzySearch, fuzzyMatch]);
 
   const results = getResults();
 

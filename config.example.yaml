@@ -39,9 +39,27 @@ server:
 # Spotlight Search Configuration
 # Spotlight allows quick navigation by typing anywhere on the page
 spotlight:
+  # Search providers - multiple search engines can be configured
+  # Each provider will appear as a separate search option in spotlight results
+  search_providers:
+    - name: Google
+      url: "https://www.google.com/search?q={query}"
+      icon: "google" # Icon name from selfh.st/icons
+    - name: DuckDuckGo
+      url: "https://duckduckgo.com/?q={query}"
+      icon: "duckduckgo" # Icon name from selfh.st/icons
+    - name: Bing
+      url: "https://www.bing.com/search?q={query}"
+      icon: "bing" # Icon name from selfh.st/icons
+    # You can also use a full URL for custom icons:
+    # - name: Custom Search
+    #   url: "https://example.com/search?q={query}"
+    #   icon: "https://example.com/icon.png"  # Full URL to icon image
+
+  # Legacy format (deprecated, use search_providers instead)
   # Search engine to use for web searches
   # Options: google, duckduckgo, bing, custom
-  search_engine: "google"
+  # search_engine: "google"
 
   # Custom search URL (only needed if search_engine is "custom")
   # Use {query} as placeholder for the search query

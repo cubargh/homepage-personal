@@ -149,7 +149,16 @@ export interface ClockWidgetConfig {
   showDay?: boolean;
 }
 
+export interface SearchProvider {
+  name: string;
+  url: string; // Should contain {query} placeholder, e.g., "https://www.google.com/search?q={query}"
+  icon?: string; // Icon name from selfh.st/icons or full URL
+}
+
 export interface SpotlightConfig {
+  // New format: array of search providers
+  search_providers?: SearchProvider[];
+  // Legacy format: single search engine (deprecated, kept for backward compatibility)
   search_engine?: "google" | "duckduckgo" | "bing" | "custom";
   custom_search_url?: string; // For custom search engine, e.g., "https://example.com/search?q="
   fuzzy_search?: boolean; // Enable fuzzy search for better matching (default: false)

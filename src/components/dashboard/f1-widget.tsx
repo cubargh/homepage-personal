@@ -88,14 +88,14 @@ export function F1Content({ config }: F1WidgetProps) {
 
       <TabsContent value="next" className="flex-1 overflow-hidden p-0">
         <ScrollArea className="h-full">
-          <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+          <div className="p-3 space-y-2">
             {nextRace ? (
-              <div className="space-y-4 md:space-y-6">
+              <div className="space-y-2">
                 <div className="space-y-1 text-center">
                   <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-widest">
                     {season} Season • Round {nextRace.round}
                   </p>
-                  <h3 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+                  <h3 className="text-lg md:text-xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
                     {nextRace.raceName}
                   </h3>
                   <p className="text-xs text-muted-foreground">
@@ -109,11 +109,11 @@ export function F1Content({ config }: F1WidgetProps) {
                   country={nextRace.circuit.country}
                 />
 
-                <div className="grid gap-2">
+                <div className="grid gap-1">
                   {scheduleItems.map((session) => (
                     <div
                       key={session.name}
-                      className={`flex items-center justify-between p-2 md:p-3 rounded-lg border ${
+                      className={`flex items-center justify-between p-2 rounded-lg border ${
                         session.name === "Race"
                           ? "bg-primary/10 border-primary/20"
                           : "bg-secondary/10 border-white/5"
@@ -156,7 +156,7 @@ export function F1Content({ config }: F1WidgetProps) {
                 </div>
               </div>
             ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground py-10">
+              <div className="h-full flex items-center justify-center text-muted-foreground py-4">
                 {isLoading
                   ? "Loading race data..."
                   : "Failed to load race data."}

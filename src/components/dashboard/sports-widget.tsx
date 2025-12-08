@@ -124,8 +124,8 @@ export function SportsWidget({ f1Config, footballConfig, padelConfig }: SportsWi
 
     return (
       <Card className={`flex flex-col border-border/50 transition-all duration-300 ${isCollapsed ? 'h-auto min-h-0' : 'h-full min-h-[33vh] lg:min-h-0'}`}>
-          <CardHeader className="p-0 border-b border-border/50">
-             <div className="flex items-center justify-between px-4 py-3">
+          <CardHeader className="p-0">
+             <div className="flex items-center justify-between px-4 py-2">
                 <div className="text-xs font-semibold flex gap-2 items-center text-foreground">
                     {icon} {title}
                 </div>
@@ -143,10 +143,10 @@ export function SportsWidget({ f1Config, footballConfig, padelConfig }: SportsWi
 
   return (
     <Card className={`flex flex-col border-border/50 transition-all duration-300 ${isCollapsed ? 'h-auto min-h-0' : 'h-full min-h-[33vh] lg:min-h-0'}`}>
-        <CardHeader className="p-0 border-b border-border/50">
-           <div className="flex items-center justify-between px-4 py-3">
+        <CardHeader className="p-0">
+           <div className="flex items-center justify-between px-4 py-2">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                 <TabsList className={`grid w-full bg-secondary/30 h-9 ${
+                 <TabsList className={`grid w-full bg-secondary/30 h-8 ${
                    enabledTabs.length === 2 ? 'grid-cols-2' : enabledTabs.length === 3 ? 'grid-cols-3' : 'grid-cols-1'
                  }`}>
                     {f1Config.enabled && (

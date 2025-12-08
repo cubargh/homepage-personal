@@ -119,7 +119,7 @@ export function FootballContent({ config, headless = false }: FootballWidgetProp
     <div className="h-full flex flex-col">
        {/* League Selector - Inline when headless */}
        {headless && (
-         <div className="px-4 pb-2">
+         <div className="px-4 py-2">
             <Select value={selectedLeague} onValueChange={setSelectedLeague}>
                 <SelectTrigger className="w-full h-8 text-xs bg-secondary/30">
                     <SelectValue placeholder="Select League" />
@@ -135,21 +135,21 @@ export function FootballContent({ config, headless = false }: FootballWidgetProp
          </div>
        )}
 
-        <ScrollArea className="flex-1 px-4 pb-4">
+        <ScrollArea className="flex-1 px-3 pb-3">
             {isLoading ? (
-                 <div className="space-y-2">
+                 <div className="space-y-1">
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className="h-16 bg-secondary/20 rounded animate-pulse" />
+                        <div key={i} className="h-12 bg-secondary/20 rounded animate-pulse" />
                     ))}
                 </div>
             ) : error ? (
                 <p className="text-destructive/80 text-sm">Failed to load matches.</p>
             ) : (
-                <div className="space-y-2">
+                <div className="space-y-1">
                     {filteredMatches.length === 0 ? (
-                        <p className="text-muted-foreground text-center py-8 text-sm">
+                        <p className="text-muted-foreground text-center py-4 text-sm">
                             No matches found for {COMPETITIONS.find(c => c.code === selectedLeague)?.name} {selectedLeague === 'TODAY' ? 'today' : 'in the next 6 days'}.
-                            {selectedLeague === 'TODAY' && <span className="block text-xs mt-2 text-muted-foreground/50">(UTC Date: {new Date().toISOString().split('T')[0]})</span>}
+                            {selectedLeague === 'TODAY' && <span className="block text-xs mt-1 text-muted-foreground/50">(UTC Date: {new Date().toISOString().split('T')[0]})</span>}
                         </p>
                     ) : (
                         filteredMatches.map((match, index) => {
@@ -165,40 +165,40 @@ export function FootballContent({ config, headless = false }: FootballWidgetProp
                             return (
                                 <div key={match.id}>
                                     {showDateHeader && (
-                                        <div className="flex items-center py-2 mt-1">
-                                            <div className="flex-grow border-t border-border/30"></div>
-                                            <span className="mx-2 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                                        <div className="py-1 mt-1 text-center">
+                                            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
                                                 {formatTime(matchDate, "EEEE, MMM d", config.timezone)}
                                             </span>
-                                            <div className="flex-grow border-t border-border/30"></div>
                                         </div>
                                     )}
-                                    <div className="flex flex-col border border-border/30 rounded-lg p-2 md:p-3 hover:bg-white/5 transition-colors mb-2 last:mb-0 bg-card/40">
-                                        <div className="flex items-center justify-between">
-                                            {/* Home Team */}
-                                            <div className="flex items-center space-x-2 w-[38%] overflow-hidden">
-                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img src={match.homeTeam.crest} alt={match.homeTeam.name} className="h-5 w-5 md:h-6 md:w-6 object-contain shrink-0" />
-                                                <span className="font-medium text-xs md:text-sm truncate" title={match.homeTeam.name}>
-                                                    {/* Prefer shortName on mobile if available, otherwise name */}
-                                                    <span className="md:hidden">{match.homeTeam.shortName || match.homeTeam.tla || match.homeTeam.name}</span>
-                                                    <span className="hidden md:inline">{match.homeTeam.name}</span>
-                                                </span>
+                                    <div className="flex flex-col border border-border/30 rounded-lg p-2 hover:bg-white/5 transition-colors mb-1 last:mb-0 bg-card/40">
+                                        <div className="flex items-center justify-between gap-3">
+                                            {/* Teams - Stacked vertically on the left */}
+                                            <div className="flex-1 flex flex-col gap-1 overflow-hidden">
+                                                {/* Home Team */}
+                                                <div className="flex items-center space-x-2 overflow-hidden">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img src={match.homeTeam.crest} alt={match.homeTeam.name} className="h-5 w-5 md:h-6 md:w-6 object-contain shrink-0" />
+                                                    <span className="font-medium text-xs md:text-sm truncate" title={match.homeTeam.name}>
+                                                        <span className="md:hidden">{match.homeTeam.shortName || match.homeTeam.tla || match.homeTeam.name}</span>
+                                                        <span className="hidden md:inline">{match.homeTeam.name}</span>
+                                                    </span>
+                                                </div>
+                                                
+                                                {/* Away Team */}
+                                                <div className="flex items-center space-x-2 overflow-hidden">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img src={match.awayTeam.crest} alt={match.awayTeam.name} className="h-5 w-5 md:h-6 md:w-6 object-contain shrink-0" />
+                                                    <span className="font-medium text-xs md:text-sm truncate" title={match.awayTeam.name}>
+                                                        <span className="md:hidden">{match.awayTeam.shortName || match.awayTeam.tla || match.awayTeam.name}</span>
+                                                        <span className="hidden md:inline">{match.awayTeam.name}</span>
+                                                    </span>
+                                                </div>
                                             </div>
                                             
-                                            {/* Score / Time */}
-                                            <div className="w-[24%] flex justify-center shrink-0">
+                                            {/* Score / Time - On the right */}
+                                            <div className="flex justify-center shrink-0">
                                                 {renderScoreOrTime(match)}
-                                            </div>
-
-                                            {/* Away Team */}
-                                            <div className="flex items-center space-x-2 justify-end w-[38%] overflow-hidden">
-                                                <span className="font-medium text-xs md:text-sm truncate text-right" title={match.awayTeam.name}>
-                                                    <span className="md:hidden">{match.awayTeam.shortName || match.awayTeam.tla || match.awayTeam.name}</span>
-                                                    <span className="hidden md:inline">{match.awayTeam.name}</span>
-                                                </span>
-                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img src={match.awayTeam.crest} alt={match.awayTeam.name} className="h-5 w-5 md:h-6 md:w-6 object-contain shrink-0" />
                                             </div>
                                         </div>
                                     </div>

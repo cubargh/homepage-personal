@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import useSWR from "swr";
+import { normalizeColor } from "@/lib/theme-utils";
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
@@ -11,36 +12,6 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
-// Helper function to convert hex/rgb/oklch to CSS value
-// Supports hex (#ffffff), rgb/rgba, oklch, and named colors
-const normalizeColor = (color: string): string => {
-  if (!color) return "";
-  
-  // If it's already a valid CSS color format, return as-is
-  // Check for oklch, rgb, rgba, hsl, hsla, or named colors
-  if (
-    color.startsWith("oklch(") ||
-    color.startsWith("rgb(") ||
-    color.startsWith("rgba(") ||
-    color.startsWith("hsl(") ||
-    color.startsWith("hsla(") ||
-    /^[a-z]+$/i.test(color) // Named colors like "red", "blue", etc.
-  ) {
-    return color;
-  }
-  
-  // If it's a hex color, ensure it has #
-  if (color.match(/^[0-9A-Fa-f]{6}$/)) {
-    return `#${color}`;
-  }
-  
-  if (color.startsWith("#")) {
-    return color;
-  }
-  
-  // Default: return as-is (might be a CSS variable or other format)
-  return color;
-};
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { data } = useSWR("/api/theme", fetcher, {

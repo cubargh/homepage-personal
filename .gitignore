@@ -45,3 +45,6 @@ config.yaml
 # config backup files
 *.backup.*
 config.yaml.backup.*
+
+# ideas folder
+/ideas/

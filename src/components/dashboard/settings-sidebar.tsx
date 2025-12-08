@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ThemePreviewPopup } from "./theme-preview-popup";
 
 interface SettingsSidebarProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface SettingsSidebarProps {
 
 export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isThemePopupOpen, setIsThemePopupOpen] = useState(false);
 
   // Prevent body scroll when sidebar is open
   useEffect(() => {
@@ -80,8 +82,27 @@ export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* Theme Preview Button */}
             <div>
+              <h3 className="text-sm font-semibold mb-3">Appearance</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIsThemePopupOpen(true);
+                  onClose(); // Close sidebar when opening theme preview
+                }}
+                className="gap-2 w-full"
+              >
+                <Palette className="h-4 w-4" />
+                Theme Preview
+              </Button>
+            </div>
+
+            {/* Storage Section */}
+            <div className="pt-4 border-t">
+              <h3 className="text-sm font-semibold mb-3">Storage</h3>
               <Button
                 variant="outline"
                 size="sm"
@@ -93,7 +114,7 @@ export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
                 }
                 className={showClearConfirm ? "text-destructive" : ""}
               >
-                {showClearConfirm ? "Confirm Clear" : "Clear Local Storage"}
+                {showClearConfirm ? "Confirm Clear" : "Clear Storage"}
               </Button>
               {showClearConfirm && (
                 <p className="text-xs text-muted-foreground mt-2">
@@ -104,6 +125,12 @@ export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
           </div>
         </div>
       </div>
+
+      {/* Theme Preview Popup */}
+      <ThemePreviewPopup
+        isOpen={isThemePopupOpen}
+        onClose={() => setIsThemePopupOpen(false)}
+      />
     </>
   );
 }

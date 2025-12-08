@@ -22,7 +22,7 @@ function CameraFeed({ url, isPlaying, isCompact }: CameraFeedProps) {
   // Determine if URL is RTSP
   const isRTSP = url.toLowerCase().startsWith("rtsp://");
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
+   
   useEffect(() => {
     if (!isPlaying) {
       // Clear any existing interval

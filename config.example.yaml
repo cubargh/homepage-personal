@@ -359,3 +359,78 @@ widgets:
     # Show day of week (only shown in standard layout, 3x3+)
     # Default: true
     showDay: true
+
+  # Beszel Server Monitor Widget
+  # Monitors server metrics via beszel's PocketBase API
+  # Displays uptime, CPU usage, memory, disk usage, network stats, temperature, and load average
+  #
+  # Required configuration:
+  # - enabled: Enable/disable the widget
+  # - url: Your PocketBase instance URL (where beszel hub is running)
+  # - auth: Authentication configuration
+  #   - type: "token" or "email"
+  #   - For token auth: provide "token" field
+  #   - For email auth: provide "email" and "password" fields
+  #
+  # Optional configuration:
+  # - refreshInterval: How often to refresh data (in seconds, default: 30)
+  # - display_metrics: List of metrics to display (all shown by default if omitted)
+  #   Options: uptime, cpu, memory, disk, network, temperature, load
+  # - disk_names: Filter which disks to show (only applies if "disk" is in display_metrics)
+  #   If omitted, all disks are shown. If specified, only listed disk names are displayed.
+  #   You can also provide custom display names by mapping disk names to display names.
+  #   Example: { "sda1": "System Disk", "sda2": "Data Disk" } to show only sda1 and sda2 with custom names
+  # - server_name: Filter to show specific server by name (shows all servers if omitted)
+  # - network_interface: Specific network interface to use for network stats (e.g., "wlp0s20f3", "eth0")
+  #   If omitted, network stats will sum all interfaces
+  # - compact_view: If true, displays all metrics inline in a single row that wraps (default: false)
+  #
+  # Note: The collection is hardcoded to "system_stats" and cannot be changed
+  #
+  # Example with token authentication:
+  beszel:
+    enabled: false
+    url: "https://beszel.example.com"
+    auth:
+      type: "token"
+      token: "your-pocketbase-api-token"
+    # Optional: refreshInterval defaults to 30 seconds if not specified
+    refreshInterval: 30
+    # Optional: display_metrics defaults to all metrics if not specified
+    display_metrics:
+      - uptime
+      - cpu
+      - memory
+      - disk
+      - network
+      - temperature
+      - load
+    # Optional: filter by server name (shows all servers if omitted)
+    # server_name: "My Server"
+    # Optional: specify network interface for network stats (shows all interfaces if omitted)
+    # network_interface: "wlp0s20f3"
+    # Optional: filter which disks to show and optionally rename them (only applies if "disk" is in display_metrics)
+    # disk_names:
+    #   sda1: "System Disk"
+    #   sda2: "Data Disk"
+    # Optional: compact_view - if true, shows all metrics inline in a single row (default: false)
+    # compact_view: false
+
+  # Example with email/password authentication:
+  # beszel:
+  #   enabled: true
+  #   url: "https://beszel.example.com"
+  #   auth:
+  #     type: "email"
+  #     email: "user@example.com"
+  #     password: "your-password"
+  #   refreshInterval: 30
+  #   display_metrics:
+  #     - uptime
+  #     - cpu
+  #     - memory
+  #     - disk
+  #     - network
+  #     - temperature
+  #     - load
+  #   server_name: "My Server"

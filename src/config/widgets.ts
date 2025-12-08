@@ -16,8 +16,9 @@ import { RSSWidget } from "@/components/dashboard/rss-widget";
 import { SpeedtestTrackerWidget } from "@/components/dashboard/speedtest-tracker-widget";
 import { TasksWidget } from "@/components/dashboard/tasks-widget";
 import { ClockWidget } from "@/components/dashboard/clock-widget";
+import { BeszelWidget } from "@/components/dashboard/beszel-widget";
 import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
-import type { ServiceStatusWidgetConfig, SpeedtestTrackerWidgetConfig } from "@/lib/config";
+import type { ServiceStatusWidgetConfig, SpeedtestTrackerWidgetConfig, BeszelWidgetConfig } from "@/lib/config";
 
 // Register Service Monitor
 WidgetRegistry.register({
@@ -613,5 +614,53 @@ WidgetRegistry.register({
     defaultX: 6,
     defaultY: 0,
     defaultId: "clock",
+  },
+});
+
+// Register Beszel Server Monitor
+WidgetRegistry.register({
+  type: "beszel",
+  component: BeszelWidget,
+  isEnabled: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.beszel);
+    return widgetConfig?.enabled ?? false;
+  },
+  getProps: (config) => {
+    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.beszel) as BeszelWidgetConfig | undefined;
+    if (!widgetConfig) {
+      throw new Error("Beszel widget config not found");
+    }
+    return {
+      config: {
+        enabled: widgetConfig.enabled,
+        url: widgetConfig.url,
+        auth: widgetConfig.auth,
+        refreshInterval: widgetConfig.refreshInterval || 30,
+        display_metrics: widgetConfig.display_metrics || [
+          "uptime",
+          "cpu",
+          "memory",
+          "disk",
+          "network",
+          "temperature",
+          "load",
+        ],
+        disk_names: widgetConfig.disk_names,
+        server_name: widgetConfig.server_name,
+        network_interface: widgetConfig.network_interface,
+        compact_view: widgetConfig.compact_view || false,
+      },
+    };
+  },
+  grid: {
+    w: 3,
+    h: 3,
+    minW: 1,
+    minH: 1,
+  },
+  options: {
+    defaultX: 0,
+    defaultY: 0,
+    defaultId: "beszel",
   },
 });

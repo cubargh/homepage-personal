@@ -12,153 +12,100 @@ export interface ServiceConfig {
   icon?: string; // Icon name from selfh.st/icons (e.g., "jellyfin", "navidrome")
 }
 
-export interface ShortcutConfig {
-  name: string;
-  url: string;
-  icon?: string; // Icon name from selfh.st/icons or full URL
-}
+export type WidgetType = "service-monitor" | "football" | "f1" | "weather" | "sports" | "calendar";
 
-export type WidgetType =
-  | "service-monitor"
-  | "shortcuts"
-  | "football"
-  | "f1"
-  | "weather"
-  | "sports"
-  | "calendar"
-  | "jellyfin"
-  | "immich"
-  | "ghostfolio"
-  | "navidrome"
-  | "qbittorrent"
-  | "ip-camera"
-  | "rss"
-  | "speedtest-tracker"
-  | "tasks"
-  | "clock";
-
-export interface WidgetConfig {
+export interface BaseWidgetConfig {
   id: string;
   type: WidgetType;
-  colSpan: number;
-  rowSpan: number;
-  x: number; // Added for grid layout
-  y: number; // Added for grid layout
-  props?: any; // Component props
+  colSpan?: number; 
+  rowSpan?: number;
+  x?: number; // Added for grid layout
+  y?: number; // Added for grid layout
 }
+
+export interface ServiceWidgetConfig extends BaseWidgetConfig {
+  type: "service-monitor";
+}
+
+export interface FootballWidgetConfig extends BaseWidgetConfig {
+  type: "football";
+}
+
+export interface F1WidgetConfig extends BaseWidgetConfig {
+  type: "f1";
+}
+
+export interface WeatherWidgetConfig extends BaseWidgetConfig {
+  type: "weather";
+}
+
+export interface SportsWidgetConfig extends BaseWidgetConfig {
+  type: "sports";
+}
+
+export interface CalendarWidgetConfig extends BaseWidgetConfig {
+  type: "calendar";
+}
+
+export type WidgetConfig = 
+  | ServiceWidgetConfig 
+  | FootballWidgetConfig 
+  | F1WidgetConfig 
+  | WeatherWidgetConfig 
+  | SportsWidgetConfig 
+  | CalendarWidgetConfig;
 
 export interface DashboardConfig {
   timezone: string;
-  debug?: boolean;
-  widgets: WidgetConfig[];
-}
-
-// Grid Types
-export interface GridSize {
-  w: number;
-  h: number;
-}
-
-export interface BaseWidgetProps {
-  gridSize?: GridSize;
-}
-
-// Widget Component Props Interfaces
-export interface ServiceWidgetProps extends BaseWidgetProps {
   services: ServiceConfig[];
-  config: { 
-    refreshInterval: number;
-    columns: number | "auto"; // Number of columns for the service grid, or "auto"
-    rows?: number | "auto"; // Number of rows to display, or "auto"
-    compactMode: boolean; // Whether to use compact mode
-    click_behavior?: "new_tab" | "same_tab"; // How links should open
-  };
-}
-
-export interface ShortcutsWidgetProps extends BaseWidgetProps {
-  shortcuts: ShortcutConfig[];
-  config: {
-    columns: number | "auto"; // Number of columns for the shortcuts grid, or "auto"
-    rows?: number | "auto"; // Number of rows to display, or "auto"
-    compactMode: boolean; // Whether to use compact mode
-    click_behavior?: "new_tab" | "same_tab"; // How links should open
-  };
-}
-
-export interface FootballWidgetProps extends BaseWidgetProps {
-  config: {
-    enabled: boolean;
+  football: {
     leagues: string[];
     refreshInterval: number;
-    timezone: string;
   };
-}
-
-export interface F1WidgetProps extends BaseWidgetProps {
-  config: { enabled: boolean; refreshInterval: number; timezone: string };
-}
-
-export interface WeatherWidgetProps extends BaseWidgetProps {
-  config: {
+  f1: {
+    refreshInterval: number;
+  };
+  weather: {
     lat: number;
     lon: number;
     units: "metric" | "imperial";
     refreshInterval: number;
-    timezone: string;
   };
+  calendar: {
+    icsUrl: string;
+    refreshInterval: number;
+  };
+  monitoring: {
+    refreshInterval: number;
+  };
+  widgets: WidgetConfig[];
 }
 
-export interface ClockWidgetProps extends BaseWidgetProps {
-  config: {
-    timezone: string;
-    format?: "12h" | "24h";
-    showSeconds?: boolean;
-    showDate?: boolean;
-    showDay?: boolean;
-  };
+// Widget Component Props Interfaces
+export interface ServiceWidgetProps {
+  services: ServiceConfig[];
+  config: { refreshInterval: number };
 }
 
-export interface CalendarWidgetProps extends BaseWidgetProps {
+export interface FootballWidgetProps {
+  config: { leagues: string[]; refreshInterval: number; timezone: string };
+}
+
+export interface F1WidgetProps {
+  config: { refreshInterval: number; timezone: string };
+}
+
+export interface WeatherWidgetProps {
+  config: { lat: number; lon: number; units: "metric" | "imperial"; refreshInterval: number; timezone: string };
+}
+
+export interface CalendarWidgetProps {
   config: { icsUrl: string; refreshInterval: number; timezone: string };
 }
 
-export interface IPCameraConfig {
-  name: string;
-  url: string; // HTTP/HTTPS or RTSP URL
-}
-
-export interface IPCameraWidgetProps extends BaseWidgetProps {
-  cameras: IPCameraConfig[];
-  config: {
-    refreshInterval?: number; // Not used for streaming, but kept for consistency
-  };
-}
-
-export interface RSSWidgetProps extends BaseWidgetProps {
-  config: {
-    refreshInterval: number;
-    view?: "full" | "concise" | "minimal";
-    wrap?: boolean;
-    timezone: string;
-  };
-}
-
-export interface JellyfinWidgetProps extends BaseWidgetProps {
-  config: {
-    enabled: boolean;
-    url: string;
-    refreshInterval: number;
-  };
-}
-
-export interface SportsWidgetProps extends BaseWidgetProps {
-  f1Config: { enabled: boolean; refreshInterval: number; timezone: string };
-  footballConfig: {
-    enabled: boolean;
-    leagues: string[];
-    refreshInterval: number;
-    timezone: string;
-  };
+export interface SportsWidgetProps {
+  f1Config: { refreshInterval: number; timezone: string };
+  footballConfig: { leagues: string[]; refreshInterval: number; timezone: string };
 }
 
 export interface FootballMatch {
@@ -231,174 +178,64 @@ export interface F1ApiNextResponse {
 }
 
 export interface F1ApiDriverChampionshipItem {
-  classificationId: number;
-  driverId: string;
-  teamId: string;
-  points: number;
-  position: number;
-  wins: number;
-  driver: {
-    name: string;
-    surname: string;
-    nationality: string;
-    birthday: string;
-    number: number;
-    shortName: string;
-    url: string;
-  };
-  team: {
+    classificationId: number;
+    driverId: string;
     teamId: string;
-    teamName: string;
-    country: string;
-    firstAppareance: number;
-    constructorsChampionships: number | null;
-    driversChampionships: number | null;
-    url: string;
-  };
+    points: number;
+    position: number;
+    wins: number;
+    driver: {
+        name: string;
+        surname: string;
+        nationality: string;
+        birthday: string;
+        number: number;
+        shortName: string;
+        url: string;
+    };
+    team: {
+        teamId: string;
+        teamName: string;
+        country: string;
+        firstAppareance: number;
+        constructorsChampionships: number | null;
+        driversChampionships: number | null;
+        url: string;
+    };
 }
 
 export interface F1ApiDriverChampionshipResponse {
-  season: number;
-  total: number;
-  drivers_championship: F1ApiDriverChampionshipItem[];
+    season: number;
+    total: number;
+    drivers_championship: F1ApiDriverChampionshipItem[];
 }
 
 export interface F1ApiConstructorChampionshipItem {
-  classificationId: number;
-  teamId: string;
-  points: number;
-  position: number;
-  wins: number;
-  team: {
-    teamName: string;
-    country: string;
-    firstAppareance: number;
-    constructorsChampionships: number | null;
-    driversChampionships: number | null;
-    url: string;
-  };
+    classificationId: number;
+    teamId: string;
+    points: number;
+    position: number;
+    wins: number;
+    team: {
+        teamName: string;
+        country: string;
+        firstAppareance: number;
+        constructorsChampionships: number | null;
+        driversChampionships: number | null;
+        url: string;
+    };
 }
 
 export interface F1ApiConstructorChampionshipResponse {
-  season: number;
-  total: number;
-  constructors_championship: F1ApiConstructorChampionshipItem[];
-}
-
-// Padel API Types
-export interface PadelPlayer {
-  id: number;
-  self: string;
-  name: string;
-  url?: string | null;
-  photo_url?: string | null;
-  category: string;
-  ranking: string;
-  points: number;
-  height?: number | null;
-  nationality: string;
-  birthplace?: string | null;
-  birthdate?: string | null;
-  age?: string | null;
-  hand?: "left" | "right" | null;
-  side: string;
-  links: string;
-  connections: {
-    matches: string;
-  };
-}
-
-export interface PadelPair {
-  id: number;
-  self: string;
-  name: string;
-  side?: "drive" | "backhand" | null;
-  connections: string;
-}
-
-export interface PadelMatch {
-  id: number;
-  self: string;
-  name: string;
-  url?: string | null;
-  category: string;
-  round: number;
-  round_name: string;
-  index: number;
-  played_at?: string | null;
-  schedule_label: string;
-  court: string;
-  court_order?: number | null;
-  status: string;
-  score: string | "hidden_free_plan";
-  winner: string | "hidden_free_plan";
-  started_time?: string | null;
-  duration: string;
-  players: {
-    team_1: PadelPair[];
-    team_2: PadelPair[];
-  };
-  connections: string;
-}
-
-export interface PadelLiveMatch {
-  id: number;
-  self: string;
-  channel: string;
-  sets: string;
-  connections: {
-    match: string;
-  };
-}
-
-export interface PadelTournament {
-  id: number;
-  self: string;
-  name: string;
-  url?: string | null;
-  location: string;
-  country: string;
-  level: string;
-  status: string;
-  start_date: string;
-  end_date: string;
-  links: string;
-  connections: string;
-}
-
-export interface PadelPaginatedResponse<T> {
-  data: T[];
-  links: {
-    first: string | null;
-    last: string | null;
-    prev: string | null;
-    next: string | null;
-  };
-  meta: {
-    current_page: number;
-    from: number | null;
-    last_page: number;
-    links: Array<{
-      url: string | null;
-      label: string;
-      active: boolean;
-    }>;
-    path: string | null;
-    per_page: number;
-    to: number | null;
+    season: number;
     total: number;
-  };
+    constructors_championship: F1ApiConstructorChampionshipItem[];
 }
-
-export type PadelMatchesResponse = PadelPaginatedResponse<PadelMatch>;
-export type PadelLiveMatchesResponse = PadelPaginatedResponse<PadelLiveMatch>;
-export type PadelTournamentsResponse = PadelPaginatedResponse<PadelTournament>;
 
 export interface WeatherData {
   location: {
     city: string;
     country: string;
-    countryCode?: string; // Optional if you need it
   };
   current: {
     temp: number;
@@ -425,161 +262,70 @@ export interface CalendarEvent {
   start: string;
   end: string;
   allDay: boolean;
-  calendarColor?: string | null; // Custom hex color from config
 }
 
-// Jellyfin Types
-export interface JellyfinStats {
-  MovieCount: number;
-  SeriesCount: number;
-  EpisodeCount: number;
-  SongCount: number;
+export interface GridSize {
+  w: number;
+  h: number;
 }
 
-export interface JellyfinItem {
-  Id: string;
-  Name: string;
-  Type: "Movie" | "Series" | "Episode" | "Audio";
-  DateCreated: string;
-  ImageTags: {
-    Primary?: string;
-    Backdrop?: string;
-  };
-  BackdropImageTags?: string[]; // Sometimes it's an array
+export interface BeszelDiskMetric {
+  name: string;
+  used: number;
+  total: number;
+  percentage: number;
 }
 
-// Immich Types
-export interface ImmichWidgetProps extends BaseWidgetProps {
+export interface BeszelNetworkMetric {
+  bytes_sent: number;
+  bytes_recv: number;
+  speed_sent?: number;
+  speed_recv?: number;
+}
+
+export interface BeszelLoadMetric {
+  load1: number;
+  load5: number;
+  load15: number;
+}
+
+export interface BeszelMemoryMetric {
+  used: number;
+  total: number;
+  percentage: number;
+}
+
+export interface BeszelMetrics {
+  uptime?: number; // seconds
+  cpu?: number; // percentage
+  memory?: BeszelMemoryMetric;
+  disk?: BeszelDiskMetric[];
+  network?: BeszelNetworkMetric;
+  temperature?: number; // celsius
+  load?: BeszelLoadMetric;
+  server_name?: string;
+  last_updated?: string;
+}
+
+export interface BaseWidgetProps {
+  gridSize?: GridSize;
+}
+
+export interface BeszelWidgetProps extends BaseWidgetProps {
   config: {
     enabled: boolean;
     url: string;
-    refreshInterval: number;
-  };
-}
-
-export interface ImmichStats {
-  photos: number;
-  videos: number;
-  usage: number; // in bytes
-}
-
-// Ghostfolio Types
-export interface GhostfolioWidgetProps extends BaseWidgetProps {
-  config: {
-    enabled: boolean;
-    url: string;
-    refreshInterval: number;
-    display_metrics?: string[]; // "today", "week", "month", "year", "total"
-  };
-}
-
-export interface GhostfolioStats {
-  performance: {
-    "1d": { relativeChange: number };
-    "7d": { relativeChange: number };
-    "28d": { relativeChange: number };
-    "30d": { relativeChange: number };
-    ytd: { relativeChange: number };
-    max: { relativeChange: number };
-  };
-}
-
-// Navidrome Types
-export interface NavidromeWidgetProps extends BaseWidgetProps {
-  config: {
-    enabled: boolean;
-    url: string;
-    user: string;
-    password: string; // The raw password
-    refreshInterval: number;
-  };
-}
-
-export interface NavidromeStats {
-  albumCount: number;
-  artistCount: number;
-  songCount: number;
-  nowPlaying?: NavidromeNowPlaying;
-}
-
-export interface NavidromeNowPlaying {
-  id: string;
-  title: string;
-  artist: string;
-  album: string;
-  coverArt: string;
-  duration: number;
-  minutesAgo: number; // How long ago it was played/started
-  player: string; // username
-}
-
-// qBittorrent Types
-export interface QBittorrentWidgetProps extends BaseWidgetProps {
-  config: {
-    enabled: boolean;
-    url: string;
+    auth: {
+      type: "token" | "email";
+      token?: string;
+      email?: string;
+      password?: string;
+    };
     refreshInterval: number;
     display_metrics?: string[];
+    server_name?: string;
+    compact_view?: boolean;
+    disk_names?: Record<string, string>; // Map disk names to display names
+    network_interface?: string; // Optional: specific network interface to use for network stats
   };
-}
-
-export interface QBittorrentTorrent {
-  hash: string;
-  name: string;
-  state: string;
-  size: number;
-  progress: number;
-  dlspeed: number;
-  upspeed: number;
-  eta: number;
-  ratio: number;
-  num_seeds: number;
-  num_leechs: number;
-}
-
-export interface QBittorrentTransferInfo {
-  dl_info_speed: number;
-  up_info_speed: number;
-  dl_info_data: number;
-  up_info_data: number;
-}
-
-export interface QBittorrentData {
-  transfer: QBittorrentTransferInfo;
-  seeding: QBittorrentTorrent[];
-  leeching: QBittorrentTorrent[];
-}
-
-// Speedtest Tracker Types
-export interface SpeedtestTrackerWidgetProps extends BaseWidgetProps {
-  config: {
-    url: string;
-    api_token: string;
-    refreshInterval: number;
-  };
-}
-
-export interface SpeedtestTrackerData {
-  download: number;
-  upload: number;
-  ping: number;
-  createdAt: string | null;
-}
-
-// Google Tasks Types
-export interface TasksWidgetProps extends BaseWidgetProps {
-  config: {
-    refreshInterval: number;
-    timezone: string;
-  };
-}
-
-export interface Task {
-  id: string;
-  title: string;
-  status: "needsAction" | "completed";
-  due: string | null;
-  notes: string | null;
-  updated: string;
-  completed: boolean;
 }

@@ -150,6 +150,24 @@ export interface ClockWidgetConfig {
   showDay?: boolean;
 }
 
+export interface BeszelWidgetConfig {
+  enabled: boolean;
+  url: string;
+  collection?: string; // Optional, deprecated - always uses "system_stats" collection
+  auth: {
+    type: "token" | "email";
+    token?: string;
+    email?: string;
+    password?: string;
+  };
+  refreshInterval?: number; // seconds
+  display_metrics?: string[];
+  disk_names?: Record<string, string>; // Optional: map disk names to display names (e.g., { "sda1": "System Disk", "sda2": "Data Disk" })
+  server_name?: string;
+  network_interface?: string; // Optional: specific network interface to use for network stats (e.g., "wlp0s20f3")
+  compact_view?: boolean; // If true, shows inline compact view with all metrics in a single row
+}
+
 export interface SearchProvider {
   name: string;
   url: string; // Should contain {query} placeholder, e.g., "https://www.google.com/search?q={query}"
@@ -227,6 +245,7 @@ export interface AppConfig {
       | SpeedtestTrackerWidgetConfig[];
     tasks: TasksWidgetConfig | TasksWidgetConfig[];
     clock: ClockWidgetConfig | ClockWidgetConfig[];
+    beszel: BeszelWidgetConfig | BeszelWidgetConfig[];
   };
 }
 

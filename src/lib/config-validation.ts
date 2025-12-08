@@ -50,6 +50,39 @@ const ServiceStatusWidgetConfigSchema = z.object({
   ),
 });
 
+const BeszelWidgetConfigSchema = z.object({
+  enabled: z.boolean(),
+  url: z.string().url(),
+  collection: z.string().min(1).optional(), // Optional, deprecated - always uses "system_stats" collection
+  auth: z
+    .object({
+      type: z.enum(["token", "email"]),
+      token: z.string().optional(),
+      email: z.string().email().optional(),
+      password: z.string().optional(),
+    })
+    .refine(
+      (data) => {
+        if (data.type === "token") {
+          return !!data.token;
+        }
+        if (data.type === "email") {
+          return !!data.email && !!data.password;
+        }
+        return false;
+      },
+      {
+        message: "Token auth requires 'token', email auth requires 'email' and 'password'",
+      }
+    ),
+  refreshInterval: z.number().optional(),
+  display_metrics: z.array(z.string()).optional(),
+  disk_names: z.record(z.string(), z.string()).optional(), // Optional: map disk names to display names
+  server_name: z.string().optional(),
+  network_interface: z.string().optional(), // Optional: specific network interface to use for network stats
+  compact_view: z.boolean().optional(), // If true, shows inline compact view with all metrics in a single row
+});
+
 const AppConfigSchema = z.object({
   server: z.object({
     root_domain: z.string(),
@@ -103,6 +136,10 @@ const AppConfigSchema = z.object({
       ServiceStatusWidgetConfigSchema,
       z.array(ServiceStatusWidgetConfigSchema),
     ]),
+    beszel: z.union([
+      BeszelWidgetConfigSchema,
+      z.array(BeszelWidgetConfigSchema),
+    ]).optional(),
   }).passthrough(), // Allow other widget configs
 });
 

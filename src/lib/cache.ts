@@ -67,8 +67,13 @@ class InMemoryCache {
 // Global cache instance
 export const cache = new InMemoryCache();
 
-// Cleanup expired entries every 5 minutes (only in Node.js environment)
-if (typeof process !== "undefined" && process.env && typeof setInterval !== "undefined") {
+// Cleanup expired entries every 5 minutes (only in Node.js environment, skip in tests)
+if (
+  typeof process !== "undefined" &&
+  process.env &&
+  typeof setInterval !== "undefined" &&
+  process.env.NODE_ENV !== "test"
+) {
   setInterval(() => {
     cache.cleanup();
   }, 5 * 60 * 1000);

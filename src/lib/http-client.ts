@@ -132,7 +132,9 @@ export class HttpClient {
     url: string,
     options: RequestInit = {}
   ): Promise<Response> {
-    const fullUrl = this.options.baseURL
+    // Only prepend baseURL if URL is not absolute
+    const isAbsoluteUrl = url.startsWith("http://") || url.startsWith("https://");
+    const fullUrl = this.options.baseURL && !isAbsoluteUrl
       ? `${this.options.baseURL}${url}`
       : url;
 

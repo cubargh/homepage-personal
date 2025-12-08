@@ -59,6 +59,9 @@ export function SpeedtestTrackerWidget({ config, gridSize }: SpeedtestTrackerWid
     if (!dateString) return "";
     try {
       const date = new Date(dateString);
+      // Check if date is invalid
+      if (isNaN(date.getTime())) return "";
+      
       const now = new Date();
       const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
       

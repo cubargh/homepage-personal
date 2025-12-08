@@ -8,7 +8,7 @@ import React, {
   useCallback,
 } from "react";
 import { Responsive, Layout, Layouts } from "react-grid-layout";
-import { DashboardConfig } from "@/types";
+import { DashboardConfig, WidgetType } from "@/types";
 import { WidgetRegistry } from "@/lib/widget-registry";
 import "@/config/widgets"; // Register widgets (client-side)
 
@@ -432,7 +432,7 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
               useCSSTransforms={true}
             >
               {dashboardConfig.widgets.map((widget) => {
-                const definition = WidgetRegistry.get(widget.type);
+                const definition = WidgetRegistry.get(widget.type as WidgetType);
                 const WidgetComponent = definition?.component;
 
                 if (!WidgetComponent) {
@@ -460,7 +460,7 @@ export function DashboardGrid({ dashboardConfig }: DashboardGridProps) {
                     className="pointer-events-auto"
                   >
                     <WidgetErrorBoundary>
-                      <WidgetComponent {...widget.props} gridSize={gridSize} />
+                      <WidgetComponent {...((widget as { props?: Record<string, unknown> }).props || {})} gridSize={gridSize} />
                     </WidgetErrorBoundary>
                   </WidgetWrapper>
                 );

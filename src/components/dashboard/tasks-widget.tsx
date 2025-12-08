@@ -184,7 +184,7 @@ export function TasksWidget({ config, gridSize }: TasksWidgetProps) {
 
       // Get current date in the configured timezone (date only, no time)
       const now = new Date();
-      const todayStr = formatInTimeZone(now, config.timezone, "yyyy-MM-dd");
+      const todayStr = formatInTimeZone(now, config.timezone || "UTC", "yyyy-MM-dd");
 
       // Compare date strings directly
       const [todayYear, todayMonth, todayDay] = todayStr.split("-").map(Number);
@@ -218,7 +218,7 @@ export function TasksWidget({ config, gridSize }: TasksWidgetProps) {
       // For dates further out, show full date
       // Parse the date-only string and format it in the configured timezone
       const taskDate = new Date(Date.UTC(taskYear, taskMonth - 1, taskDay));
-      return formatInTimeZone(taskDate, config.timezone, "MMM d, yyyy");
+      return formatInTimeZone(taskDate, config.timezone || "UTC", "MMM d, yyyy");
     } catch {
       return dueDate;
     }

@@ -167,7 +167,7 @@ export function ShortcutsWidget({
 
   // Calculate columns: use "auto" to calculate optimal columns based on number of shortcuts
   const calculateColumns = (): number => {
-    if (config.columns === "auto") {
+    if (config.columns === "auto" || !config.columns) {
       const totalShortcuts = shortcuts.length;
       if (totalShortcuts === 0) return 2; // Default fallback
 
@@ -194,14 +194,14 @@ export function ShortcutsWidget({
         return Math.ceil(sqrt);
       }
     }
-    return config.columns;
+    return typeof config.columns === "number" ? config.columns : 2;
   };
 
   const columns = calculateColumns();
 
   // Calculate rows: use "auto" to calculate based on number of shortcuts and columns
   const calculateRows = (): number => {
-    if (config.rows === "auto") {
+    if (config.rows === "auto" || !config.rows) {
       const totalShortcuts = shortcuts.length;
       if (totalShortcuts === 0) return 1;
 
@@ -265,7 +265,7 @@ export function ShortcutsWidget({
             gap: GRID_GAP,
           }}
         >
-          {visibleShortcuts.map((shortcut) => {
+          {visibleShortcuts.map((shortcut: ShortcutConfig) => {
             // In standard mode, each pill spans 3 columns
             const gridColumnSpan = compactMode ? 1 : 3;
             return (
@@ -284,7 +284,7 @@ export function ShortcutsWidget({
               >
                 <ShortcutItem
                   shortcut={shortcut}
-                  compactMode={compactMode}
+                  compactMode={compactMode ?? false}
                   columns={columns}
                   rows={numRows}
                   clickBehavior={config.click_behavior}

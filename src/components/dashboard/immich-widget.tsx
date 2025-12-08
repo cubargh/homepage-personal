@@ -54,7 +54,7 @@ export function ImmichWidget({ config, gridSize }: ImmichWidgetProps) {
   }
 
   // Format usage to GB
-  const usageGB = data ? (data.usage / 1073741824).toFixed(1) : "0.0";
+  const usageGB = data && data.usage ? (data.usage / 1073741824).toFixed(1) : "0.0";
 
   const headerActions = (
     <a

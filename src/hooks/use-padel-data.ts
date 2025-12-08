@@ -1,7 +1,8 @@
 import useSWR from "swr";
 import { 
   PadelMatchesResponse,
-  PadelTournamentsResponse
+  PadelTournamentsResponse,
+  PadelMatch
 } from "@/types";
 
 const fetcher = async (url: string) => {
@@ -24,14 +25,14 @@ export function usePadelData(refreshInterval: number) {
   );
 
   // Filter live matches from the matches data based on status field
-  const liveMatches = (matches?.data || []).filter(
-    (match) => match.status === "live" || match.status === "in_progress"
+  const liveMatches = (matches?.data || matches?.matches || []).filter(
+    (match: PadelMatch) => match.status === "live" || match.status === "in_progress"
   );
 
   return {
-    matches: matches?.data || [],
+    matches: matches?.data || matches?.matches || [],
     liveMatches: liveMatches,
-    tournaments: tournaments?.data || [],
+    tournaments: tournaments?.data || tournaments?.tournaments || [],
     isLoading: !matches && !matchesError,
     isError: matchesError || tournamentsError
   };

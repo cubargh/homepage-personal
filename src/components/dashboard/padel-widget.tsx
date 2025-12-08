@@ -109,7 +109,7 @@ function LiveMatchCard({
               </span>
             )}
             {tournament && " • "}
-            {getRoundName(match.round)} •{" "}
+            {match.round ? getRoundName(Number(match.round)) : ""} •{" "}
             {match.category === "men" ? "Men's" : "Women's"}
             {match.court && ` • Court: ${match.court}`}
           </div>
@@ -180,7 +180,7 @@ function UpcomingMatchCard({
               </span>
             )}
             {tournament && " • "}
-            {getRoundName(match.round)} •{" "}
+            {match.round ? getRoundName(Number(match.round)) : ""} •{" "}
             {match.category === "men" ? "Men's" : "Women's"}
           </div>
         </div>
@@ -258,12 +258,12 @@ export function PadelContent({ config }: PadelWidgetProps) {
   // Memoize tournament date ranges for performance
   const tournamentDateRanges = useMemo(() => {
     return tournaments
-      .map((tournament) => {
+      .map((tournament: PadelTournament) => {
         try {
           return {
             tournament,
-            startDate: parseISO(tournament.start_date),
-            endDate: parseISO(tournament.end_date),
+            startDate: parseISO(tournament.startDate),
+            endDate: parseISO(tournament.endDate),
           };
         } catch {
           return null;
@@ -271,12 +271,21 @@ export function PadelContent({ config }: PadelWidgetProps) {
       })
       .filter(
         (
-          range
+          range: {
+            tournament: PadelTournament;
+            startDate: Date;
+            endDate: Date;
+          } | null
         ): range is {
           tournament: PadelTournament;
           startDate: Date;
           endDate: Date;
-        } => range !== null
+        } => {
+          if (range === null) return false;
+          return (
+            range.startDate instanceof Date && range.endDate instanceof Date
+          );
+        }
       );
   }, [tournaments]);
 
@@ -289,7 +298,7 @@ export function PadelContent({ config }: PadelWidgetProps) {
 
       // Find tournament where match date falls within tournament date range
       const matchingRange = tournamentDateRanges.find(
-        ({ startDate, endDate }) =>
+        ({ startDate, endDate }: { startDate: Date; endDate: Date }) =>
           matchDate >= startDate && matchDate <= endDate
       );
 
@@ -409,7 +418,7 @@ export function PadelContent({ config }: PadelWidgetProps) {
                   </Badge>
                   Live Matches
                 </div>
-                {liveMatches.map((match: PadelMatch, index) => {
+                {liveMatches.map((match: PadelMatch, index: number) => {
                   const team1Name = getTeamName(match.players?.team_1);
                   const team2Name = getTeamName(match.players?.team_2);
                   const tournament = getTournamentForMatch(match);
@@ -468,7 +477,7 @@ export function PadelContent({ config }: PadelWidgetProps) {
                     Upcoming Matches
                   </div>
                 )}
-                {upcomingMatches.map((match: PadelMatch, index) => {
+                {upcomingMatches.map((match: PadelMatch, index: number) => {
                   const isLive =
                     match.status === "live" || match.status === "in_progress";
                   const team1Name = getTeamName(match.players?.team_1);
@@ -558,16 +567,35 @@ export function PadelContent({ config }: PadelWidgetProps) {
                     <div className="text-[10px] text-muted-foreground space-y-0.5">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-3 w-3" />
-                        {formatTime(
-                          parseISO(tournament.start_date),
-                          "MMM dd",
-                          config.timezone
-                        )}{" "}
-                        -{" "}
-                        {formatTime(
-                          parseISO(tournament.end_date),
-                          "MMM dd",
-                          config.timezone
+                        {tournament.start_date && tournament.end_date && (
+                          <>
+                            {formatTime(
+                              parseISO(tournament.start_date),
+                              "MMM dd",
+                              config.timezone
+                            )}{" "}
+                            -{" "}
+                            {formatTime(
+                              parseISO(tournament.end_date),
+                              "MMM dd",
+                              config.timezone
+                            )}
+                          </>
+                        )}
+                        {(!tournament.start_date || !tournament.end_date) && (
+                          <>
+                            {formatTime(
+                              parseISO(tournament.startDate),
+                              "MMM dd",
+                              config.timezone
+                            )}{" "}
+                            -{" "}
+                            {formatTime(
+                              parseISO(tournament.endDate),
+                              "MMM dd",
+                              config.timezone
+                            )}
+                          </>
                         )}
                       </div>
                       <div className="flex items-center gap-1">

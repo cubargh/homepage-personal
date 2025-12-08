@@ -95,7 +95,7 @@ export function QBittorrentWidget({ config }: QBittorrentWidgetProps) {
   // For now let's just show downloads as per "default" mode behavior usually expected.
   // If we want to be fancy, we can toggle.
 
-  const activeDownloads = data?.leeching || [];
+  const activeDownloads = Array.isArray(data?.leeching) ? data.leeching : (data?.torrents || []);
   
   return (
     <Card className="h-full flex flex-col border-border/50 overflow-hidden">
@@ -125,7 +125,7 @@ export function QBittorrentWidget({ config }: QBittorrentWidgetProps) {
               <Skeleton className="h-5 w-20" />
             ) : (
               <span className="text-lg font-bold text-green-500">
-                {formatSpeed(data?.transfer.dl_info_speed || 0)}
+                {formatSpeed(data?.transfer?.dl_info_speed || data?.transfer?.dlSpeed || 0)}
               </span>
             )}
           </div>
@@ -138,7 +138,7 @@ export function QBittorrentWidget({ config }: QBittorrentWidgetProps) {
               <Skeleton className="h-5 w-20" />
             ) : (
               <span className="text-lg font-bold text-blue-500">
-                {formatSpeed(data?.transfer.up_info_speed || 0)}
+                {formatSpeed(data?.transfer?.up_info_speed || data?.transfer?.upSpeed || 0)}
               </span>
             )}
           </div>
@@ -148,11 +148,11 @@ export function QBittorrentWidget({ config }: QBittorrentWidgetProps) {
         <div className="grid grid-cols-2 gap-px bg-border/50 border-b border-border/50">
            <div className="bg-card p-2 flex items-center justify-center space-x-2">
              <span className="text-xs text-muted-foreground">Leeching:</span>
-             {isLoading ? <Skeleton className="h-4 w-4"/> : <span className="text-sm font-semibold">{data?.leeching.length || 0}</span>}
+             {isLoading ? <Skeleton className="h-4 w-4"/> : <span className="text-sm font-semibold">{Array.isArray(data?.leeching) ? data.leeching.length : (data?.leeching || 0)}</span>}
            </div>
            <div className="bg-card p-2 flex items-center justify-center space-x-2">
              <span className="text-xs text-muted-foreground">Seeding:</span>
-             {isLoading ? <Skeleton className="h-4 w-4"/> : <span className="text-sm font-semibold">{data?.seeding.length || 0}</span>}
+             {isLoading ? <Skeleton className="h-4 w-4"/> : <span className="text-sm font-semibold">{Array.isArray(data?.seeding) ? data.seeding.length : (data?.seeding || 0)}</span>}
            </div>
         </div>
 

@@ -293,7 +293,7 @@ export function ServiceWidget({
         return Math.ceil(sqrt);
       }
     }
-    return config.columns;
+    return config.columns ?? 2;
   };
 
   const columns = calculateColumns();
@@ -389,7 +389,7 @@ export function ServiceWidget({
                   <ServiceItem
                     service={service}
                     refreshInterval={config.refreshInterval}
-                    compactMode={compactMode}
+                    compactMode={compactMode ?? false}
                     columns={columns}
                     rows={numRows}
                     clickBehavior={config.click_behavior}

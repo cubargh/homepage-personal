@@ -30,7 +30,6 @@ function ConfigEditor({
 
   useEffect(() => {
     loadConfig();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Cleanup timeout on unmount

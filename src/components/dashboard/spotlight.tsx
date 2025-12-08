@@ -552,7 +552,10 @@ export function Spotlight({
   // Reset selected index when results change
   useEffect(() => {
     if (selectedIndex >= results.length && results.length > 0) {
-      setSelectedIndex(0);
+      // Use setTimeout to avoid synchronous setState in effect
+      setTimeout(() => {
+        setSelectedIndex(0);
+      }, 0);
     }
   }, [results.length, selectedIndex]);
 

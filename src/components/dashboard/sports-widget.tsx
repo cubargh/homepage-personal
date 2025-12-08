@@ -47,11 +47,6 @@ export function SportsWidget({ f1Config, footballConfig, padelConfig }: SportsWi
 
   // Only fetch F1 data if F1 is enabled (pass 0 to disable auto-refresh)
   const { nextRace } = useF1Data(f1Config.enabled ? f1Config.refreshInterval : 0);
-  
-  // Safety check: if none are enabled, don't render (shouldn't happen due to isEnabled check)
-  if (!f1Config.enabled && !footballConfig.enabled && !padelConfigWithDefaults.enabled) {
-    return null;
-  }
 
   useEffect(() => {
     // Only auto-switch to F1 if F1 is enabled
@@ -87,6 +82,11 @@ export function SportsWidget({ f1Config, footballConfig, padelConfig }: SportsWi
       hasSetDefaultTab.current = true;
     }
   }, [nextRace, f1Config.timezone, f1Config.enabled]);
+
+  // Safety check: if none are enabled, don't render (shouldn't happen due to isEnabled check)
+  if (!f1Config.enabled && !footballConfig.enabled && !padelConfigWithDefaults.enabled) {
+    return null;
+  }
 
   const toggleCollapse = () => {
     if (window.innerWidth < 768) {

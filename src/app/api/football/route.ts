@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadConfig } from "@/lib/config";
 import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
-import { withErrorHandling, requireConfig } from "@/lib/api-handler";
+import { withErrorHandling } from "@/lib/api-handler";
 import { ApiError, ApiErrorCode } from "@/lib/api-error";
 
 const BASE_URL = "https://api.football-data.org/v4";

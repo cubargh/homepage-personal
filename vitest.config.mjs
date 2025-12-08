@@ -6,7 +6,8 @@ export default defineConfig({
     globals: true,
     environment: "happy-dom",
     setupFiles: ["./src/test/setup.ts"],
-    include: ["**/*.test.ts", "**/*.test.tsx"],
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    exclude: ["**/node_modules/**", "**/.next/**", "**/dist/**", "**/build/**"],
     testTimeout: 10000, // 10 second timeout per test
     hookTimeout: 10000, // 10 second timeout for hooks
     teardownTimeout: 5000, // 5 second timeout for teardown

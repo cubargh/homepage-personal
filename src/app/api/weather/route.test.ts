@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { addDays, isSameDay, parseISO } from "date-fns";
 
 // We need to extract the processForecast function logic for testing
@@ -174,7 +174,6 @@ describe("processForecast", () => {
   it("should handle missing forecasts", () => {
     const today = new Date();
     const tomorrow = addDays(today, 1);
-    const dayAfter = addDays(today, 2);
 
     const forecastData: WeatherApiForecast = {
       list: [
@@ -183,7 +182,6 @@ describe("processForecast", () => {
           main: { temp_min: 10, temp_max: 15 },
           weather: [{ main: "Clear", icon: "01d" }],
         },
-        // Missing forecast for dayAfter
       ],
     };
 

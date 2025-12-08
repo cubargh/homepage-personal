@@ -131,7 +131,7 @@ function processFeedItem(item: RSSFeedItem, color: string | null): ProcessedFeed
   };
 }
 
-export const GET = withErrorHandling(async (request: NextRequest) => {
+export const GET = withErrorHandling(async (_request: NextRequest) => {
   const config = loadConfig();
 
   const rssConfigs = normalizeWidgetConfig<RSSWidgetConfig>(

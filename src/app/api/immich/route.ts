@@ -4,7 +4,7 @@ import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
 import { withErrorHandling, requireConfig } from "@/lib/api-handler";
 import { ApiError, ApiErrorCode } from "@/lib/api-error";
 
-export const GET = withErrorHandling(async (request: NextRequest) => {
+export const GET = withErrorHandling(async (_request: NextRequest) => {
   const config = loadConfig();
   const immichConfig = requireConfig(
     getFirstEnabledWidgetConfig(config.widgets.immich),

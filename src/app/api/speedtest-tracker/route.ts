@@ -21,7 +21,7 @@ const REQUEST_TIMEOUT = 10000; // 10 seconds
 const MAX_SPEED_MBPS = 10000;
 const MAX_PING_MS = 10000;
 
-export const GET = withErrorHandling(async (request: NextRequest) => {
+export const GET = withErrorHandling(async (_request: NextRequest) => {
   const config = loadConfig();
   const speedtestConfig = requireConfig(
     getFirstEnabledWidgetConfig(config.widgets.speedtest_tracker),

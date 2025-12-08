@@ -80,7 +80,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
   let body: { content?: unknown };
   try {
     body = await request.json();
-  } catch (error) {
+  } catch {
     throw new ApiError(
       "Invalid request body",
       400,

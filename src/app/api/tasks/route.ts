@@ -350,7 +350,7 @@ async function getAuthAndTaskList(
   return { accessToken, taskListId: targetTaskListId };
 }
 
-export const GET = withErrorHandling(async (request: NextRequest) => {
+export const GET = withErrorHandling(async (_request: NextRequest) => {
   const config = loadConfig();
   const tasksConfig = requireConfig(
     getFirstEnabledWidgetConfig(config.widgets.tasks) as GoogleTasksConfig | undefined,

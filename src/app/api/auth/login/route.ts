@@ -19,7 +19,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
   let body: { passphrase?: string };
   try {
     body = await request.json();
-  } catch (error) {
+  } catch {
     throw new ApiError(
       "Invalid request body",
       400,

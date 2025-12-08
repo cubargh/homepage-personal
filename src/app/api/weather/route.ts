@@ -86,7 +86,7 @@ function processForecast(forecastData: WeatherApiForecast): DailyForecast[] {
   return dailyForecast;
 }
 
-export const GET = withErrorHandling(async (request: NextRequest) => {
+export const GET = withErrorHandling(async (_request: NextRequest) => {
   const config = loadConfig();
   const weatherConfig = requireConfig(
     getFirstEnabledWidgetConfig(config.widgets.weather),

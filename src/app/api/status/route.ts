@@ -30,7 +30,7 @@ async function checkServiceStatus(url: string) {
       statusCode: response.status,
       latency,
     };
-  } catch (error) {
+  } catch {
     // If HEAD fails (some servers don't support it), try GET
     try {
       const controller = new AbortController();

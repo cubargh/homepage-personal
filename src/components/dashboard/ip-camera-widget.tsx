@@ -22,6 +22,7 @@ function CameraFeed({ url, isPlaying, isCompact }: CameraFeedProps) {
   // Determine if URL is RTSP
   const isRTSP = url.toLowerCase().startsWith("rtsp://");
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!isPlaying) {
       // Clear any existing interval
@@ -29,15 +30,20 @@ function CameraFeed({ url, isPlaying, isCompact }: CameraFeedProps) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
-      setError(false);
-      setErrorMessage(null);
+      // Reset error state using setTimeout to avoid synchronous setState in effect
+      setTimeout(() => {
+        setError(false);
+        setErrorMessage(null);
+      }, 0);
       return;
     }
 
     if (isRTSP) {
       // For RTSP, use API endpoint to proxy/transcode
       const proxyUrl = `/api/camera/stream?url=${encodeURIComponent(url)}`;
-      setImageUrl(proxyUrl);
+      setTimeout(() => {
+        setImageUrl(proxyUrl);
+      }, 0);
     } else {
       // Check if URL is an MJPEG stream (multipart/x-mixed-replace)
       const isMJPEG = url.toLowerCase().includes('mjpg') || 
@@ -46,7 +52,9 @@ function CameraFeed({ url, isPlaying, isCompact }: CameraFeedProps) {
       
       if (isMJPEG) {
         // For MJPEG streams, use the URL directly (browser handles multipart/x-mixed-replace)
-        setImageUrl(url);
+        setTimeout(() => {
+          setImageUrl(url);
+        }, 0);
       } else {
         // For regular HTTP/HTTPS image endpoints, use cache busting
         const updateImage = () => {
@@ -55,8 +63,10 @@ function CameraFeed({ url, isPlaying, isCompact }: CameraFeedProps) {
           setImageUrl(`${url}${separator}${cacheBuster}`);
         };
 
-        // Update immediately
-        updateImage();
+        // Update immediately (wrapped in setTimeout to avoid synchronous setState in effect)
+        setTimeout(() => {
+          updateImage();
+        }, 0);
 
         // Set up interval to refresh image (every 1 second for live feed)
         intervalRef.current = setInterval(updateImage, 1000);

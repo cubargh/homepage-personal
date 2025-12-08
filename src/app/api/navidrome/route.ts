@@ -58,7 +58,7 @@ async function getArtistCount(baseUrl: string, user: string, queryString: string
   );
 }
 
-export const GET = withErrorHandling(async (request: NextRequest) => {
+export const GET = withErrorHandling(async (_request: NextRequest) => {
   const config = loadConfig();
   const navidromeConfig = requireConfig(
     getFirstEnabledWidgetConfig(config.widgets.navidrome),

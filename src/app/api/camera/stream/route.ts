@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { spawn } from "child_process";
-import { ApiError, ApiErrorCode } from "@/lib/api-error";
+import { ApiErrorCode } from "@/lib/api-error";
 
 /**
  * API endpoint to proxy/transcode RTSP streams
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       // Timeout after 2 seconds
       setTimeout(() => reject(new Error("ffmpeg check timeout")), 2000);
     });
-  } catch (error) {
+  } catch {
     return Response.json(
       {
         error:
@@ -168,7 +168,7 @@ export async function GET(request: NextRequest) {
         console.error("ffmpeg process error:", error);
         try {
           controller.error(error);
-        } catch (e) {
+        } catch {
           // Controller may already be closed
         }
       });
@@ -179,7 +179,7 @@ export async function GET(request: NextRequest) {
         }
         try {
           controller.close();
-        } catch (e) {
+        } catch {
           // Controller may already be closed
         }
       });
@@ -189,7 +189,7 @@ export async function GET(request: NextRequest) {
         try {
           ffmpeg.kill("SIGTERM");
           controller.close();
-        } catch (e) {
+        } catch {
           // Process may already be terminated
         }
       });

@@ -32,7 +32,7 @@ interface JellyfinItemsResponse {
   Items?: JellyfinItem[];
 }
 
-export const GET = withErrorHandling(async (request: NextRequest) => {
+export const GET = withErrorHandling(async (_request: NextRequest) => {
   const config = loadConfig();
   const jfConfig = requireConfig(
     getFirstEnabledWidgetConfig(config.widgets.jellyfin),

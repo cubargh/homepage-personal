@@ -199,8 +199,14 @@ describe("validateConfig", () => {
     };
 
     const result = validateConfig(validConfig);
-    expect(result.widgets.calendar.ics_urls).toHaveLength(2);
-    expect(result.widgets.service_status.services).toHaveLength(2);
+    const calendarConfig = Array.isArray(result.widgets.calendar) 
+      ? result.widgets.calendar[0] 
+      : result.widgets.calendar;
+    const serviceStatusConfig = Array.isArray(result.widgets.service_status)
+      ? result.widgets.service_status[0]
+      : result.widgets.service_status;
+    expect(calendarConfig.ics_urls).toHaveLength(2);
+    expect(serviceStatusConfig.services).toHaveLength(2);
   });
 
   it("should format error messages correctly", () => {

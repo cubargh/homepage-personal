@@ -5,7 +5,7 @@ import {
   requireConfig,
 } from "./api-handler";
 import { ApiError, ApiErrorCode, handleApiError } from "./api-error";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 // Mock handleApiError
 vi.mock("./api-error", async () => {
@@ -37,7 +37,7 @@ describe("withErrorHandling", () => {
 
   it("should successfully wrap handler and return result", async () => {
     const handler = vi.fn(async () => {
-      return new Response(JSON.stringify({ success: true }), { status: 200 });
+      return NextResponse.json({ success: true }, { status: 200 });
     });
 
     const wrappedHandler = withErrorHandling(handler);
@@ -71,11 +71,11 @@ describe("withErrorHandling", () => {
 
   it("should preserve request and context parameters", async () => {
     const handler = vi.fn(async (req, context) => {
-      return new Response(
-        JSON.stringify({
+      return NextResponse.json(
+        {
           url: req.url,
           params: context?.params ? await context.params : null,
-        }),
+        },
         { status: 200 }
       );
     });

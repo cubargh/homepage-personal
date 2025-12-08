@@ -5,7 +5,6 @@ import { ClockWidgetProps } from "@/types";
 import { Clock } from "lucide-react";
 import { WidgetLayout } from "@/components/dashboard/widget-layout";
 import { formatTime } from "@/lib/utils";
-import { cn } from "@/lib/utils";
 
 export function ClockWidget({ config, gridSize }: ClockWidgetProps) {
   const [currentTime, setCurrentTime] = useState(new Date());

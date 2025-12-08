@@ -44,7 +44,7 @@ const SEARCH_ENGINE_URLS: Record<string, string> = {
 };
 
 // Get default search providers for backward compatibility
-const getDefaultSearchProviders = (): SearchProvider[] => {
+const _getDefaultSearchProviders = (): SearchProvider[] => {
   return [
     {
       name: "Google",

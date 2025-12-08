@@ -3,7 +3,7 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { RSSWidgetProps } from "@/types";
-import { Rss, ExternalLink, Calendar, User, ChevronRight, RefreshCw } from "lucide-react";
+import { Rss, ExternalLink, Calendar, User, RefreshCw } from "lucide-react";
 import { WidgetLayout } from "@/components/dashboard/widget-layout";
 import { cn, formatTime } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -36,7 +36,6 @@ export function RSSWidget({ config, gridSize }: RSSWidgetProps) {
   const [selectedFeed, setSelectedFeed] = useState<string | null>(null);
   
   const isCompact = gridSize ? gridSize.h <= 2 : false;
-  const isStandard = !isCompact;
   const viewMode = config.view || "full";
   const wrap = config.wrap ?? true; // Default to true
 

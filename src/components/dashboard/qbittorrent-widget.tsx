@@ -6,7 +6,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { QBittorrentWidgetProps, QBittorrentData, QBittorrentTorrent } from "@/types";
 import { ArrowDown, ArrowUp, Download, Upload, Pause, AlertCircle, CheckCircle, Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);

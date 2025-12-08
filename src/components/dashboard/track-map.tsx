@@ -27,7 +27,7 @@ interface GeoJSON {
   features: GeoJSONFeature[];
 }
 
-export function TrackMap({ circuitName, city, country }: TrackMapProps) {
+export function TrackMap({ circuitName, city, country: _country }: TrackMapProps) {
   const [geoJson, setGeoJson] = useState<GeoJSON | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +39,7 @@ export function TrackMap({ circuitName, city, country }: TrackMapProps) {
         if (!response.ok) throw new Error("Failed to load track data");
         const data = await response.json();
         setGeoJson(data);
-      } catch (err) {
+      } catch {
         setError("Failed to load track map");
       } finally {
         setIsLoading(false);
@@ -91,8 +91,6 @@ export function TrackMap({ circuitName, city, country }: TrackMapProps) {
     // Add some padding
     const width = maxX - minX;
     const height = maxY - minY;
-    const paddingX = width * 0.1;
-    const paddingY = height * 0.1;
 
     // Normalize and create path string
     // Flip Y axis because SVG Y goes down, Latitude goes up

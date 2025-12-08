@@ -148,7 +148,6 @@ export class HttpClient {
       headers: mergedHeaders,
     };
 
-    const timeout = this.options.timeout || this.defaultOptions.timeout;
     const retries = this.options.retries ?? this.defaultOptions.retries;
     const retryDelay = this.options.retryDelay || this.defaultOptions.retryDelay;
     const retryOn = this.options.retryOn || this.defaultOptions.retryOn;

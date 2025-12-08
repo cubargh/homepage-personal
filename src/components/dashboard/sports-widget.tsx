@@ -8,7 +8,7 @@ import { F1Content } from "./f1-widget";
 import { FootballContent } from "./football-widget";
 import { PadelContent } from "./padel-widget";
 import { Flag, Trophy, ChevronDown, ChevronUp, Activity } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useF1Data } from "@/hooks/use-f1-data";
 
 interface SportsWidgetProps {

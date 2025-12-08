@@ -10,7 +10,6 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { WidgetLayout } from "@/components/dashboard/widget-layout";
-import { cn } from "@/lib/utils";
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);

@@ -30,7 +30,6 @@ export function WidgetLayout({
   // - Standard: 3x3+ (full layout)
   const isMinimal = gridSize ? (gridSize.w === 1 && gridSize.h === 1) : false;
   const isCompact = gridSize ? (gridSize.w === 2 && gridSize.h === 2) : false;
-  const isStandard = gridSize ? (gridSize.w >= 3 || gridSize.h >= 3) : true; // Default to standard if no gridSize
   
   // Show header if height >= 2 (hide for 1x1 minimal widgets)
   const showHeader = title && !isMinimal;

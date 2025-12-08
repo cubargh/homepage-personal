@@ -76,7 +76,6 @@ async function performTaskAction(
 
 export function TasksWidget({ config, gridSize }: TasksWidgetProps) {
   const isCompact = gridSize ? gridSize.h <= 2 : false;
-  const isStandard = !isCompact;
 
   const { data, error, isLoading, mutate } = useSWR<TasksData>(
     "/api/tasks",

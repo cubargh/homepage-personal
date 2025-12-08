@@ -10,7 +10,7 @@ describe("WidgetRegistry", () => {
   beforeEach(() => {
     // Clear registry before each test
     const allWidgets = WidgetRegistry.getAll();
-    allWidgets.forEach((widget) => {
+    allWidgets.forEach((_widget) => {
       // Note: There's no unregister method, so we'll work with what we have
       // In a real scenario, you might want to add an unregister method
     });

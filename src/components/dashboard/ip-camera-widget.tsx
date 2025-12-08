@@ -22,7 +22,6 @@ function CameraFeed({ url, isPlaying, isCompact }: CameraFeedProps) {
   // Determine if URL is RTSP
   const isRTSP = url.toLowerCase().startsWith("rtsp://");
 
-   
   useEffect(() => {
     if (!isPlaying) {
       // Clear any existing interval
@@ -46,10 +45,11 @@ function CameraFeed({ url, isPlaying, isCompact }: CameraFeedProps) {
       }, 0);
     } else {
       // Check if URL is an MJPEG stream (multipart/x-mixed-replace)
-      const isMJPEG = url.toLowerCase().includes('mjpg') || 
-                      url.toLowerCase().includes('mjpeg') ||
-                      url.toLowerCase().includes('video.cgi');
-      
+      const isMJPEG =
+        url.toLowerCase().includes("mjpg") ||
+        url.toLowerCase().includes("mjpeg") ||
+        url.toLowerCase().includes("video.cgi");
+
       if (isMJPEG) {
         // For MJPEG streams, use the URL directly (browser handles multipart/x-mixed-replace)
         setTimeout(() => {
@@ -84,13 +84,18 @@ function CameraFeed({ url, isPlaying, isCompact }: CameraFeedProps) {
   const handleImageError = () => {
     setError(true);
     // Check if URL ends with common image/video extensions or paths
-    const hasImagePath = /\.(jpg|jpeg|png|gif|bmp|webp|mjpg|mjpeg)$/i.test(url) ||
-                         /\/?(video|mjpeg|stream|snapshot|image|jpg|jpeg|png)/i.test(url);
-    
+    const hasImagePath =
+      /\.(jpg|jpeg|png|gif|bmp|webp|mjpg|mjpeg)$/i.test(url) ||
+      /\/?(video|mjpeg|stream|snapshot|image|jpg|jpeg|png)/i.test(url);
+
     if (!hasImagePath && !isRTSP) {
-      setErrorMessage("URL may not be a direct image stream. Try adding /video, /mjpeg, or /snapshot to the URL");
+      setErrorMessage(
+        "URL may not be a direct image stream. Try adding /video, /mjpeg, or /snapshot to the URL"
+      );
     } else {
-      setErrorMessage("Failed to load camera feed. Check URL and network connection.");
+      setErrorMessage(
+        "Failed to load camera feed. Check URL and network connection."
+      );
     }
   };
 
@@ -116,6 +121,7 @@ function CameraFeed({ url, isPlaying, isCompact }: CameraFeedProps) {
   return (
     <div className="relative w-full h-full bg-black rounded overflow-hidden">
       {isPlaying && imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           ref={imgRef}
           src={imageUrl}
@@ -144,7 +150,7 @@ function CameraFeed({ url, isPlaying, isCompact }: CameraFeedProps) {
 
 export function IPCameraWidget({
   cameras,
-  config,
+  config: _config,
   gridSize,
 }: IPCameraWidgetProps) {
   const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
@@ -284,4 +290,3 @@ export function IPCameraWidget({
     </WidgetLayout>
   );
 }
-

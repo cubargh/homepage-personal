@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import useSWR from "swr";
 import { parseISO } from "date-fns";
 import { formatTime } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -55,10 +55,9 @@ export function FootballContent({ config, headless = false }: FootballWidgetProp
     }
   );
 
-  const matches = data?.matches || [];
-  
   // Since the API now returns filtered matches, we can just sort them
   const filteredMatches = useMemo(() => {
+      const matches = data?.matches || [];
       // Filter out finished matches from yesterday if we are in TODAY mode
       // This happens because we widened the window to catch all global timezones
       let matchesToDisplay = matches;
@@ -79,7 +78,7 @@ export function FootballContent({ config, headless = false }: FootballWidgetProp
           // 2. Sort by Home Team Name (Deterministic Tie-breaker)
           return a.homeTeam.name.localeCompare(b.homeTeam.name);
       });
-  }, [matches, selectedLeague, config.timezone]);
+  }, [data?.matches, selectedLeague, config.timezone]);
 
   const renderScoreOrTime = (match: any) => {
       const isLive = ["IN_PLAY", "PAUSED"].includes(match.status);

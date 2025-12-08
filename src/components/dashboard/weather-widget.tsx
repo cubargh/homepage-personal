@@ -61,7 +61,6 @@ export function WeatherWidget({ config, gridSize }: WeatherWidgetProps) {
   // - Standard: 3x3+ (full layout with forecast)
   const isMinimal = gridSize ? (gridSize.w === 1 && gridSize.h === 1) : false;
   const isCompact = gridSize ? (gridSize.w === 2 && gridSize.h === 2) : false;
-  const isStandard = gridSize ? (gridSize.w >= 3 || gridSize.h >= 3) : true;
 
   return (
     <WidgetLayout

@@ -50,7 +50,7 @@ export function F1Content({ config }: F1WidgetProps) {
         name,
         date,
       };
-    } catch (e) {
+    } catch {
       console.error(`Invalid date for session ${name}:`, dateTime);
       return null;
     }

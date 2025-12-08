@@ -3,10 +3,8 @@
 import useSWR from "swr";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { NavidromeWidgetProps, NavidromeStats } from "@/types";
-import { Music, Disc, Mic2, PlayCircle, PauseCircle, Radio } from "lucide-react";
-import { cn } from "@/lib/utils";
-import Image from "next/image";
+import { NavidromeWidgetProps } from "@/types";
+import { Music, Disc, Mic2, Radio } from "lucide-react";
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);

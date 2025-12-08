@@ -273,7 +273,7 @@ describe("HttpClient", () => {
       );
 
       // Invalid URL should not use circuit breaker but still make request
-      const response = await client.request("invalid-url");
+      const _response = await client.request("invalid-url");
       expect(global.fetch).toHaveBeenCalled();
     });
   });

@@ -158,21 +158,18 @@ export function IPCameraWidget({
     );
   }
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent drag from starting
+  const handleClick = () => {
     setIsPlaying(!isPlaying);
   };
 
-  const handleNextCamera = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleNextCamera = () => {
     if (cameras.length > 1) {
       setCurrentCameraIndex((prev) => (prev + 1) % cameras.length);
       setIsPlaying(false); // Pause when switching cameras
     }
   };
 
-  const handlePrevCamera = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handlePrevCamera = () => {
     if (cameras.length > 1) {
       setCurrentCameraIndex(
         (prev) => (prev - 1 + cameras.length) % cameras.length
@@ -191,10 +188,6 @@ export function IPCameraWidget({
       <div
         className="relative w-full h-full cursor-pointer group"
         onClick={handleClick}
-        onMouseDown={(e) => {
-          // Prevent drag when clicking on the camera feed
-          e.stopPropagation();
-        }}
       >
         <CameraFeed
           url={currentCamera.url}

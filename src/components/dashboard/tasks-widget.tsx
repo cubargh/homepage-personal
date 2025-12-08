@@ -18,7 +18,11 @@ import {
 import { WidgetLayout } from "@/components/dashboard/widget-layout";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { formatInTimeZone } from "date-fns-tz";
@@ -170,22 +174,22 @@ export function TasksWidget({ config, gridSize }: TasksWidgetProps) {
       // Google Tasks API only supports dates, not times
       // The API always returns dates as midnight UTC (00:00:00.000Z)
       // We need to extract just the date part and compare dates, not datetimes
-      
+
       // Parse the date string - it's in RFC3339 format (e.g., "2025-12-06T00:00:00.000Z")
       // Extract just the date part (YYYY-MM-DD)
       const dateMatch = dueDate.match(/^(\d{4}-\d{2}-\d{2})/);
       if (!dateMatch) return dueDate;
-      
+
       const dateOnlyStr = dateMatch[1]; // e.g., "2025-12-06"
-      
+
       // Get current date in the configured timezone (date only, no time)
       const now = new Date();
       const todayStr = formatInTimeZone(now, config.timezone, "yyyy-MM-dd");
-      
+
       // Compare date strings directly
       const [todayYear, todayMonth, todayDay] = todayStr.split("-").map(Number);
       const [taskYear, taskMonth, taskDay] = dateOnlyStr.split("-").map(Number);
-      
+
       const todayDate = new Date(Date.UTC(todayYear, todayMonth - 1, todayDay));
       const taskDateOnly = new Date(Date.UTC(taskYear, taskMonth - 1, taskDay));
       const diffDays = Math.floor(
@@ -280,38 +284,42 @@ export function TasksWidget({ config, gridSize }: TasksWidgetProps) {
                         onClick={() => handleToggleComplete(task)}
                         disabled={completingTaskId === task.id}
                         className="shrink-0"
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onTouchStart={(e) => e.stopPropagation()}
                       >
-                        <Square className={cn(
-                          "h-4 w-4 transition-colors",
-                          overdue
-                            ? "text-destructive"
-                            : "text-muted-foreground hover:text-primary"
-                        )} />
+                        <Square
+                          className={cn(
+                            "h-4 w-4 transition-colors",
+                            overdue
+                              ? "text-destructive"
+                              : "text-muted-foreground hover:text-primary"
+                          )}
+                        />
                       </button>
                       {dueDate && (
                         <div className="shrink-0">
-                          <div className={cn(
-                            "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
-                            overdue
-                              ? "bg-destructive/20 text-destructive"
-                              : dueDate === "Today"
-                              ? "bg-primary/20 text-primary"
-                              : dueDate === "Tomorrow"
-                              ? "bg-blue-500/20 text-blue-400"
-                              : "bg-muted/30 text-muted-foreground"
-                          )}>
+                          <div
+                            className={cn(
+                              "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
+                              overdue
+                                ? "bg-destructive/20 text-destructive"
+                                : dueDate === "Today"
+                                ? "bg-primary/20 text-primary"
+                                : dueDate === "Tomorrow"
+                                ? "bg-blue-500/20 text-blue-400"
+                                : "bg-muted/30 text-muted-foreground"
+                            )}
+                          >
                             <Calendar className="h-2.5 w-2.5" />
                             {dueDate}
                           </div>
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <div className={cn(
-                          "text-sm truncate",
-                          overdue && "text-destructive font-medium"
-                        )}>
+                        <div
+                          className={cn(
+                            "text-sm truncate",
+                            overdue && "text-destructive font-medium"
+                          )}
+                        >
                           {task.title}
                         </div>
                       </div>
@@ -366,17 +374,8 @@ export function TasksWidget({ config, gridSize }: TasksWidgetProps) {
       ) : (
         <>
           {/* Create Task Form */}
-          <div 
-            className="p-3 border-b border-border/50"
-            onMouseDown={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-          >
-            <form 
-              onSubmit={handleCreateTask} 
-              className="flex gap-2"
-              onMouseDown={(e) => e.stopPropagation()}
-              onTouchStart={(e) => e.stopPropagation()}
-            >
+          <div className="p-3 border-b border-border/50">
+            <form onSubmit={handleCreateTask} className="flex gap-2">
               <Input
                 type="text"
                 placeholder="Add a new task..."
@@ -384,16 +383,12 @@ export function TasksWidget({ config, gridSize }: TasksWidgetProps) {
                 onChange={(e) => setNewTaskTitle(e.target.value)}
                 disabled={isCreating}
                 className="flex-1 h-8 text-sm"
-                onMouseDown={(e) => e.stopPropagation()}
-                onTouchStart={(e) => e.stopPropagation()}
               />
               <Button
                 type="submit"
                 disabled={isCreating || !newTaskTitle.trim()}
                 size="sm"
                 className="h-8 px-3"
-                onMouseDown={(e) => e.stopPropagation()}
-                onTouchStart={(e) => e.stopPropagation()}
               >
                 <Plus className="h-3 w-3" />
               </Button>
@@ -416,7 +411,7 @@ export function TasksWidget({ config, gridSize }: TasksWidgetProps) {
                         const overdue = isOverdue(task.due);
                         const isCompleting = completingTaskId === task.id;
                         const isDeleting = deletingTaskId === task.id;
-                        
+
                         // Determine date badge style
                         const getDateBadgeStyle = () => {
                           if (overdue) {
@@ -445,36 +440,40 @@ export function TasksWidget({ config, gridSize }: TasksWidgetProps) {
                               onClick={() => handleToggleComplete(task)}
                               disabled={isCompleting}
                               className="shrink-0"
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onTouchStart={(e) => e.stopPropagation()}
                             >
                               {isCompleting ? (
                                 <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
                               ) : (
-                                <Square className={cn(
-                                  "h-5 w-5 transition-colors",
-                                  overdue
-                                    ? "text-destructive hover:text-destructive/80"
-                                    : "text-muted-foreground group-hover:text-primary"
-                                )} />
+                                <Square
+                                  className={cn(
+                                    "h-5 w-5 transition-colors",
+                                    overdue
+                                      ? "text-destructive hover:text-destructive/80"
+                                      : "text-muted-foreground group-hover:text-primary"
+                                  )}
+                                />
                               )}
                             </button>
                             {dueDate && (
                               <div className="shrink-0">
-                                <div className={cn(
-                                  "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium border",
-                                  getDateBadgeStyle()
-                                )}>
+                                <div
+                                  className={cn(
+                                    "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium border",
+                                    getDateBadgeStyle()
+                                  )}
+                                >
                                   <Calendar className="h-3 w-3" />
                                   <span>{dueDate}</span>
                                 </div>
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <div className={cn(
-                                "font-medium text-sm",
-                                overdue && "text-destructive"
-                              )}>
+                              <div
+                                className={cn(
+                                  "font-medium text-sm",
+                                  overdue && "text-destructive"
+                                )}
+                              >
                                 {task.title}
                               </div>
                               {task.notes && (
@@ -487,26 +486,25 @@ export function TasksWidget({ config, gridSize }: TasksWidgetProps) {
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <a
-                                    href={`https://tasks.google.com/embed/list/${data?.taskListId || "@default"}?id=${task.id}`}
+                                    href={`https://tasks.google.com/embed/list/${
+                                      data?.taskListId || "@default"
+                                    }?id=${task.id}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    onClick={(e) => e.stopPropagation()}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    onTouchStart={(e) => e.stopPropagation()}
                                     className="p-1.5 hover:bg-secondary/40 rounded transition-colors"
                                   >
                                     <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-primary" />
                                   </a>
                                 </TooltipTrigger>
-                                <TooltipContent>Open in Google Tasks</TooltipContent>
+                                <TooltipContent>
+                                  Open in Google Tasks
+                                </TooltipContent>
                               </Tooltip>
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <button
                                     onClick={() => handleDeleteTask(task.id)}
                                     disabled={isDeleting}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    onTouchStart={(e) => e.stopPropagation()}
                                     className="p-1.5 hover:bg-secondary/40 rounded text-muted-foreground hover:text-destructive transition-colors"
                                   >
                                     {isDeleting ? (
@@ -525,74 +523,72 @@ export function TasksWidget({ config, gridSize }: TasksWidgetProps) {
                     </div>
                   )}
 
-                {completedTasks.length > 0 && (
-                  <div className="pt-4 mt-4 border-t border-border/30">
-                    <button
-                      onClick={() => setIsCompletedCollapsed(!isCompletedCollapsed)}
-                      className="flex items-center justify-between w-full mb-3 group"
-                      onMouseDown={(e) => e.stopPropagation()}
-                      onTouchStart={(e) => e.stopPropagation()}
-                    >
-                      <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider group-hover:text-foreground transition-colors">
-                        Completed ({completedTasks.length})
-                      </div>
-                      {isCompletedCollapsed ? (
-                        <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-                      ) : (
-                        <ChevronUp className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-                      )}
-                    </button>
-                    {!isCompletedCollapsed && (
-                      <div className="space-y-1.5">
-                        {completedTasks.slice(0, 5).map((task) => {
-                          const isCompleting = completingTaskId === task.id;
-                          const isDeleting = deletingTaskId === task.id;
-                          return (
-                            <div
-                              key={task.id}
-                              className="flex items-center gap-2 p-2 rounded-md text-sm opacity-60 hover:opacity-100 hover:bg-secondary/5 transition-all group"
-                            >
-                              <button
-                                onClick={() => handleToggleComplete(task)}
-                                disabled={isCompleting}
-                                className="shrink-0"
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onTouchStart={(e) => e.stopPropagation()}
-                              >
-                                {isCompleting ? (
-                                  <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
-                                ) : (
-                                  <CheckSquare2 className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
-                                )}
-                              </button>
-                            <div className="flex-1 min-w-0 line-through text-muted-foreground break-words">
-                              <span className="line-clamp-2">{task.title}</span>
-                            </div>
-                              <button
-                                onClick={() => handleDeleteTask(task.id)}
-                                disabled={isDeleting}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onTouchStart={(e) => e.stopPropagation()}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-secondary/40 rounded text-muted-foreground hover:text-destructive"
-                              >
-                                {isDeleting ? (
-                                  <RefreshCw className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  <Trash2 className="h-3 w-3" />
-                                )}
-                              </button>
-                            </div>
-                          );
-                        })}
-                        {completedTasks.length > 5 && (
-                          <div className="text-xs text-muted-foreground pl-6 pt-1">
-                            +{completedTasks.length - 5} more completed
-                          </div>
+                  {completedTasks.length > 0 && (
+                    <div className="pt-4 mt-4 border-t border-border/30">
+                      <button
+                        onClick={() =>
+                          setIsCompletedCollapsed(!isCompletedCollapsed)
+                        }
+                        className="flex items-center justify-between w-full mb-3 group"
+                      >
+                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider group-hover:text-foreground transition-colors">
+                          Completed ({completedTasks.length})
+                        </div>
+                        {isCompletedCollapsed ? (
+                          <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                        ) : (
+                          <ChevronUp className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                         )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                      </button>
+                      {!isCompletedCollapsed && (
+                        <div className="space-y-1.5">
+                          {completedTasks.slice(0, 5).map((task) => {
+                            const isCompleting = completingTaskId === task.id;
+                            const isDeleting = deletingTaskId === task.id;
+                            return (
+                              <div
+                                key={task.id}
+                                className="flex items-center gap-2 p-2 rounded-md text-sm opacity-60 hover:opacity-100 hover:bg-secondary/5 transition-all group"
+                              >
+                                <button
+                                  onClick={() => handleToggleComplete(task)}
+                                  disabled={isCompleting}
+                                  className="shrink-0"
+                                >
+                                  {isCompleting ? (
+                                    <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
+                                  ) : (
+                                    <CheckSquare2 className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
+                                  )}
+                                </button>
+                                <div className="flex-1 min-w-0 line-through text-muted-foreground break-words">
+                                  <span className="line-clamp-2">
+                                    {task.title}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => handleDeleteTask(task.id)}
+                                  disabled={isDeleting}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-secondary/40 rounded text-muted-foreground hover:text-destructive"
+                                >
+                                  {isDeleting ? (
+                                    <RefreshCw className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-3 w-3" />
+                                  )}
+                                </button>
+                              </div>
+                            );
+                          })}
+                          {completedTasks.length > 5 && (
+                            <div className="text-xs text-muted-foreground pl-6 pt-1">
+                              +{completedTasks.length - 5} more completed
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </div>

@@ -112,6 +112,7 @@ const AppConfigSchema = z.object({
         )
         .optional(),
       fuzzy_search: z.boolean().optional(),
+      history_size: z.number().int().positive().optional(),
     })
     .optional(),
       theme: z

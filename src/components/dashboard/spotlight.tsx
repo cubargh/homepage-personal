@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { ShortcutConfig, ServiceConfig } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Search, Globe, Link2, ExternalLink, ArrowUpRight } from "lucide-react";
+import { Search, Globe, Link2, ExternalLink, ArrowUpRight, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SearchProvider {
@@ -18,17 +18,24 @@ interface SpotlightConfig {
   search_engine?: "google" | "duckduckgo" | "bing" | "custom"; // Legacy, for backward compatibility
   custom_search_url?: string; // Legacy, for backward compatibility
   fuzzy_search?: boolean;
+  history_size?: number; // Number of URLs to remember in history (default: 20)
 }
 
 interface SpotlightItem {
   id: string;
-  type: "shortcut" | "service" | "search" | "url";
+  type: "shortcut" | "service" | "search" | "url" | "history";
   name: string;
   url: string;
   icon?: string;
   matchScore?: number; // For fuzzy search scoring
   matchIndices?: number[]; // Indices of matched characters for highlighting
   isExactMatch?: boolean; // True if this is an exact match
+}
+
+interface HistoryEntry {
+  url: string;
+  title: string;
+  visitedAt: number;
 }
 
 interface SpotlightProps {
@@ -41,6 +48,57 @@ const SEARCH_ENGINE_URLS: Record<string, string> = {
   google: "https://www.google.com/search?q=",
   duckduckgo: "https://duckduckgo.com/?q=",
   bing: "https://www.bing.com/search?q=",
+};
+
+const HISTORY_STORAGE_KEY = "spotlight_history";
+
+// Check if a URL is a search engine URL
+const isSearchEngineUrl = (url: string, searchProviders: SearchProvider[]): boolean => {
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.toLowerCase();
+    
+    // Check against known search engines
+    const searchEngineDomains = [
+      "google.com",
+      "google.co.uk",
+      "google.ca",
+      "duckduckgo.com",
+      "bing.com",
+      "yahoo.com",
+      "yandex.com",
+      "baidu.com",
+    ];
+    
+    if (searchEngineDomains.some(domain => hostname.includes(domain))) {
+      // Check if it's actually a search query (has query parameters)
+      return urlObj.searchParams.has("q") || urlObj.searchParams.has("query") || urlObj.pathname.includes("/search");
+    }
+    
+    // Check against configured search providers
+    return searchProviders.some(provider => {
+      try {
+        const providerUrl = new URL(provider.url.replace("{query}", ""));
+        return hostname === providerUrl.hostname.toLowerCase();
+      } catch {
+        return false;
+      }
+    });
+  } catch {
+    return false;
+  }
+};
+
+// Normalize URL for comparison (remove trailing slashes, normalize protocol)
+const normalizeUrl = (url: string): string => {
+  try {
+    const urlObj = new URL(url);
+    // Remove trailing slash from pathname
+    const pathname = urlObj.pathname.replace(/\/$/, "") || "/";
+    return `${urlObj.protocol}//${urlObj.hostname}${pathname}${urlObj.search}${urlObj.hash}`;
+  } catch {
+    return url;
+  }
 };
 
 // Get default search providers for backward compatibility
@@ -65,6 +123,7 @@ export function Spotlight({
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const useFuzzySearch = spotlightConfig.fuzzy_search ?? false;
+  const historySize = spotlightConfig.history_size ?? 20;
 
   // Fuzzy search algorithm - checks if query matches text with character order flexibility
   const fuzzyMatch = useCallback(
@@ -250,6 +309,29 @@ export function Spotlight({
     return domainPattern.test(trimmed);
   };
 
+  // Load history from localStorage
+  const loadHistory = useCallback((): HistoryEntry[] => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem(HISTORY_STORAGE_KEY);
+      if (!stored) return [];
+      const history = JSON.parse(stored) as HistoryEntry[];
+      return Array.isArray(history) ? history : [];
+    } catch {
+      return [];
+    }
+  }, []);
+
+  // Save history to localStorage
+  const saveHistory = useCallback((history: HistoryEntry[]) => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+    } catch {
+      // Ignore storage errors
+    }
+  }, []);
+
   // Get search providers from config (new format) or convert legacy format
   const getSearchProviders = useCallback((): SearchProvider[] => {
     // New format: use search_providers array
@@ -280,6 +362,43 @@ export function Spotlight({
       },
     ];
   }, [spotlightConfig]);
+
+  // Add URL to history
+  const addToHistory = useCallback((url: string, title?: string) => {
+    const searchProvidersList = getSearchProviders();
+    
+    // Don't save search engine URLs
+    if (isSearchEngineUrl(url, searchProvidersList)) {
+      return;
+    }
+    
+    // Get existing shortcuts and services URLs to exclude duplicates
+    const existingUrls = new Set<string>();
+    shortcuts.forEach(s => existingUrls.add(normalizeUrl(s.url)));
+    services.forEach(s => existingUrls.add(normalizeUrl(s.url)));
+    
+    const normalizedUrl = normalizeUrl(url);
+    
+    // Don't save if already in shortcuts/services
+    if (existingUrls.has(normalizedUrl)) {
+      return;
+    }
+    
+    const history = loadHistory();
+    
+    // Remove if already exists (to move to top)
+    const filteredHistory = history.filter(entry => normalizeUrl(entry.url) !== normalizedUrl);
+    
+    // Add to beginning
+    const newEntry: HistoryEntry = {
+      url,
+      title: title || url,
+      visitedAt: Date.now(),
+    };
+    
+    const updatedHistory = [newEntry, ...filteredHistory].slice(0, historySize);
+    saveHistory(updatedHistory);
+  }, [shortcuts, services, historySize, getSearchProviders, loadHistory, saveHistory]);
 
   // Generate search URL from provider
   const getSearchUrl = useCallback(
@@ -380,10 +499,59 @@ export function Spotlight({
       }
     });
 
+    // Add history items
+    const history = loadHistory();
+    const searchProvidersList = getSearchProviders();
+    const existingUrls = new Set<string>();
+    shortcuts.forEach(s => existingUrls.add(normalizeUrl(s.url)));
+    services.forEach(s => existingUrls.add(normalizeUrl(s.url)));
+    
+    history.forEach((entry) => {
+      const normalizedHistoryUrl = normalizeUrl(entry.url);
+      
+      // Skip if already in shortcuts/services
+      if (existingUrls.has(normalizedHistoryUrl)) {
+        return;
+      }
+      
+      // Skip search engine URLs
+      if (isSearchEngineUrl(entry.url, searchProvidersList)) {
+        return;
+      }
+      
+      // Match against title or URL
+      const titleLower = entry.title.toLowerCase();
+      const urlLower = entry.url.toLowerCase();
+      const matchesQuery = titleLower.includes(trimmedQuery) || urlLower.includes(trimmedQuery);
+      
+      if (matchesQuery || !trimmedQuery) {
+        const nameMatch = useFuzzySearch && trimmedQuery
+          ? fuzzyMatch(entry.title, trimmedQuery)
+          : {
+              match: matchesQuery,
+              score: titleLower === trimmedQuery ? 100 : titleLower.includes(trimmedQuery) ? 50 : 0,
+              indices: [],
+              isExact: titleLower === trimmedQuery,
+            };
+        
+        if (nameMatch.match || !trimmedQuery) {
+          results.push({
+            id: `history-${normalizedHistoryUrl}`,
+            type: "history",
+            name: entry.title,
+            url: entry.url,
+            matchScore: nameMatch.score || 5, // Lower score than shortcuts/services
+            matchIndices: nameMatch.indices,
+            isExactMatch: nameMatch.isExact,
+          });
+        }
+      }
+    });
+
     // Add search options if query doesn't match URL pattern
     if (!isValidUrl(trimmedQuery)) {
-      const searchProviders = getSearchProviders();
-      searchProviders.forEach((provider, index) => {
+      const searchProvidersList = getSearchProviders();
+      searchProvidersList.forEach((provider, index) => {
         results.push({
           id: `search-${index}`,
           type: "search",
@@ -405,7 +573,7 @@ export function Spotlight({
       // If both are exact or both are not, sort by score
       return (b.matchScore || 0) - (a.matchScore || 0);
     });
-  }, [query, shortcuts, services, getSearchProviders, getSearchUrl, useFuzzySearch, fuzzyMatch]);
+  }, [query, shortcuts, services, getSearchProviders, getSearchUrl, useFuzzySearch, fuzzyMatch, loadHistory]);
 
   const results = getResults();
 
@@ -511,6 +679,11 @@ export function Spotlight({
 
   // Handle navigation
   const navigateTo = (item: SpotlightItem, openInNewTab: boolean = false) => {
+    // Save to history if it's a URL or history item (not search or shortcut/service)
+    if (item.type === "url" || item.type === "history") {
+      addToHistory(item.url, item.name);
+    }
+    
     if (openInNewTab) {
       const newWindow = window.open(item.url, "_blank", "noopener,noreferrer");
       // Try to focus the new window/tab (browser may prevent this due to security)
@@ -620,6 +793,8 @@ export function Spotlight({
         return <Search className="w-5 h-5" />;
       case "url":
         return <ExternalLink className="w-5 h-5" />;
+      case "history":
+        return <Clock className="w-5 h-5" />;
       default:
         return <Globe className="w-5 h-5" />;
     }

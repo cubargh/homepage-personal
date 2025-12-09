@@ -181,6 +181,7 @@ export interface SpotlightConfig {
   search_engine?: "google" | "duckduckgo" | "bing" | "custom";
   custom_search_url?: string; // For custom search engine, e.g., "https://example.com/search?q="
   fuzzy_search?: boolean; // Enable fuzzy search for better matching (default: false)
+  history_size?: number; // Number of URLs to remember in history (default: 20)
 }
 
 export interface ThemeConfig {

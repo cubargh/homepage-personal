@@ -39,6 +39,9 @@ server:
 # Spotlight Search Configuration
 # Spotlight allows quick navigation by typing anywhere on the page
 spotlight:
+  # Number of URLs to remember in history (default: 20)
+  # History excludes search engine URLs and URLs already in shortcuts/services
+  history_size: 20
   # Search providers - multiple search engines can be configured
   # Each provider will appear as a separate search option in spotlight results
   search_providers:

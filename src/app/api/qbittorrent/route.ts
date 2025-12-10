@@ -4,6 +4,9 @@ import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
 import { withErrorHandling, requireConfig } from "@/lib/api-handler";
 import { ApiError, ApiErrorCode } from "@/lib/api-error";
 
+// Cache qBittorrent data for 30 seconds
+export const revalidate = 30;
+
 export const GET = withErrorHandling(async (_request: NextRequest) => {
   const config = loadConfig();
   const qbConfig = requireConfig(
@@ -95,10 +98,15 @@ export const GET = withErrorHandling(async (_request: NextRequest) => {
     );
   }
 
-  return NextResponse.json({
+  const result = {
     transfer,
     seeding,
     leeching,
-  });
+  };
+
+  const response = NextResponse.json(result);
+  // Cache for 30 seconds
+  response.headers.set("Cache-Control", "public, s-maxage=30, stale-while-revalidate=60");
+  return response;
 });
 

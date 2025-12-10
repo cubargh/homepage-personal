@@ -134,7 +134,7 @@ export const GET = withErrorHandling(async (_request: NextRequest) => {
   // Get artist count with caching (this is expensive, so cache it)
   const artistCount = await getArtistCount(baseUrl, user, queryString);
 
-  return NextResponse.json({
+  const result = {
     scanStatus: {
       ...scanData["subsonic-response"]?.scanStatus,
       artistCount,
@@ -151,6 +151,11 @@ export const GET = withErrorHandling(async (_request: NextRequest) => {
           player: nowPlaying.username,
         }
       : null,
-  });
+  };
+
+  const response = NextResponse.json(result);
+  // Cache for 1 minute (now playing changes frequently)
+  response.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+  return response;
 });
 

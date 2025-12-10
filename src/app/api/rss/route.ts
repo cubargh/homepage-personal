@@ -3,7 +3,9 @@ import { loadConfig, RSSWidgetConfig } from "@/lib/config";
 import { normalizeWidgetConfig } from "@/lib/widget-config-utils";
 import { withErrorHandling } from "@/lib/api-handler";
 import { ApiError, ApiErrorCode } from "@/lib/api-error";
+import { cached } from "@/lib/cache";
 import Parser from "rss-parser";
+import crypto from "crypto";
 
 const parser = new Parser({
   customFields: {
@@ -131,6 +133,9 @@ function processFeedItem(item: RSSFeedItem, color: string | null): ProcessedFeed
   };
 }
 
+// Cache RSS feeds for 5 minutes
+export const revalidate = 300;
+
 export const GET = withErrorHandling(async (_request: NextRequest) => {
   const config = loadConfig();
 
@@ -166,69 +171,82 @@ export const GET = withErrorHandling(async (_request: NextRequest) => {
     );
   }
 
-  // Parse feed URLs and colors from config
-  const feedConfigs = allFeeds
-    .map(parseFeedConfig)
-    .filter((config): config is ParsedFeedConfig => config !== null);
+  // Create cache key based on feeds and maxItems
+  const cacheKey = `rss:${crypto.createHash("md5").update(JSON.stringify({ feeds: allFeeds, maxItems })).digest("hex")}`;
 
-  // Process feeds sequentially with delays to avoid rate limiting
-  const feedResults: (ProcessedFeed | null)[] = [];
-  for (let i = 0; i < feedConfigs.length; i++) {
-    const { feedUrl, color } = feedConfigs[i];
+  const result = await cached(
+    cacheKey,
+    async () => {
+      // Parse feed URLs and colors from config
+      const feedConfigs = allFeeds
+        .map(parseFeedConfig)
+        .filter((config): config is ParsedFeedConfig => config !== null);
 
-    // Add delay between requests to avoid rate limiting (except for first request)
-    if (i > 0) {
-      await delay(500); // 500ms delay between feeds
-    }
+      // Process feeds sequentially with delays to avoid rate limiting
+      const feedResults: (ProcessedFeed | null)[] = [];
+      for (let i = 0; i < feedConfigs.length; i++) {
+        const { feedUrl, color } = feedConfigs[i];
 
-    try {
-      const feed = await fetchWithRetry(feedUrl);
-      const items = (feed.items || [])
-        .slice(0, maxItems || 10)
-        .map((item) => processFeedItem(item, color));
+        // Add delay between requests to avoid rate limiting (except for first request)
+        if (i > 0) {
+          await delay(500); // 500ms delay between feeds
+        }
 
-      feedResults.push({
-        feedUrl,
-        feedTitle: feed.title || feedUrl,
-        feedColor: color,
-        items,
+        try {
+          const feed = await fetchWithRetry(feedUrl);
+          const items = (feed.items || [])
+            .slice(0, maxItems || 10)
+            .map((item) => processFeedItem(item, color));
+
+          feedResults.push({
+            feedUrl,
+            feedTitle: feed.title || feedUrl,
+            feedColor: color,
+            items,
+          });
+        } catch (error) {
+          console.error(`Error processing RSS feed ${feedUrl}:`, error);
+          // Continue processing other feeds even if one fails
+          feedResults.push(null);
+        }
+      }
+
+      const validFeeds = feedResults.filter(
+        (feed): feed is ProcessedFeed => feed !== null
+      );
+
+      // Combine all items and sort by date (newest first)
+      const allItems: (ProcessedFeedItem & {
+        feedTitle: string;
+        feedUrl: string;
+      })[] = validFeeds.flatMap((feed) =>
+        feed.items.map((item) => ({
+          ...item,
+          feedTitle: feed.feedTitle,
+          feedUrl: feed.feedUrl,
+          feedColor: feed.feedColor || item.feedColor || null,
+        }))
+      );
+
+      // Sort by date (parse dates and sort)
+      allItems.sort((a, b) => {
+        const dateA = a.pubDate ? new Date(a.pubDate).getTime() : 0;
+        const dateB = b.pubDate ? new Date(b.pubDate).getTime() : 0;
+        return dateB - dateA; // Newest first
       });
-    } catch (error) {
-      console.error(`Error processing RSS feed ${feedUrl}:`, error);
-      // Continue processing other feeds even if one fails
-      feedResults.push(null);
-    }
-  }
 
-  const validFeeds = feedResults.filter(
-    (feed): feed is ProcessedFeed => feed !== null
+      // Limit total items
+      const limitedItems = allItems.slice(0, maxItems);
+
+      return {
+        feeds: validFeeds,
+        items: limitedItems,
+      };
+    },
+    300000 // 5 minutes cache
   );
 
-  // Combine all items and sort by date (newest first)
-  const allItems: (ProcessedFeedItem & {
-    feedTitle: string;
-    feedUrl: string;
-  })[] = validFeeds.flatMap((feed) =>
-    feed.items.map((item) => ({
-      ...item,
-      feedTitle: feed.feedTitle,
-      feedUrl: feed.feedUrl,
-      feedColor: feed.feedColor || item.feedColor || null,
-    }))
-  );
-
-  // Sort by date (parse dates and sort)
-  allItems.sort((a, b) => {
-    const dateA = a.pubDate ? new Date(a.pubDate).getTime() : 0;
-    const dateB = b.pubDate ? new Date(b.pubDate).getTime() : 0;
-    return dateB - dateA; // Newest first
-  });
-
-  // Limit total items
-  const limitedItems = allItems.slice(0, maxItems);
-
-  return NextResponse.json({
-    feeds: validFeeds,
-    items: limitedItems,
-  });
+  const response = NextResponse.json(result);
+  response.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+  return response;
 });

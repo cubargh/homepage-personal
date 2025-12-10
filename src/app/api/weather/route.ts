@@ -86,6 +86,9 @@ function processForecast(forecastData: WeatherApiForecast): DailyForecast[] {
   return dailyForecast;
 }
 
+// Cache weather for 30 minutes
+export const revalidate = 1800;
+
 export const GET = withErrorHandling(async (_request: NextRequest) => {
   const config = loadConfig();
   const weatherConfig = requireConfig(
@@ -140,7 +143,7 @@ export const GET = withErrorHandling(async (_request: NextRequest) => {
 
   const processedForecast = processForecast(forecastData);
 
-  return NextResponse.json({
+  const result = {
     location: {
       city: currentData.name,
       country: currentData.sys.country,
@@ -154,5 +157,10 @@ export const GET = withErrorHandling(async (_request: NextRequest) => {
       icon: currentData.weather[0]?.icon || "",
     },
     forecast: processedForecast,
-  });
+  };
+
+  const response = NextResponse.json(result);
+  // Cache for 30 minutes
+  response.headers.set("Cache-Control", "public, s-maxage=1800, stale-while-revalidate=3600");
+  return response;
 });

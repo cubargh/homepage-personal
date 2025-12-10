@@ -4,6 +4,8 @@ import { loadConfig, CalendarWidgetConfig } from "@/lib/config";
 import { normalizeWidgetConfig } from "@/lib/widget-config-utils";
 import { withErrorHandling } from "@/lib/api-handler";
 import { ApiError, ApiErrorCode } from "@/lib/api-error";
+import { cached } from "@/lib/cache";
+import crypto from "crypto";
 
 interface CalendarEvent {
   id: string;
@@ -78,6 +80,9 @@ async function fetchCalendarEvents(
   }
 }
 
+// Cache calendar events for 5 minutes
+export const revalidate = 300;
+
 export const GET = withErrorHandling(async () => {
   const config = loadConfig();
 
@@ -109,22 +114,35 @@ export const GET = withErrorHandling(async () => {
     );
   }
 
-  // Parse URLs and colors from config
-  const parsedConfigs = allIcsUrls
-    .map(parseCalendarConfig)
-    .filter((config) => config.url.length > 0);
+  // Create cache key based on ICS URLs
+  const cacheKey = `calendar:${crypto.createHash("md5").update(JSON.stringify(allIcsUrls)).digest("hex")}`;
 
-  // Fetch all calendars in parallel
-  const allEvents = await Promise.all(
-    parsedConfigs.map(({ url, color }, index) =>
-      fetchCalendarEvents(url, color, index)
-    )
+  const result = await cached(
+    cacheKey,
+    async () => {
+      // Parse URLs and colors from config
+      const parsedConfigs = allIcsUrls
+        .map(parseCalendarConfig)
+        .filter((config) => config.url.length > 0);
+
+      // Fetch all calendars in parallel
+      const allEvents = await Promise.all(
+        parsedConfigs.map(({ url, color }, index) =>
+          fetchCalendarEvents(url, color, index)
+        )
+      );
+
+      // Flatten and sort events
+      const flatEvents = allEvents
+        .flat()
+        .sort((a, b) => a.start.getTime() - b.start.getTime());
+
+      return { events: flatEvents };
+    },
+    300000 // 5 minutes cache
   );
 
-  // Flatten and sort events
-  const flatEvents = allEvents
-    .flat()
-    .sort((a, b) => a.start.getTime() - b.start.getTime());
-
-  return NextResponse.json({ events: flatEvents });
+  const response = NextResponse.json(result);
+  response.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+  return response;
 });

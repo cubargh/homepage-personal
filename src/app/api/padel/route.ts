@@ -7,6 +7,10 @@ import { ApiError, ApiErrorCode } from "@/lib/api-error";
 const BASE_URL = "https://padelapi.org/api";
 const DAYS_AHEAD = 60; // Extended range to catch future tournaments
 
+// Force dynamic rendering due to query parameters
+// Note: revalidate is not compatible with force-dynamic, so we rely on Cache-Control headers and in-memory caching
+export const dynamic = "force-dynamic";
+
 export const GET = withErrorHandling(async (request: NextRequest) => {
   const searchParams = request.nextUrl.searchParams;
   const endpoint = searchParams.get("endpoint") || "matches";
@@ -18,7 +22,11 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
   const API_TOKEN = sportsConfig?.padel?.api_token;
 
   if (!API_TOKEN) {
-    throw new ApiError("API Configuration Missing", 500, ApiErrorCode.MISSING_CONFIG);
+    throw new ApiError(
+      "API Configuration Missing",
+      500,
+      ApiErrorCode.MISSING_CONFIG
+    );
   }
 
   const today = new Date();
@@ -43,7 +51,7 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
       throw new ApiError("Invalid endpoint", 400, ApiErrorCode.BAD_REQUEST);
   }
 
-  const response = await fetch(url, {
+  const fetchResponse = await fetch(url, {
     headers: {
       Authorization: `Bearer ${API_TOKEN}`,
       Accept: "application/json",
@@ -51,11 +59,11 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
     next: { revalidate: 60 }, // Cache for 1 minute
   });
 
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => "Unknown error");
+  if (!fetchResponse.ok) {
+    const errorText = await fetchResponse.text().catch(() => "Unknown error");
     throw new ApiError(
       "Upstream Error",
-      response.status,
+      fetchResponse.status,
       ApiErrorCode.UPSTREAM_ERROR,
       errorText
     );
@@ -63,7 +71,7 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
 
   let data: unknown;
   try {
-    data = await response.json();
+    data = await fetchResponse.json();
   } catch (error) {
     throw new ApiError(
       "Failed to parse Padel API response",
@@ -73,6 +81,11 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
     );
   }
 
-  return NextResponse.json(data);
+  const response = NextResponse.json(data);
+  // Cache for 1 minute (matches change frequently)
+  response.headers.set(
+    "Cache-Control",
+    "public, s-maxage=60, stale-while-revalidate=120"
+  );
+  return response;
 });
-

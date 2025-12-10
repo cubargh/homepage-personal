@@ -8,6 +8,10 @@ const BASE_URL = "https://api.football-data.org/v4";
 const DEFAULT_COMPETITIONS = "PL,PD,BL1,SA,CL,EL";
 const DAYS_AHEAD = 6; // API limit is 10 days
 
+// Force dynamic rendering due to query parameters
+// Note: revalidate is not compatible with force-dynamic, so we rely on Cache-Control headers and in-memory caching
+export const dynamic = 'force-dynamic';
+
 export const GET = withErrorHandling(async (request: NextRequest) => {
   const searchParams = request.nextUrl.searchParams;
   const endpoint = searchParams.get("endpoint") || "matches";
@@ -60,18 +64,18 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
     url = `${BASE_URL}/matches?competitions=${competitions}&dateFrom=${dateFrom}&dateTo=${dateTo}`;
   }
 
-  const response = await fetch(url, {
+  const fetchResponse = await fetch(url, {
     headers: {
       "X-Auth-Token": API_KEY,
     },
     next: { revalidate: 60 }, // Cache for 1 minute
   });
 
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => "Unknown error");
+  if (!fetchResponse.ok) {
+    const errorText = await fetchResponse.text().catch(() => "Unknown error");
     throw new ApiError(
       "Upstream Error",
-      response.status,
+      fetchResponse.status,
       ApiErrorCode.UPSTREAM_ERROR,
       errorText
     );
@@ -79,7 +83,7 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
 
   let data: unknown;
   try {
-    data = await response.json();
+    data = await fetchResponse.json();
   } catch (error) {
     throw new ApiError(
       "Failed to parse football API response",
@@ -89,5 +93,8 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
     );
   }
 
-  return NextResponse.json(data);
+  const response = NextResponse.json(data);
+  // Cache for 1 minute (matches change frequently)
+  response.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+  return response;
 });

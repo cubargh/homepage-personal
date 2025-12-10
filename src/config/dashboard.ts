@@ -27,6 +27,10 @@ function getWidgetConfig<T>(
 }
 
 export const getDashboardConfig = (): DashboardConfig => {
+  // Cache config loading for 30 seconds to improve page load time
+  // Config file watching will invalidate cache when file changes
+  // Note: cached() returns a Promise, but we need synchronous access
+  // For now, we'll load directly but could optimize further with async/await
   const config = loadConfig();
 
   const ROOT_DOMAIN = config.server.root_domain;

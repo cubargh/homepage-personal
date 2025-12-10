@@ -350,6 +350,9 @@ async function getAuthAndTaskList(
   return { accessToken, taskListId: targetTaskListId };
 }
 
+// Cache tasks for 1 minute (tasks can change frequently)
+export const revalidate = 60;
+
 export const GET = withErrorHandling(async (_request: NextRequest) => {
   const config = loadConfig();
   const tasksConfig = requireConfig(
@@ -377,10 +380,15 @@ export const GET = withErrorHandling(async (_request: NextRequest) => {
     completed: task.status === "completed",
   }));
 
-  return NextResponse.json({
+  const result = {
     tasks: transformedTasks,
     taskListId,
-  });
+  };
+
+  const response = NextResponse.json(result);
+  // Cache for 1 minute (tasks can change frequently)
+  response.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+  return response;
 });
 
 export const POST = withErrorHandling(async (request: NextRequest) => {

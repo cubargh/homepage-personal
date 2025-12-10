@@ -21,6 +21,9 @@ const REQUEST_TIMEOUT = 10000; // 10 seconds
 const MAX_SPEED_MBPS = 10000;
 const MAX_PING_MS = 10000;
 
+// Cache speedtest data for 1 minute
+export const revalidate = 60;
+
 export const GET = withErrorHandling(async (_request: NextRequest) => {
   const config = loadConfig();
   const speedtestConfig = requireConfig(
@@ -110,15 +113,15 @@ export const GET = withErrorHandling(async (_request: NextRequest) => {
     }
 
     // Extract values from API response
-    const result = responseData.data || responseData;
+    const apiResult = responseData.data || responseData;
 
     const downloadBits =
-      typeof result.download_bits === "number" ? result.download_bits : null;
+      typeof apiResult.download_bits === "number" ? apiResult.download_bits : null;
     const uploadBits =
-      typeof result.upload_bits === "number" ? result.upload_bits : null;
-    const ping = typeof result.ping === "number" ? result.ping : null;
+      typeof apiResult.upload_bits === "number" ? apiResult.upload_bits : null;
+    const ping = typeof apiResult.ping === "number" ? apiResult.ping : null;
     const createdAt =
-      typeof result.created_at === "string" ? result.created_at : null;
+      typeof apiResult.created_at === "string" ? apiResult.created_at : null;
 
     // Convert bits to Mbps (divide by 1,000,000)
     const download = downloadBits !== null ? downloadBits / 1000000 : null;
@@ -147,12 +150,17 @@ export const GET = withErrorHandling(async (_request: NextRequest) => {
       );
     }
 
-    return NextResponse.json({
+    const result = {
       download,
       upload,
       ping,
       createdAt,
-    });
+    };
+
+    const apiResponse = NextResponse.json(result);
+    // Cache for 1 minute
+    apiResponse.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+    return apiResponse;
   } catch (error) {
     clearTimeout(timeoutId);
     if (error instanceof ApiError) {

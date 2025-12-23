@@ -19,6 +19,7 @@ interface SpotlightConfig {
   custom_search_url?: string; // Legacy, for backward compatibility
   fuzzy_search?: boolean;
   history_size?: number; // Number of URLs to remember in history (default: 20)
+  click_behavior?: "new_tab" | "same_tab"; // How to open links (default: "same_tab")
 }
 
 interface SpotlightItem {
@@ -124,6 +125,7 @@ export function Spotlight({
   const resultsRef = useRef<HTMLDivElement>(null);
   const useFuzzySearch = spotlightConfig.fuzzy_search ?? false;
   const historySize = spotlightConfig.history_size ?? 20;
+  const defaultClickBehavior = spotlightConfig.click_behavior ?? "same_tab";
 
   // Fuzzy search algorithm - checks if query matches text with character order flexibility
   const fuzzyMatch = useCallback(
@@ -678,13 +680,16 @@ export function Spotlight({
   }, [isOpen]);
 
   // Handle navigation
-  const navigateTo = (item: SpotlightItem, openInNewTab: boolean = false) => {
+  const navigateTo = (item: SpotlightItem, openInNewTab?: boolean) => {
     // Save to history if it's a URL or history item (not search or shortcut/service)
     if (item.type === "url" || item.type === "history") {
       addToHistory(item.url, item.name);
     }
     
-    if (openInNewTab) {
+    // Use provided openInNewTab, or fall back to config default
+    const shouldOpenInNewTab = openInNewTab ?? (defaultClickBehavior === "new_tab");
+    
+    if (shouldOpenInNewTab) {
       const newWindow = window.open(item.url, "_blank", "noopener,noreferrer");
       // Try to focus the new window/tab (browser may prevent this due to security)
       if (newWindow) {
@@ -863,7 +868,7 @@ export function Spotlight({
                       )}
                     >
                       <button
-                        onClick={() => navigateTo(item, false)}
+                        onClick={() => navigateTo(item)}
                         className={cn(
                           "flex-1 flex items-center gap-3 text-left focus:outline-none min-w-0"
                         )}
@@ -888,14 +893,16 @@ export function Spotlight({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigateTo(item, true);
+                          // Toggle behavior: if default is new_tab, this opens in same tab; if default is same_tab, this opens in new tab
+                          const toggleBehavior = defaultClickBehavior === "new_tab" ? false : true;
+                          navigateTo(item, toggleBehavior);
                         }}
                         className={cn(
                           "flex-shrink-0 p-1.5 rounded hover:bg-muted transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none",
                           index === selectedIndex && "opacity-100"
                         )}
-                        title="Open in new tab"
-                        aria-label="Open in new tab"
+                        title={defaultClickBehavior === "new_tab" ? "Open in same tab" : "Open in new tab"}
+                        aria-label={defaultClickBehavior === "new_tab" ? "Open in same tab" : "Open in new tab"}
                       >
                         <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
                       </button>

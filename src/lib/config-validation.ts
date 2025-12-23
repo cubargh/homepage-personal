@@ -113,6 +113,7 @@ const AppConfigSchema = z.object({
         .optional(),
       fuzzy_search: z.boolean().optional(),
       history_size: z.number().int().positive().optional(),
+      click_behavior: z.enum(["new_tab", "same_tab"]).optional(),
     })
     .optional(),
       theme: z

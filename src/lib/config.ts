@@ -182,6 +182,7 @@ export interface SpotlightConfig {
   custom_search_url?: string; // For custom search engine, e.g., "https://example.com/search?q="
   fuzzy_search?: boolean; // Enable fuzzy search for better matching (default: false)
   history_size?: number; // Number of URLs to remember in history (default: 20)
+  click_behavior?: "new_tab" | "same_tab"; // How to open links (default: "same_tab")
 }
 
 export interface ThemeConfig {

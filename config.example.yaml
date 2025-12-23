@@ -42,6 +42,11 @@ spotlight:
   # Number of URLs to remember in history (default: 20)
   # History excludes search engine URLs and URLs already in shortcuts/services
   history_size: 20
+  # How to open links when clicked
+  # Options: "new_tab" (open in new tab) or "same_tab" (open in current tab)
+  # Default: "same_tab"
+  # Note: Ctrl/Cmd+Enter always opens in new tab, and the arrow button toggles the behavior
+  # click_behavior: "same_tab" # "new_tab" or "same_tab"
   # Search providers - multiple search engines can be configured
   # Each provider will appear as a separate search option in spotlight results
   search_providers:

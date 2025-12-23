@@ -711,8 +711,11 @@ export function Spotlight({
       selectedIndex >= 0 &&
       selectedIndex < results.length
     ) {
-      // Check if Ctrl/Cmd+Enter for new tab
-      const openInNewTab = e.ctrlKey || e.metaKey;
+      // If Ctrl/Cmd+Enter, toggle the behavior (opposite of default)
+      // Otherwise, use the default behavior from config
+      const openInNewTab = e.ctrlKey || e.metaKey 
+        ? defaultClickBehavior === "same_tab"  // Toggle: if default is same_tab, open in new tab
+        : undefined;  // undefined means use default from config
       navigateTo(results[selectedIndex], openInNewTab);
     } else if (e.key === "ArrowDown" && results.length > 0) {
       e.preventDefault();

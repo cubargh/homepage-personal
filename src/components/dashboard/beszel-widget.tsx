@@ -1,11 +1,8 @@
 "use client";
 
 import React from "react";
-import useSWR from "swr";
 import { BeszelWidgetProps, BeszelMetrics } from "@/types";
 import {
-  Loader2,
-  AlertTriangle,
   Cpu,
   HardDrive,
   Network,
@@ -15,16 +12,10 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { WidgetLayout } from "@/components/dashboard/widget-layout";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-
-const fetcher = async (url: string) => {
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error("Failed to fetch beszel data");
-  }
-  return res.json();
-};
+import { useWidgetData } from "@/hooks/use-widget-data";
+import { useWidgetLayout } from "@/hooks/use-widget-layout";
+import { WidgetError, WidgetLoading, StatCard } from "@/components/dashboard/shared";
 
 function formatUptime(seconds?: number): string {
   if (!seconds || seconds < 0) return "N/A";
@@ -84,52 +75,14 @@ function getProgressColor(percentage: number): string {
   return "bg-primary";
 }
 
-interface StatCardProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string | React.ReactNode;
-  loading: boolean;
-  gradient?: string;
-  iconColor?: string;
-}
-
-function StatCard({
-  icon,
-  label,
-  value,
-  loading,
-  gradient = "from-blue-500/10 to-transparent",
-  iconColor = "text-blue-400",
-}: StatCardProps) {
-  return (
-    <div
-      className={`flex flex-col items-center justify-center rounded-lg bg-gradient-to-br ${gradient} p-3 border border-border/30 hover:border-border/50 transition-all`}
-    >
-      <div className={`${iconColor} mb-2`}>{icon}</div>
-      {loading ? (
-        <Skeleton className="h-6 w-16 mb-1" />
-      ) : (
-        <span className="text-xl font-bold tracking-tight text-foreground leading-none mb-1">
-          {value}
-        </span>
-      )}
-      <span className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">
-        {label}
-      </span>
-    </div>
-  );
-}
-
 export function BeszelWidget({ config, gridSize }: BeszelWidgetProps) {
-  const { data, error, isLoading } = useSWR<BeszelMetrics>(
-    config.enabled ? "/api/beszel" : null,
-    fetcher,
-    {
-      refreshInterval: (config.refreshInterval || 30) * 1000,
-    }
-  );
+  const { data, error, isLoading } = useWidgetData<BeszelMetrics>({
+    endpoint: "/api/beszel",
+    refreshInterval: (config.refreshInterval || 30) * 1000,
+    enabled: config.enabled,
+  });
 
-  const isMinimal = gridSize ? gridSize.w === 1 && gridSize.h === 1 : false;
+  const { isMinimal } = useWidgetLayout(gridSize);
   const isCompactView = config.compact_view || false;
 
   const displayMetrics = config.display_metrics || [
@@ -144,16 +97,14 @@ export function BeszelWidget({ config, gridSize }: BeszelWidgetProps) {
 
   const shouldShow = (metric: string) => displayMetrics.includes(metric);
 
-  // Get display name for a disk
   const getDiskDisplayName = (diskName: string): string => {
     return config.disk_names?.[diskName] || diskName;
   };
 
-  // Filter disks based on disk_names config
   const getFilteredDisks = (disks: BeszelMetrics["disk"]) => {
     if (!disks) return [];
     if (!config.disk_names || Object.keys(config.disk_names).length === 0) {
-      return disks; // No filter applied, return all disks
+      return disks;
     }
     return disks.filter((disk) => disk.name in (config.disk_names || {}));
   };
@@ -201,42 +152,34 @@ export function BeszelWidget({ config, gridSize }: BeszelWidgetProps) {
       contentClassName="p-0"
     >
       {error ? (
-        <div className="h-full flex flex-col items-center justify-center text-destructive/80 space-y-2 p-4">
-          <AlertTriangle className="h-8 w-8" aria-label="Error" />
-          {!isMinimal && (
-            <>
-              <p className="text-sm font-medium">Server Monitor Unavailable</p>
-              <p className="text-xs text-muted-foreground text-center">
-                {error instanceof Error ? error.message : "Check configuration"}
-              </p>
-            </>
-          )}
-        </div>
+        <WidgetError
+          message="Server Monitor Unavailable"
+          hint={error instanceof Error ? error.message : "Check configuration"}
+          isMinimal={isMinimal}
+        />
       ) : isLoading || !data ? (
-        <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-2 p-4">
-          <Loader2
-            className="h-8 w-8 animate-spin"
-            aria-label="Loading server data"
-          />
-          {!isMinimal && <p className="text-sm">Loading...</p>}
-        </div>
+        <WidgetLoading message={isMinimal ? undefined : "Loading..."} />
       ) : (
         <div className="flex flex-col h-full w-full">
           {isMinimal ? (
             // 1x1 Minimal Layout - Show CPU only
-            <div className="flex flex-col items-center justify-center h-full w-full bg-gradient-to-br from-blue-500/10 to-transparent p-3">
-              <Cpu className="h-7 w-7 mb-2 text-blue-400" />
-              <div className="flex flex-col items-center">
-                <span className="text-2xl font-bold tracking-tighter text-foreground leading-none">
-                  {data.cpu !== undefined ? `${Math.round(data.cpu)}%` : "N/A"}
-                </span>
-                <span className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wider">
-                  CPU
-                </span>
-              </div>
+            <div className="flex flex-col items-center justify-center h-full w-full p-3">
+              <StatCard
+                icon={<Cpu className="h-7 w-7" />}
+                label="CPU"
+                value={data.cpu !== undefined ? (
+                  <span className={getCpuColor(data.cpu)}>
+                    {Math.round(data.cpu)}%
+                  </span>
+                ) : "N/A"}
+                loading={false}
+                compact
+                iconColor="text-blue-400"
+                gradient="from-blue-500/10 to-transparent"
+              />
             </div>
           ) : isCompactView ? (
-            // Compact Inline Layout - All metrics inline with wrapping (controlled by config.compact_view)
+            // Compact Inline Layout
             <div className="flex flex-wrap items-center gap-3 p-3 h-full content-start">
               {displayMetrics.map((metric) => {
                 if (metric === "cpu" && shouldShow("cpu")) {
@@ -248,30 +191,16 @@ export function BeszelWidget({ config, gridSize }: BeszelWidgetProps) {
                           <span className={getCpuColor(data.cpu)}>
                             {Math.round(data.cpu)}%
                           </span>
-                        ) : (
-                          "N/A"
-                        )}
+                        ) : "N/A"}
                       </span>
                     </div>
                   );
                 }
-                if (
-                  metric === "memory" &&
-                  shouldShow("memory") &&
-                  data.memory
-                ) {
+                if (metric === "memory" && shouldShow("memory") && data.memory) {
                   return (
                     <div key={metric} className="flex items-center gap-1.5">
-                      <Activity
-                        className={`h-4 w-4 ${getMemoryColor(
-                          data.memory.percentage
-                        )}`}
-                      />
-                      <span
-                        className={`text-sm font-semibold ${getMemoryColor(
-                          data.memory.percentage
-                        )}`}
-                      >
+                      <Activity className={`h-4 w-4 ${getMemoryColor(data.memory.percentage)}`} />
+                      <span className={`text-sm font-semibold ${getMemoryColor(data.memory.percentage)}`}>
                         {Math.round(data.memory.percentage)}%
                       </span>
                     </div>
@@ -287,33 +216,16 @@ export function BeszelWidget({ config, gridSize }: BeszelWidgetProps) {
                     </div>
                   );
                 }
-                if (
-                  metric === "disk" &&
-                  shouldShow("disk") &&
-                  data.disk &&
-                  data.disk.length > 0
-                ) {
+                if (metric === "disk" && shouldShow("disk") && data.disk && data.disk.length > 0) {
                   const filteredDisks = getFilteredDisks(data.disk);
                   if (filteredDisks && filteredDisks.length > 0) {
                     return (
                       <React.Fragment key={metric}>
                         {filteredDisks.map((disk, idx) => (
-                          <div
-                            key={`${metric}-${idx}`}
-                            className="flex items-center gap-1.5"
-                          >
-                            <HardDrive
-                              className={`h-4 w-4 ${getDiskColor(
-                                disk.percentage
-                              )}`}
-                            />
-                            <span
-                              className={`text-sm font-semibold ${getDiskColor(
-                                disk.percentage
-                              )}`}
-                            >
-                              {getDiskDisplayName(disk.name)}:{" "}
-                              {Math.round(disk.percentage)}%
+                          <div key={`${metric}-${idx}`} className="flex items-center gap-1.5">
+                            <HardDrive className={`h-4 w-4 ${getDiskColor(disk.percentage)}`} />
+                            <span className={`text-sm font-semibold ${getDiskColor(disk.percentage)}`}>
+                              {getDiskDisplayName(disk.name)}: {Math.round(disk.percentage)}%
                             </span>
                           </div>
                         ))}
@@ -321,11 +233,7 @@ export function BeszelWidget({ config, gridSize }: BeszelWidgetProps) {
                     );
                   }
                 }
-                if (
-                  metric === "network" &&
-                  shouldShow("network") &&
-                  data.network
-                ) {
+                if (metric === "network" && shouldShow("network") && data.network) {
                   return (
                     <div key={metric} className="flex items-center gap-1.5">
                       <Network className="h-4 w-4 text-blue-400" />
@@ -335,11 +243,7 @@ export function BeszelWidget({ config, gridSize }: BeszelWidgetProps) {
                     </div>
                   );
                 }
-                if (
-                  metric === "temperature" &&
-                  shouldShow("temperature") &&
-                  data.temperature !== undefined
-                ) {
+                if (metric === "temperature" && shouldShow("temperature") && data.temperature !== undefined) {
                   return (
                     <div key={metric} className="flex items-center gap-1.5">
                       <Thermometer className="h-4 w-4 text-orange-400" />
@@ -354,9 +258,7 @@ export function BeszelWidget({ config, gridSize }: BeszelWidgetProps) {
                     <div key={metric} className="flex items-center gap-1.5">
                       <TrendingUp className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-semibold text-foreground">
-                        {data.load.load1.toFixed(1)}/
-                        {data.load.load5.toFixed(1)}/
-                        {data.load.load15.toFixed(1)}
+                        {data.load.load1.toFixed(1)}/{data.load.load5.toFixed(1)}/{data.load.load15.toFixed(1)}
                       </span>
                     </div>
                   );
@@ -373,15 +275,11 @@ export function BeszelWidget({ config, gridSize }: BeszelWidgetProps) {
                   <StatCard
                     icon={<Cpu className="h-6 w-6" />}
                     label="CPU"
-                    value={
-                      data.cpu !== undefined ? (
-                        <span className={getCpuColor(data.cpu)}>
-                          {Math.round(data.cpu)}%
-                        </span>
-                      ) : (
-                        "N/A"
-                      )
-                    }
+                    value={data.cpu !== undefined ? (
+                      <span className={getCpuColor(data.cpu)}>
+                        {Math.round(data.cpu)}%
+                      </span>
+                    ) : "N/A"}
                     loading={isLoading}
                     gradient={getCpuBgColor(data.cpu)}
                     iconColor={getCpuColor(data.cpu)}
@@ -414,54 +312,44 @@ export function BeszelWidget({ config, gridSize }: BeszelWidgetProps) {
               </div>
 
               {/* Disk Usage */}
-              {shouldShow("disk") &&
-                data.disk &&
-                data.disk.length > 0 &&
-                (() => {
-                  const filteredDisks = getFilteredDisks(data.disk);
-                  if (!filteredDisks || filteredDisks.length === 0) return null;
-                  return (
-                    <div className="space-y-3 rounded-lg bg-secondary/20 p-3 border border-border/30">
-                      <div className="flex items-center gap-2">
-                        <HardDrive className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                          Disk Usage
-                        </span>
-                      </div>
-                      <div className="space-y-2.5">
-                        {filteredDisks.map((disk, idx) => (
-                          <div key={idx} className="space-y-1.5">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-medium text-foreground">
-                                {getDiskDisplayName(disk.name)}
-                              </span>
-                              <span
-                                className={`text-xs font-semibold ${getDiskColor(
-                                  disk.percentage
-                                )}`}
-                              >
-                                {Math.round(disk.percentage)}%
-                              </span>
-                            </div>
-                            <Progress
-                              value={disk.percentage}
-                              className="h-2"
-                              indicatorClassName={getProgressColor(
-                                disk.percentage
-                              )}
-                            />
-                            {disk.used > 0 && disk.total > 0 && (
-                              <div className="text-[10px] font-medium text-muted-foreground">
-                                {formatBytes(disk.used)} /{" "}
-                                {formatBytes(disk.total)}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+              {shouldShow("disk") && data.disk && data.disk.length > 0 && (() => {
+                const filteredDisks = getFilteredDisks(data.disk);
+                if (!filteredDisks || filteredDisks.length === 0) return null;
+                return (
+                  <div className="space-y-3 rounded-lg bg-secondary/20 p-3 border border-border/30">
+                    <div className="flex items-center gap-2">
+                      <HardDrive className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Disk Usage
+                      </span>
                     </div>
-                  );
-                })()}
+                    <div className="space-y-2.5">
+                      {filteredDisks.map((disk, idx) => (
+                        <div key={idx} className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-foreground">
+                              {getDiskDisplayName(disk.name)}
+                            </span>
+                            <span className={`text-xs font-semibold ${getDiskColor(disk.percentage)}`}>
+                              {Math.round(disk.percentage)}%
+                            </span>
+                          </div>
+                          <Progress
+                            value={disk.percentage}
+                            className="h-2"
+                            indicatorClassName={getProgressColor(disk.percentage)}
+                          />
+                          {disk.used > 0 && disk.total > 0 && (
+                            <div className="text-[10px] font-medium text-muted-foreground">
+                              {formatBytes(disk.used)} / {formatBytes(disk.total)}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Network Stats */}
               {shouldShow("network") && data.network && (

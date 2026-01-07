@@ -27,16 +27,6 @@ export interface SportsWidgetConfig {
   };
 }
 
-// Keep old interfaces for backward compatibility (deprecated)
-export interface FootballWidgetConfig {
-  enabled: boolean;
-  api_key: string;
-}
-
-export interface F1WidgetConfig {
-  enabled: boolean;
-}
-
 export interface CalendarWidgetConfig {
   enabled: boolean;
   ics_urls: string[];
@@ -229,9 +219,6 @@ export interface AppConfig {
   widgets: {
     weather: WeatherWidgetConfig | WeatherWidgetConfig[];
     sports: SportsWidgetConfig | SportsWidgetConfig[];
-    // Deprecated: Use sports.f1 and sports.football instead
-    football?: FootballWidgetConfig | FootballWidgetConfig[];
-    f1?: F1WidgetConfig | F1WidgetConfig[];
     calendar: CalendarWidgetConfig | CalendarWidgetConfig[];
     service_status: ServiceStatusWidgetConfig | ServiceStatusWidgetConfig[];
     shortcuts: ShortcutsWidgetConfig | ShortcutsWidgetConfig[];

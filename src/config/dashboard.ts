@@ -1,36 +1,10 @@
 import { DashboardConfig, WidgetConfig } from "@/types";
 import { loadConfig, AppConfig } from "@/lib/config";
 import { WidgetRegistry } from "@/lib/widget-registry";
+import { normalizeWidgetConfig } from "@/lib/widget-config-utils";
 import "@/config/widgets"; // Register widgets
 
-// Helper function to normalize widget configs to arrays
-function normalizeWidgetConfig<T>(config: T | T[] | undefined): T[] {
-  if (!config) return [];
-  return Array.isArray(config) ? config : [config];
-}
-
-// Map widget types to config keys (for widgets where they differ)
-const WIDGET_TYPE_TO_CONFIG_KEY: Record<string, keyof AppConfig["widgets"]> = {
-  "service-monitor": "service_status",
-  "ip-camera": "ip_camera",
-  "speedtest-tracker": "speedtest_tracker",
-};
-
-// Helper function to get widget config by type
-function getWidgetConfig<T>(
-  config: AppConfig,
-  widgetType: string
-): T | T[] | undefined {
-  // Map widget type to config key if needed
-  const configKey = WIDGET_TYPE_TO_CONFIG_KEY[widgetType] || widgetType;
-  return config.widgets[configKey as keyof AppConfig["widgets"]] as T | T[] | undefined;
-}
-
 export const getDashboardConfig = (): DashboardConfig => {
-  // Cache config loading for 30 seconds to improve page load time
-  // Config file watching will invalidate cache when file changes
-  // Note: cached() returns a Promise, but we need synchronous access
-  // For now, we'll load directly but could optimize further with async/await
   const config = loadConfig();
 
   const ROOT_DOMAIN = config.server.root_domain;
@@ -45,16 +19,16 @@ export const getDashboardConfig = (): DashboardConfig => {
   const enabledWidgets: WidgetConfig[] = [];
 
   WidgetRegistry.getAll().forEach((def) => {
-    // Map widget type to config key if needed
-    const configKey = WIDGET_TYPE_TO_CONFIG_KEY[def.type] || def.type;
-    
+    // Get config key from the widget definition (auto-derived or explicitly set)
+    const configKey = def.configKey;
+
     // Get the widget config (can be single object or array)
     const widgetConfigs = normalizeWidgetConfig(
-      getWidgetConfig(config, def.type)
+      config.widgets[configKey] as { enabled: boolean } | { enabled: boolean }[] | undefined
     );
 
     // Process each widget instance
-    widgetConfigs.forEach((widgetConfig: any, index: number) => {
+    widgetConfigs.forEach((widgetConfig, index) => {
       // Check if this instance is enabled
       if (widgetConfig?.enabled) {
         // Create a modified config with only this widget instance
@@ -63,12 +37,12 @@ export const getDashboardConfig = (): DashboardConfig => {
           ...config,
           widgets: {
             ...config.widgets,
-            [configKey]: widgetConfig, // Use config key, not widget type
+            [configKey]: widgetConfig,
           },
         };
 
         // Generate unique ID for this instance
-        const baseId = def.options?.defaultId || def.type;
+        const baseId = def.defaults.id || def.type;
         const instanceId =
           widgetConfigs.length > 1 ? `${baseId}-${index}` : baseId;
 
@@ -79,11 +53,11 @@ export const getDashboardConfig = (): DashboardConfig => {
           enabledWidgets.push({
             id: instanceId,
             type: def.type,
-            x: def.options?.defaultX ?? 0,
-            y: def.options?.defaultY ?? 0,
+            x: def.defaults.x ?? 0,
+            y: def.defaults.y ?? 0,
             colSpan: def.grid.w,
             rowSpan: def.grid.h,
-            props: def.getProps(instanceConfig),
+            props: def.getProps(instanceConfig) as Record<string, unknown>,
           });
         }
       }

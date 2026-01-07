@@ -14,8 +14,6 @@ export interface ServiceConfig {
 
 export type WidgetType =
   | "service-monitor"
-  | "football"
-  | "f1"
   | "weather"
   | "sports"
   | "calendar"
@@ -45,14 +43,6 @@ export interface ServiceWidgetConfig extends BaseWidgetConfig {
   type: "service-monitor";
 }
 
-export interface FootballWidgetConfig extends BaseWidgetConfig {
-  type: "football";
-}
-
-export interface F1WidgetConfig extends BaseWidgetConfig {
-  type: "f1";
-}
-
 export interface WeatherWidgetConfig extends BaseWidgetConfig {
   type: "weather";
 }
@@ -67,8 +57,6 @@ export interface CalendarWidgetConfig extends BaseWidgetConfig {
 
 export type WidgetConfig =
   | ServiceWidgetConfig
-  | FootballWidgetConfig
-  | F1WidgetConfig
   | WeatherWidgetConfig
   | SportsWidgetConfig
   | CalendarWidgetConfig
@@ -85,13 +73,6 @@ export type WidgetConfig =
 export interface DashboardConfig {
   timezone: string;
   services?: ServiceConfig[];
-  football?: {
-    leagues: string[];
-    refreshInterval: number;
-  };
-  f1?: {
-    refreshInterval: number;
-  };
   weather?: {
     lat: number;
     lon: number;
@@ -119,14 +100,6 @@ export interface ServiceWidgetProps extends BaseWidgetProps {
     rows?: number | "auto";
     click_behavior?: "new_tab" | "same_tab";
   };
-}
-
-export interface FootballWidgetProps {
-  config: { leagues: string[]; refreshInterval: number; timezone: string };
-}
-
-export interface F1WidgetProps {
-  config: { refreshInterval: number; timezone: string };
 }
 
 export interface WeatherWidgetProps extends BaseWidgetProps {

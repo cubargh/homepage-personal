@@ -18,15 +18,9 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
 
   const config = loadConfig();
 
-  // Check new sports config first
+  // Get API key from sports config
   const sportsConfig = getFirstEnabledWidgetConfig(config.widgets.sports);
-  let API_KEY = sportsConfig?.football?.api_key;
-
-  // Fallback to old football config for backward compatibility
-  if (!API_KEY) {
-    const footballConfig = getFirstEnabledWidgetConfig(config.widgets.football);
-    API_KEY = footballConfig?.api_key;
-  }
+  const API_KEY = sportsConfig?.football?.api_key;
 
   if (!API_KEY) {
     throw new ApiError("API Configuration Missing", 500, ApiErrorCode.MISSING_CONFIG);

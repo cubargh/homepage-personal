@@ -1,12 +1,13 @@
 "use client";
 
-import useSWR from "swr";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { JellyfinWidgetProps, JellyfinStats, JellyfinItem } from "@/types";
-import { Tv, Play, Film, AlertTriangle } from "lucide-react";
+import { Tv, Play, Film } from "lucide-react";
+import { useWidgetData } from "@/hooks/use-widget-data";
+import { WidgetError, StatCard } from "@/components/dashboard/shared";
 
 interface JellyfinResponse {
   stats: JellyfinStats;
@@ -14,22 +15,11 @@ interface JellyfinResponse {
   latestShows: JellyfinItem[];
 }
 
-const fetcher = async (url: string) => {
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error("Failed to fetch Jellyfin data");
-  }
-  return res.json();
-};
-
 export function JellyfinWidget({ config }: JellyfinWidgetProps) {
-  const { data, error, isLoading } = useSWR<JellyfinResponse>(
-    "/api/jellyfin",
-    fetcher,
-    {
-      refreshInterval: config.refreshInterval,
-    }
-  );
+  const { data, error, isLoading } = useWidgetData<JellyfinResponse>({
+    endpoint: "/api/jellyfin",
+    refreshInterval: config.refreshInterval,
+  });
 
   if (error) {
     return (
@@ -40,12 +30,11 @@ export function JellyfinWidget({ config }: JellyfinWidgetProps) {
             <span className="font-semibold text-sm">Jellyfin</span>
           </div>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col items-center justify-center text-destructive/80 space-y-2 p-4">
-          <AlertTriangle className="h-8 w-8" />
-          <p className="text-sm text-center">Connection Failed</p>
-          <p className="text-xs text-muted-foreground text-center">
-            Check API Key & URL
-          </p>
+        <CardContent className="flex-1 p-4">
+          <WidgetError
+            message="Connection Failed"
+            hint="Check API Key & URL"
+          />
         </CardContent>
       </Card>
     );
@@ -74,19 +63,19 @@ export function JellyfinWidget({ config }: JellyfinWidgetProps) {
       <CardContent className="flex-1 p-0 flex flex-col min-h-0">
         {/* Stats Row */}
         <div className="grid grid-cols-3 gap-2 p-4 border-b border-border/30 bg-card/50">
-          <StatItem
+          <StatCard
             icon={<Film className="h-3 w-3" />}
             label="Movies"
             value={stats?.MovieCount}
             loading={isLoading}
           />
-          <StatItem
+          <StatCard
             icon={<Tv className="h-3 w-3" />}
             label="Shows"
             value={stats?.SeriesCount}
             loading={isLoading}
           />
-          <StatItem
+          <StatCard
             icon={<Play className="h-3 w-3" />}
             label="Episodes"
             value={stats?.EpisodeCount}
@@ -124,22 +113,6 @@ export function JellyfinWidget({ config }: JellyfinWidgetProps) {
         </ScrollArea>
       </CardContent>
     </Card>
-  );
-}
-
-function StatItem({ icon, label, value, loading }: any) {
-  return (
-    <div className="flex flex-col items-center justify-center p-2 rounded-md bg-secondary/20 space-y-1">
-      <div className="text-muted-foreground">{icon}</div>
-      {loading ? (
-        <Skeleton className="h-4 w-8" />
-      ) : (
-        <span className="text-lg font-bold leading-none">{value ?? 0}</span>
-      )}
-      <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-        {label}
-      </span>
-    </div>
   );
 }
 

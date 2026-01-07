@@ -1,11 +1,20 @@
-import { WidgetRegistry } from "@/lib/widget-registry";
+/**
+ * Widget Registration
+ *
+ * This file registers all dashboard widgets using the defineWidget factory.
+ * Each widget definition is concise - the factory handles boilerplate like
+ * isEnabled checks and config key derivation automatically.
+ */
+
+import { defineWidget } from "@/lib/widget-registry";
+import { REFRESH_INTERVALS } from "@/config/defaults";
+
+// Widget Components
 import { ServiceWidget } from "@/components/dashboard/service-widget";
 import { ShortcutsWidget } from "@/components/dashboard/shortcuts-widget";
 import { WeatherWidget } from "@/components/dashboard/weather-widget";
 import { CalendarWidget } from "@/components/dashboard/calendar-widget";
 import { SportsWidget } from "@/components/dashboard/sports-widget";
-import { F1Widget } from "@/components/dashboard/f1-widget";
-import { FootballWidget } from "@/components/dashboard/football-widget";
 import { JellyfinWidget } from "@/components/dashboard/jellyfin-widget";
 import { ImmichWidget } from "@/components/dashboard/immich-widget";
 import { GhostfolioWidget } from "@/components/dashboard/ghostfolio-widget";
@@ -17,650 +26,405 @@ import { SpeedtestTrackerWidget } from "@/components/dashboard/speedtest-tracker
 import { TasksWidget } from "@/components/dashboard/tasks-widget";
 import { ClockWidget } from "@/components/dashboard/clock-widget";
 import { BeszelWidget } from "@/components/dashboard/beszel-widget";
-import { getFirstEnabledWidgetConfig } from "@/lib/widget-config-utils";
-import type { ServiceStatusWidgetConfig, SpeedtestTrackerWidgetConfig, BeszelWidgetConfig } from "@/lib/config";
 
-// Register Service Monitor
-WidgetRegistry.register({
+// Config Types
+import type {
+  ServiceStatusWidgetConfig,
+  ShortcutsWidgetConfig,
+  WeatherWidgetConfig,
+  CalendarWidgetConfig,
+  SportsWidgetConfig,
+  JellyfinWidgetConfig,
+  ImmichWidgetConfig,
+  GhostfolioWidgetConfig,
+  NavidromeWidgetConfig,
+  QBittorrentWidgetConfig,
+  IPCameraWidgetConfig,
+  RSSWidgetConfig,
+  SpeedtestTrackerWidgetConfig,
+  TasksWidgetConfig,
+  ClockWidgetConfig,
+  BeszelWidgetConfig,
+} from "@/lib/config";
+
+// Props Types
+import type {
+  ServiceWidgetProps,
+  ShortcutsWidgetProps,
+  WeatherWidgetProps,
+  CalendarWidgetProps,
+  JellyfinWidgetProps,
+  ImmichWidgetProps,
+  GhostfolioWidgetProps,
+  NavidromeWidgetProps,
+  QBittorrentWidgetProps,
+  IPCameraWidgetProps,
+  RSSWidgetProps,
+  SpeedtestTrackerWidgetProps,
+  TasksWidgetProps,
+  ClockWidgetProps,
+  BeszelWidgetProps,
+} from "@/types";
+
+// =============================================================================
+// Service Monitor
+// =============================================================================
+
+defineWidget<ServiceWidgetProps, ServiceStatusWidgetConfig>({
   type: "service-monitor",
   component: ServiceWidget,
-  isEnabled: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.service_status);
-    return widgetConfig?.enabled ?? false;
-  },
-  getProps: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.service_status) as ServiceStatusWidgetConfig | undefined;
-    return {
-      services: widgetConfig?.services || [],
-      config: {
-        refreshInterval: 60000, // 1 minute
-        columns: widgetConfig?.columns ?? 2,
-        rows: widgetConfig?.rows ?? "auto",
-        compactMode: widgetConfig?.compactMode ?? false,
-        click_behavior: widgetConfig?.click_behavior ?? "new_tab",
-      },
-    };
-  },
-  grid: {
-    w: 3,
-    h: 2,
-    minW: 3,
-    minH: 2,
-  },
-  options: {
-    defaultX: 0,
-    defaultY: 2,
-    defaultId: "services",
-  },
+  getProps: (cfg) => ({
+    services: cfg.services || [],
+    config: {
+      refreshInterval: REFRESH_INTERVALS.STANDARD,
+      columns: cfg.columns ?? 2,
+      rows: cfg.rows ?? "auto",
+      compactMode: cfg.compactMode ?? false,
+      click_behavior: cfg.click_behavior ?? "new_tab",
+    },
+  }),
+  grid: { w: 3, h: 2, minW: 3, minH: 2 },
+  defaults: { x: 0, y: 2, id: "services" },
 });
 
-// Register Shortcuts
-WidgetRegistry.register({
+// =============================================================================
+// Shortcuts
+// =============================================================================
+
+defineWidget<ShortcutsWidgetProps, ShortcutsWidgetConfig>({
   type: "shortcuts",
   component: ShortcutsWidget,
-  isEnabled: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.shortcuts);
-    return widgetConfig?.enabled ?? false;
-  },
-  getProps: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.shortcuts);
-    return {
-      shortcuts: widgetConfig?.shortcuts || [],
-      config: {
-        columns: widgetConfig?.columns ?? 2,
-        rows: widgetConfig?.rows ?? "auto",
-        compactMode: widgetConfig?.compactMode ?? false,
-        click_behavior: widgetConfig?.click_behavior ?? "new_tab",
-      },
-    };
-  },
-  grid: {
-    w: 3,
-    h: 2,
-    minW: 1, // Allow 1x1 compact layout
-    minH: 1, // Allow 1x1 compact layout
-  },
-  options: {
-    defaultX: 3,
-    defaultY: 0,
-    defaultId: "shortcuts",
-  },
+  getProps: (cfg) => ({
+    shortcuts: cfg.shortcuts || [],
+    config: {
+      shortcuts: cfg.shortcuts || [],
+      columns: cfg.columns ?? 2,
+      rows: cfg.rows ?? "auto",
+      compactMode: cfg.compactMode ?? false,
+      click_behavior: cfg.click_behavior ?? "new_tab",
+    },
+  }),
+  grid: { w: 3, h: 2, minW: 1, minH: 1 },
+  defaults: { x: 3, y: 0, id: "shortcuts" },
 });
 
-// Register Weather
-WidgetRegistry.register({
+// =============================================================================
+// Weather
+// =============================================================================
+
+defineWidget<WeatherWidgetProps, WeatherWidgetConfig>({
   type: "weather",
   component: WeatherWidget,
-  isEnabled: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.weather);
-    return widgetConfig?.enabled ?? false;
-  },
-  getProps: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.weather);
-    if (!widgetConfig) {
-      throw new Error("Weather widget config not found");
-    }
-    return {
-      config: {
-        lat: widgetConfig.lat,
-        lon: widgetConfig.lon,
-        units: widgetConfig.units as "metric" | "imperial",
-        refreshInterval: 60000 * 30, // 30 minutes
-        timezone: config.server.timezone,
-      },
-    };
-  },
-  grid: {
-    w: 3,
-    h: 2,
-    minW: 1,
-    minH: 1,
-  },
-  options: {
-    defaultX: 0,
-    defaultY: 0,
-    defaultId: "weather",
-  },
+  getProps: (cfg, app) => ({
+    config: {
+      lat: cfg.lat,
+      lon: cfg.lon,
+      units: cfg.units as "metric" | "imperial",
+      refreshInterval: REFRESH_INTERVALS.WEATHER,
+      timezone: app.server.timezone,
+    },
+  }),
+  grid: { w: 3, h: 2, minW: 1, minH: 1 },
+  defaults: { x: 0, y: 0, id: "weather" },
 });
 
-// Register Calendar
-WidgetRegistry.register({
+// =============================================================================
+// Calendar
+// =============================================================================
+
+defineWidget<CalendarWidgetProps, CalendarWidgetConfig>({
   type: "calendar",
   component: CalendarWidget,
-  isEnabled: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.calendar);
-    return widgetConfig?.enabled ?? false;
-  },
-  getProps: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.calendar);
-    if (!widgetConfig) {
-      throw new Error("Calendar widget config not found");
-    }
-    return {
-      config: {
-        icsUrl: widgetConfig.ics_urls.join(","),
-        refreshInterval: 60000 * 15, // 15 minutes
-        timezone: config.server.timezone,
-      },
-    };
-  },
-  grid: {
-    w: 4,
-    h: 4,
-    minW: 1, // Allow 1x1 compact layout
-    minH: 1, // Allow 1x1 compact layout
-  },
-  options: {
-    defaultX: 3,
-    defaultY: 0,
-    defaultId: "calendar",
-  },
+  getProps: (cfg, app) => ({
+    config: {
+      icsUrl: cfg.ics_urls.join(","),
+      refreshInterval: REFRESH_INTERVALS.CALENDAR,
+      timezone: app.server.timezone,
+    },
+  }),
+  grid: { w: 4, h: 4, minW: 1, minH: 1 },
+  defaults: { x: 3, y: 0, id: "calendar" },
 });
 
-// Register Sports (Combined)
-WidgetRegistry.register({
+// =============================================================================
+// Sports (Combined F1, Football, Padel)
+// =============================================================================
+
+interface SportsWidgetProps {
+  f1Config: { enabled: boolean; refreshInterval: number; timezone: string };
+  footballConfig: {
+    enabled: boolean;
+    api_key: string;
+    leagues: string[];
+    refreshInterval: number;
+    timezone: string;
+  };
+  padelConfig: { enabled: boolean; refreshInterval: number; timezone: string };
+}
+
+defineWidget<SportsWidgetProps, SportsWidgetConfig>({
   type: "sports",
   component: SportsWidget,
-  isEnabled: (config) => {
-    const sportsConfig = getFirstEnabledWidgetConfig(config.widgets.sports);
-    if (sportsConfig?.enabled) {
-      // Verify at least one sub-widget is enabled
-      const f1Enabled = sportsConfig.f1?.enabled ?? false;
-      const footballEnabled = sportsConfig.football?.enabled ?? false;
-      const padelEnabled = sportsConfig.padel?.enabled ?? false;
-      return f1Enabled || footballEnabled || padelEnabled;
-    }
-    // Backward compatibility: check old f1/football configs
-    const footballConfig = getFirstEnabledWidgetConfig(config.widgets.football);
-    const f1Config = getFirstEnabledWidgetConfig(config.widgets.f1);
-    return (footballConfig?.enabled ?? false) || (f1Config?.enabled ?? false);
+  isEnabled: (cfg) => {
+    // Widget is enabled if at least one sub-widget is enabled
+    const f1Enabled = cfg.f1?.enabled ?? false;
+    const footballEnabled = cfg.football?.enabled ?? false;
+    const padelEnabled = cfg.padel?.enabled ?? false;
+    return cfg.enabled && (f1Enabled || footballEnabled || padelEnabled);
   },
-  getProps: (config) => {
-    const common = { timezone: config.server.timezone };
-    const sportsConfig = getFirstEnabledWidgetConfig(config.widgets.sports);
-    
-    // Use new sports config if available
-    if (sportsConfig?.enabled) {
-      const f1Enabled = sportsConfig.f1?.enabled ?? false;
-      const footballEnabled = sportsConfig.football?.enabled ?? false;
-      const padelEnabled = sportsConfig.padel?.enabled ?? false;
-      
-      return {
-        f1Config: {
-          enabled: f1Enabled,
-          refreshInterval: 60000 * 60, // 1 hour
-          ...common,
-        },
-        footballConfig: {
-          enabled: footballEnabled,
-          api_key: sportsConfig.football?.api_key || "",
-          leagues: ["PL", "PD", "BL1", "SA", "CL"],
-          refreshInterval: 60000, // 1 minute
-          ...common,
-        },
-        padelConfig: {
-          enabled: padelEnabled,
-          refreshInterval: 60000 * 5, // 5 minutes
-          ...common,
-        },
-      };
-    }
-    
-    // Backward compatibility: use old f1/football configs
-    const f1Config = getFirstEnabledWidgetConfig(config.widgets.f1);
-    const footballConfig = getFirstEnabledWidgetConfig(config.widgets.football);
-    return {
-      f1Config: {
-        enabled: f1Config?.enabled ?? false,
-        refreshInterval: 60000 * 60, // 1 hour
-        ...common,
-      },
-      footballConfig: {
-        enabled: footballConfig?.enabled ?? false,
-        api_key: footballConfig?.api_key || "",
-        leagues: ["PL", "PD", "BL1", "SA", "CL"], // Hardcoded in original dashboard.ts
-        refreshInterval: 60000, // 1 minute
-        ...common,
-      },
-      padelConfig: {
-        enabled: false,
-        refreshInterval: 60000 * 5, // 5 minutes
-        ...common,
-      },
-    };
-  },
-  grid: {
-    w: 3,
-    h: 4,
-    minW: 2,
-    minH: 2,
-  },
-  options: {
-    defaultX: 7,
-    defaultY: 0,
-    defaultId: "sports-combined",
-  },
+  getProps: (cfg, app) => ({
+    f1Config: {
+      enabled: cfg.f1?.enabled ?? false,
+      refreshInterval: REFRESH_INTERVALS.HOURLY,
+      timezone: app.server.timezone,
+    },
+    footballConfig: {
+      enabled: cfg.football?.enabled ?? false,
+      api_key: cfg.football?.api_key || "",
+      leagues: ["PL", "PD", "BL1", "SA", "CL"],
+      refreshInterval: REFRESH_INTERVALS.STANDARD,
+      timezone: app.server.timezone,
+    },
+    padelConfig: {
+      enabled: cfg.padel?.enabled ?? false,
+      refreshInterval: REFRESH_INTERVALS.SLOW,
+      timezone: app.server.timezone,
+    },
+  }),
+  grid: { w: 3, h: 4, minW: 2, minH: 2 },
+  defaults: { x: 7, y: 0, id: "sports-combined" },
 });
 
-// Register Jellyfin
-WidgetRegistry.register({
+// =============================================================================
+// Jellyfin
+// =============================================================================
+
+defineWidget<JellyfinWidgetProps, JellyfinWidgetConfig>({
   type: "jellyfin",
   component: JellyfinWidget,
-  isEnabled: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.jellyfin);
-    return widgetConfig?.enabled ?? false;
-  },
-  getProps: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.jellyfin);
-    if (!widgetConfig) {
-      throw new Error("Jellyfin widget config not found");
-    }
-    return {
-      config: {
-        enabled: widgetConfig.enabled,
-        url: widgetConfig.url,
-        refreshInterval: 60000 * 5, // 5 minutes
-      },
-    };
-  },
-  grid: {
-    w: 4,
-    h: 4,
-    minW: 2,
-    minH: 2,
-  },
-  options: {
-    defaultX: 0,
-    defaultY: 4, 
-    defaultId: "jellyfin",
-  },
+  getProps: (cfg) => ({
+    config: {
+      enabled: cfg.enabled,
+      url: cfg.url,
+      apiKey: cfg.api_key,
+      refreshInterval: REFRESH_INTERVALS.SLOW,
+    },
+  }),
+  grid: { w: 4, h: 4, minW: 2, minH: 2 },
+  defaults: { x: 0, y: 4, id: "jellyfin" },
 });
 
-// Register Immich
-WidgetRegistry.register({
+// =============================================================================
+// Immich
+// =============================================================================
+
+defineWidget<ImmichWidgetProps, ImmichWidgetConfig>({
   type: "immich",
   component: ImmichWidget,
-  isEnabled: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.immich);
-    return widgetConfig?.enabled ?? false;
-  },
-  getProps: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.immich);
-    if (!widgetConfig) {
-      throw new Error("Immich widget config not found");
-    }
-    return {
-      config: {
-        enabled: widgetConfig.enabled,
-        url: widgetConfig.url,
-        refreshInterval: 60000 * 15, // 15 minutes
-      },
-    };
-  },
-  grid: {
-    w: 3,
-    h: 2,
-    minW: 1, // Allow 1x1 compact layout
-    minH: 1, // Allow 1x1 compact layout
-  },
-  options: {
-    defaultX: 4,
-    defaultY: 4, 
-    defaultId: "immich",
-  },
+  getProps: (cfg) => ({
+    config: {
+      enabled: cfg.enabled,
+      url: cfg.url,
+      apiKey: cfg.api_key,
+      refreshInterval: REFRESH_INTERVALS.CALENDAR, // 15 minutes
+    },
+  }),
+  grid: { w: 3, h: 2, minW: 1, minH: 1 },
+  defaults: { x: 4, y: 4, id: "immich" },
 });
 
-// Register Ghostfolio
-WidgetRegistry.register({
+// =============================================================================
+// Ghostfolio
+// =============================================================================
+
+defineWidget<GhostfolioWidgetProps, GhostfolioWidgetConfig>({
   type: "ghostfolio",
   component: GhostfolioWidget,
-  isEnabled: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.ghostfolio);
-    return widgetConfig?.enabled ?? false;
-  },
-  getProps: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.ghostfolio);
-    if (!widgetConfig) {
-      throw new Error("Ghostfolio widget config not found");
-    }
-    return {
-      config: {
-        enabled: widgetConfig.enabled,
-        url: widgetConfig.url,
-        refreshInterval: 60000 * 5, // 5 minutes
-        display_metrics: widgetConfig.display_metrics,
-      },
-    };
-  },
-  grid: {
-    w: 3,
-    h: 2,
-    minW: 1, // Allow 1x1 minimal layout
-    minH: 1, // Allow 1x1 minimal layout
-  },
-  options: {
-    defaultX: 7,
-    defaultY: 4,
-    defaultId: "ghostfolio",
-  },
+  getProps: (cfg) => ({
+    config: {
+      enabled: cfg.enabled,
+      url: cfg.url,
+      accessToken: cfg.public_token,
+      refreshInterval: REFRESH_INTERVALS.SLOW,
+      display_metrics: cfg.display_metrics,
+    },
+  }),
+  grid: { w: 3, h: 2, minW: 1, minH: 1 },
+  defaults: { x: 7, y: 4, id: "ghostfolio" },
 });
 
-// Register Navidrome
-WidgetRegistry.register({
+// =============================================================================
+// Navidrome
+// =============================================================================
+
+defineWidget<NavidromeWidgetProps, NavidromeWidgetConfig>({
   type: "navidrome",
   component: NavidromeWidget,
-  isEnabled: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.navidrome);
-    return widgetConfig?.enabled ?? false;
-  },
-  getProps: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.navidrome);
-    if (!widgetConfig) {
-      throw new Error("Navidrome widget config not found");
-    }
-    return {
-      config: {
-        enabled: widgetConfig.enabled,
-        url: widgetConfig.url,
-        user: widgetConfig.user,
-        password: widgetConfig.password,
-        refreshInterval: 30000, // 30 seconds
-      },
-    };
-  },
-  grid: {
-    w: 3,
-    h: 3, // Medium square
-    minW: 2,
-    minH: 2,
-  },
-  options: {
-    defaultX: 4,
-    defaultY: 6,
-    defaultId: "navidrome",
-  },
+  getProps: (cfg) => ({
+    config: {
+      enabled: cfg.enabled,
+      url: cfg.url,
+      username: cfg.user,
+      password: cfg.password,
+      refreshInterval: REFRESH_INTERVALS.FAST,
+    },
+  }),
+  grid: { w: 3, h: 3, minW: 2, minH: 2 },
+  defaults: { x: 4, y: 6, id: "navidrome" },
 });
 
-// Register IP Camera
-WidgetRegistry.register({
+// =============================================================================
+// IP Camera
+// =============================================================================
+
+defineWidget<IPCameraWidgetProps, IPCameraWidgetConfig>({
   type: "ip-camera",
   component: IPCameraWidget,
-  isEnabled: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.ip_camera);
-    return widgetConfig?.enabled ?? false;
-  },
-  getProps: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.ip_camera);
-    return {
-      cameras: widgetConfig?.cameras || [],
-      config: {
-        refreshInterval: 1000, // 1 second (for image refresh)
-      },
-    };
-  },
-  grid: {
-    w: 3,
-    h: 3,
-    minW: 1, // Allow 1x1 compact layout
-    minH: 1, // Allow 1x1 compact layout
-  },
-  options: {
-    defaultX: 0,
-    defaultY: 8,
-    defaultId: "ip-camera",
-  },
+  getProps: (cfg) => ({
+    cameras: cfg.cameras || [],
+    config: {
+      enabled: cfg.enabled,
+      url: cfg.cameras?.[0]?.url || "",
+      refreshInterval: REFRESH_INTERVALS.REAL_TIME,
+    },
+  }),
+  grid: { w: 3, h: 3, minW: 1, minH: 1 },
+  defaults: { x: 0, y: 8, id: "ip-camera" },
 });
 
-// Register RSS Feed Reader
-WidgetRegistry.register({
+// =============================================================================
+// RSS
+// =============================================================================
+
+defineWidget<RSSWidgetProps, RSSWidgetConfig>({
   type: "rss",
   component: RSSWidget,
-  isEnabled: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.rss);
-    return widgetConfig?.enabled ?? false;
-  },
-  getProps: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.rss);
-    return {
-      config: {
-        refreshInterval: (widgetConfig?.refreshInterval || 300) * 1000, // Convert seconds to milliseconds
-        view: widgetConfig?.view || "full",
-        wrap: widgetConfig?.wrap ?? true, // Default to true for wrapping
-        timezone: config.server.timezone,
-      },
-    };
-  },
-  grid: {
-    w: 4,
-    h: 4,
-    minW: 1, // Allow 1x1 compact layout
-    minH: 1, // Allow 1x1 compact layout
-  },
-  options: {
-    defaultX: 0,
-    defaultY: 11,
-    defaultId: "rss",
-  },
+  getProps: (cfg, app) => ({
+    config: {
+      enabled: cfg.enabled,
+      feeds: cfg.feeds.map((url) => ({ name: url, url })),
+      refreshInterval: (cfg.refreshInterval || 300) * 1000, // Convert seconds to ms
+      maxItems: cfg.maxItems,
+      view: cfg.view || "full",
+      wrap: cfg.wrap ?? true,
+      timezone: app.server.timezone,
+    },
+  }),
+  grid: { w: 4, h: 4, minW: 1, minH: 1 },
+  defaults: { x: 0, y: 11, id: "rss" },
 });
 
-// Register qBittorrent
-WidgetRegistry.register({
+// =============================================================================
+// qBittorrent
+// =============================================================================
+
+defineWidget<QBittorrentWidgetProps, QBittorrentWidgetConfig>({
   type: "qbittorrent",
   component: QBittorrentWidget,
-  isEnabled: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.qbittorrent);
-    return widgetConfig?.enabled ?? false;
-  },
-  getProps: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.qbittorrent);
-    if (!widgetConfig) {
-      throw new Error("qBittorrent widget config not found");
-    }
-    return {
-      config: {
-        enabled: widgetConfig.enabled,
-        url: widgetConfig.url,
-        refreshInterval: 1000, // 1 second update
-      },
-    };
-  },
-  grid: {
-    w: 3,
-    h: 3,
-    minW: 3,
-    minH: 2,
-  },
-  options: {
-    defaultX: 0,
-    defaultY: 6,
-    defaultId: "qbittorrent",
-  },
+  getProps: (cfg) => ({
+    config: {
+      enabled: cfg.enabled,
+      url: cfg.url,
+      username: cfg.user || "",
+      password: cfg.password || "",
+      refreshInterval: REFRESH_INTERVALS.REAL_TIME,
+    },
+  }),
+  grid: { w: 3, h: 3, minW: 3, minH: 2 },
+  defaults: { x: 0, y: 6, id: "qbittorrent" },
 });
 
-// Register Individual F1 (Optional/Fallback if used directly)
-WidgetRegistry.register({
-  type: "f1",
-  component: F1Widget,
-  isEnabled: () => false, // Disabled by default in favor of combined sports widget
-  getProps: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.f1);
-    return {
-      config: {
-        enabled: widgetConfig?.enabled ?? true,
-        refreshInterval: 60000 * 60,
-        timezone: config.server.timezone,
-      },
-    };
-  },
-  grid: { w: 3, h: 2 },
-});
+// =============================================================================
+// Speedtest Tracker
+// =============================================================================
 
-// Register Individual Football (Optional/Fallback if used directly)
-WidgetRegistry.register({
-  type: "football",
-  component: FootballWidget,
-  isEnabled: () => false, // Disabled by default in favor of combined sports widget
-  getProps: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.football);
-    if (!widgetConfig) {
-      throw new Error("Football widget config not found");
-    }
-    return {
-      config: {
-        enabled: widgetConfig.enabled,
-        leagues: ["PL", "PD", "BL1", "SA", "CL"],
-        refreshInterval: 60000,
-        timezone: config.server.timezone,
-      },
-    };
-  },
-  grid: { w: 3, h: 2 },
-});
-
-// Register Speedtest Tracker
-WidgetRegistry.register({
+defineWidget<SpeedtestTrackerWidgetProps, SpeedtestTrackerWidgetConfig>({
   type: "speedtest-tracker",
   component: SpeedtestTrackerWidget,
-  isEnabled: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.speedtest_tracker);
-    return widgetConfig?.enabled ?? false;
-  },
-  getProps: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.speedtest_tracker) as SpeedtestTrackerWidgetConfig | undefined;
-    if (!widgetConfig) {
-      throw new Error("Speedtest Tracker widget config not found");
-    }
-    return {
-      config: {
-        url: widgetConfig.url,
-        api_token: widgetConfig.api_token,
-        refreshInterval: 60000 * 5, // 5 minutes
-      },
-    };
-  },
-  grid: {
-    w: 3,
-    h: 2,
-    minW: 1,
-    minH: 1,
-  },
-  options: {
-    defaultX: 0,
-    defaultY: 0,
-    defaultId: "speedtest-tracker",
-  },
+  getProps: (cfg) => ({
+    config: {
+      enabled: cfg.enabled,
+      url: cfg.url,
+      apiKey: cfg.api_token,
+      refreshInterval: REFRESH_INTERVALS.SLOW,
+    },
+  }),
+  grid: { w: 3, h: 2, minW: 1, minH: 1 },
+  defaults: { x: 0, y: 0, id: "speedtest-tracker" },
 });
 
-// Register Google Tasks
-WidgetRegistry.register({
+// =============================================================================
+// Tasks (Google Tasks)
+// =============================================================================
+
+defineWidget<TasksWidgetProps, TasksWidgetConfig>({
   type: "tasks",
   component: TasksWidget,
-  isEnabled: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.tasks);
-    return widgetConfig?.enabled ?? false;
-  },
-  getProps: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.tasks);
-    if (!widgetConfig) {
-      throw new Error("Tasks widget config not found");
-    }
-    return {
-      config: {
-        refreshInterval: 60000 * 5, // 5 minutes
-        timezone: config.server.timezone,
+  getProps: (cfg, app) => ({
+    config: {
+      enabled: cfg.enabled,
+      provider: "google",
+      google: {
+        clientId: cfg.client_id,
+        clientSecret: cfg.client_secret,
+        refreshToken: cfg.refresh_token,
       },
-    };
-  },
-  grid: {
-    w: 3,
-    h: 4,
-    minW: 2,
-    minH: 2,
-  },
-  options: {
-    defaultX: 3,
-    defaultY: 6,
-    defaultId: "tasks",
-  },
+      refreshInterval: REFRESH_INTERVALS.SLOW,
+      timezone: app.server.timezone,
+    },
+  }),
+  grid: { w: 3, h: 4, minW: 2, minH: 2 },
+  defaults: { x: 3, y: 6, id: "tasks" },
 });
 
-// Register Clock
-WidgetRegistry.register({
+// =============================================================================
+// Clock
+// =============================================================================
+
+defineWidget<ClockWidgetProps, ClockWidgetConfig>({
   type: "clock",
   component: ClockWidget,
-  isEnabled: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.clock);
-    return widgetConfig?.enabled ?? false;
-  },
-  getProps: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.clock);
-    return {
-      config: {
-        timezone: config.server.timezone,
-        format: widgetConfig?.format || "24h",
-        showSeconds: widgetConfig?.showSeconds !== false, // Default to true
-        showDate: widgetConfig?.showDate !== false, // Default to true
-        showDay: widgetConfig?.showDay !== false, // Default to true
-      },
-    };
-  },
-  grid: {
-    w: 2,
-    h: 2,
-    minW: 1,
-    minH: 1,
-  },
-  options: {
-    defaultX: 6,
-    defaultY: 0,
-    defaultId: "clock",
-  },
+  getProps: (cfg, app) => ({
+    config: {
+      format: cfg.format || "24h",
+      showSeconds: cfg.showSeconds !== false,
+      showDate: cfg.showDate !== false,
+      showDay: cfg.showDay !== false,
+      timezone: app.server.timezone,
+    },
+  }),
+  grid: { w: 2, h: 2, minW: 1, minH: 1 },
+  defaults: { x: 6, y: 0, id: "clock" },
 });
 
-// Register Beszel Server Monitor
-WidgetRegistry.register({
+// =============================================================================
+// Beszel (Server Monitor)
+// =============================================================================
+
+defineWidget<BeszelWidgetProps, BeszelWidgetConfig>({
   type: "beszel",
   component: BeszelWidget,
-  isEnabled: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.beszel);
-    return widgetConfig?.enabled ?? false;
-  },
-  getProps: (config) => {
-    const widgetConfig = getFirstEnabledWidgetConfig(config.widgets.beszel) as BeszelWidgetConfig | undefined;
-    if (!widgetConfig) {
-      throw new Error("Beszel widget config not found");
-    }
-    return {
-      config: {
-        enabled: widgetConfig.enabled,
-        url: widgetConfig.url,
-        auth: widgetConfig.auth,
-        refreshInterval: widgetConfig.refreshInterval || 30,
-        display_metrics: widgetConfig.display_metrics || [
-          "uptime",
-          "cpu",
-          "memory",
-          "disk",
-          "network",
-          "temperature",
-          "load",
-        ],
-        disk_names: widgetConfig.disk_names,
-        server_name: widgetConfig.server_name,
-        network_interface: widgetConfig.network_interface,
-        compact_view: widgetConfig.compact_view || false,
-      },
-    };
-  },
-  grid: {
-    w: 3,
-    h: 3,
-    minW: 1,
-    minH: 1,
-  },
-  options: {
-    defaultX: 0,
-    defaultY: 0,
-    defaultId: "beszel",
-  },
+  getProps: (cfg) => ({
+    config: {
+      enabled: cfg.enabled,
+      url: cfg.url,
+      auth: cfg.auth,
+      refreshInterval: cfg.refreshInterval || 30,
+      display_metrics: cfg.display_metrics || [
+        "uptime",
+        "cpu",
+        "memory",
+        "disk",
+        "network",
+        "temperature",
+        "load",
+      ],
+      disk_names: cfg.disk_names,
+      server_name: cfg.server_name,
+      network_interface: cfg.network_interface,
+      compact_view: cfg.compact_view || false,
+    },
+  }),
+  grid: { w: 3, h: 3, minW: 1, minH: 1 },
+  defaults: { x: 0, y: 0, id: "beszel" },
 });

@@ -36,12 +36,17 @@ src/
 │   └── login/         # Auth page
 ├── components/
 │   ├── dashboard/     # Widget components (20+)
+│   │   └── shared/    # Shared widget UI (WidgetError, WidgetLoading, StatCard)
 │   └── ui/            # Base UI components (Radix-based)
 ├── config/
-│   ├── widgets.ts     # Widget registration (registers all widgets)
-│   └── dashboard.ts   # Dashboard config assembly
+│   ├── widgets.ts     # Widget registration using defineWidget()
+│   ├── dashboard.ts   # Dashboard config assembly
+│   └── defaults.ts    # Shared constants (REFRESH_INTERVALS)
+├── hooks/
+│   ├── use-widget-data.ts   # SWR data fetching hook
+│   └── use-widget-layout.ts # Layout calculation hook
 ├── lib/
-│   ├── widget-registry.ts  # Widget registry class
+│   ├── widget-registry.ts  # Widget registry & defineWidget factory
 │   ├── http-client.ts      # HttpClient with retries & circuit breaker
 │   ├── cache.ts            # In-memory cache with TTL
 │   ├── api-handler.ts      # API error handling middleware
@@ -55,12 +60,45 @@ src/
 
 ### Key Patterns
 
-**Widget Registry** (`src/lib/widget-registry.ts`): Central registry for widget definitions. Each widget has:
-- `type`: Widget type identifier
-- `component`: React component
-- `isEnabled(config)`: Checks if widget should display
-- `getProps(config)`: Extracts props from config
-- `grid`: Default dimensions {w, h, minW?, minH?}
+**Widget Registry** (`src/lib/widget-registry.ts`): Central registry with `defineWidget()` factory for reduced boilerplate:
+
+```typescript
+defineWidget<ImmichWidgetProps, ImmichWidgetConfig>({
+  type: "immich",
+  component: ImmichWidget,
+  getProps: (cfg) => ({
+    config: {
+      enabled: cfg.enabled,
+      url: cfg.url,
+      apiKey: cfg.api_key,
+      refreshInterval: REFRESH_INTERVALS.CALENDAR,
+    },
+  }),
+  grid: { w: 3, h: 2, minW: 1, minH: 1 },
+  defaults: { x: 4, y: 4, id: "immich" },
+});
+```
+
+The factory auto-generates:
+- `isEnabled()` from `widgetConfig.enabled`
+- `configKey` derivation from widget type (kebab-case → snake_case)
+
+**Shared Widget Infrastructure**:
+- `useWidgetData<T>(options)` - SWR wrapper for data fetching
+- `useWidgetLayout(gridSize)` - Returns `{ isMinimal, isCompact, isStandard }`
+- `<WidgetError message="..." hint="..." />` - Standardized error display
+- `<WidgetLoading message="..." />` - Standardized loading spinner
+- `<StatCard icon={} label="" value={} loading={} />` - Reusable stat display
+
+**Refresh Intervals** (`src/config/defaults.ts`):
+```typescript
+REFRESH_INTERVALS.REAL_TIME  // 1s (qbittorrent, cameras)
+REFRESH_INTERVALS.FAST       // 30s (navidrome)
+REFRESH_INTERVALS.STANDARD   // 60s (service-monitor, football)
+REFRESH_INTERVALS.SLOW       // 5min (jellyfin, ghostfolio)
+REFRESH_INTERVALS.CALENDAR   // 15min
+REFRESH_INTERVALS.WEATHER    // 30min
+```
 
 **API Route Pattern**: All routes use `withErrorHandling()` middleware:
 ```typescript
@@ -84,11 +122,19 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
 
 ### Adding a New Widget
 
-1. Create component in `src/components/dashboard/`
-2. Register in `src/config/widgets.ts` using `WidgetRegistry.register()`
-3. Add config types to `src/types/index.ts`
-4. Add Zod schema to `src/lib/config-validation.ts`
-5. Create API route in `src/app/api/` if needed
+1. Create component in `src/components/dashboard/` using shared hooks:
+   ```typescript
+   const { data, error, isLoading } = useWidgetData<MyData>({
+     endpoint: "/api/my-widget",
+     refreshInterval: REFRESH_INTERVALS.STANDARD,
+   });
+   const { isCompact, isStandard } = useWidgetLayout(gridSize);
+   ```
+2. Register in `src/config/widgets.ts` using `defineWidget()`
+3. Add config types to `src/lib/config.ts`
+4. Add props types to `src/types/index.ts`
+5. Add Zod schema to `src/lib/config-validation.ts`
+6. Create API route in `src/app/api/` if needed
 
 ### Authentication
 

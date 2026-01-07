@@ -19,10 +19,12 @@ describe("WidgetRegistry", () => {
   it("should register widget definition", () => {
     const definition = {
       type: "weather" as WidgetType,
+      configKey: "weather" as const,
       component: MockWidget,
       isEnabled: () => true,
       getProps: () => ({}),
       grid: { w: 4, h: 4 },
+      defaults: {},
     };
 
     WidgetRegistry.register(definition);
@@ -36,10 +38,12 @@ describe("WidgetRegistry", () => {
   it("should retrieve widget by type", () => {
     const definition = {
       type: "clock" as WidgetType,
+      configKey: "clock" as const,
       component: MockWidget,
       isEnabled: () => true,
       getProps: () => ({}),
       grid: { w: 2, h: 2 },
+      defaults: {},
     };
 
     WidgetRegistry.register(definition);
@@ -56,18 +60,22 @@ describe("WidgetRegistry", () => {
   it("should return all registered widgets", () => {
     const widget1 = {
       type: "weather" as WidgetType,
+      configKey: "weather" as const,
       component: MockWidget,
       isEnabled: () => true,
       getProps: () => ({}),
       grid: { w: 4, h: 4 },
+      defaults: {},
     };
 
     const widget2 = {
       type: "clock" as WidgetType,
+      configKey: "clock" as const,
       component: MockWidget,
       isEnabled: () => true,
       getProps: () => ({}),
       grid: { w: 2, h: 2 },
+      defaults: {},
     };
 
     WidgetRegistry.register(widget1);
@@ -83,18 +91,22 @@ describe("WidgetRegistry", () => {
   it("should overwrite existing registrations", () => {
     const originalDefinition = {
       type: "weather" as WidgetType,
+      configKey: "weather" as const,
       component: MockWidget,
       isEnabled: () => true,
       getProps: () => ({}),
       grid: { w: 4, h: 4 },
+      defaults: {},
     };
 
     const newDefinition = {
       type: "weather" as WidgetType,
+      configKey: "weather" as const,
       component: MockWidget,
       isEnabled: () => false,
       getProps: () => ({ custom: "props" }),
       grid: { w: 6, h: 6 },
+      defaults: {},
     };
 
     WidgetRegistry.register(originalDefinition);
@@ -118,10 +130,12 @@ describe("WidgetRegistry", () => {
     types.forEach((type) => {
       const definition = {
         type,
+        configKey: type.replace(/-/g, "_") as keyof import("@/lib/config").AppConfig["widgets"],
         component: MockWidget,
         isEnabled: () => true,
         getProps: () => ({}),
         grid: { w: 2, h: 2 },
+        defaults: {},
       };
 
       WidgetRegistry.register(definition);
@@ -140,10 +154,12 @@ describe("WidgetRegistry", () => {
 
     const definition = {
       type: "weather" as WidgetType,
+      configKey: "weather" as const,
       component: MockWidget,
       isEnabled: (config: any) => config.widgets.weather.enabled,
       getProps: () => ({}),
       grid: { w: 4, h: 4 },
+      defaults: {},
     };
 
     WidgetRegistry.register(definition);
@@ -165,12 +181,14 @@ describe("WidgetRegistry", () => {
 
     const definition = {
       type: "weather" as WidgetType,
+      configKey: "weather" as const,
       component: MockWidget,
       isEnabled: () => true,
       getProps: (config: any) => ({
         config: config.widgets.weather,
       }),
       grid: { w: 4, h: 4 },
+      defaults: {},
     };
 
     WidgetRegistry.register(definition);
@@ -189,6 +207,7 @@ describe("WidgetRegistry", () => {
   it("should handle grid configuration", () => {
     const definition = {
       type: "weather" as WidgetType,
+      configKey: "weather" as const,
       component: MockWidget,
       isEnabled: () => true,
       getProps: () => ({}),
@@ -198,6 +217,7 @@ describe("WidgetRegistry", () => {
         minW: 2,
         minH: 2,
       },
+      defaults: {},
     };
 
     WidgetRegistry.register(definition);
@@ -209,26 +229,26 @@ describe("WidgetRegistry", () => {
     expect(retrieved?.grid.minH).toBe(2);
   });
 
-  it("should handle options configuration", () => {
+  it("should handle defaults configuration", () => {
     const definition = {
       type: "weather" as WidgetType,
+      configKey: "weather" as const,
       component: MockWidget,
       isEnabled: () => true,
       getProps: () => ({}),
       grid: { w: 4, h: 4 },
-      options: {
-        defaultX: 0,
-        defaultY: 0,
-        defaultId: "weather-widget",
+      defaults: {
+        x: 0,
+        y: 0,
+        id: "weather-widget",
       },
     };
 
     WidgetRegistry.register(definition);
     const retrieved = WidgetRegistry.get("weather");
 
-    expect(retrieved?.options?.defaultX).toBe(0);
-    expect(retrieved?.options?.defaultY).toBe(0);
-    expect(retrieved?.options?.defaultId).toBe("weather-widget");
+    expect(retrieved?.defaults?.x).toBe(0);
+    expect(retrieved?.defaults?.y).toBe(0);
+    expect(retrieved?.defaults?.id).toBe("weather-widget");
   });
 });
-

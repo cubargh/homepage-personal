@@ -158,6 +158,16 @@ export interface BeszelWidgetConfig {
   compact_view?: boolean; // If true, shows inline compact view with all metrics in a single row
 }
 
+export interface IbkrWidgetConfig {
+  enabled: boolean;
+  token: string; // Flex Web Service token from IB Client Portal
+  query_id: string; // Activity Flex Query ID from IB Client Portal
+  show_positions?: boolean; // Show top holdings (default: true)
+  position_count?: number; // Number of positions to show (default: 5)
+  refresh_interval?: number; // Refresh interval in seconds (default: 3600 = 1 hour)
+  url?: string; // Optional: Link to IB Client Portal for "View" button
+}
+
 export interface SearchProvider {
   name: string;
   url: string; // Should contain {query} placeholder, e.g., "https://www.google.com/search?q={query}"
@@ -235,6 +245,7 @@ export interface AppConfig {
     tasks: TasksWidgetConfig | TasksWidgetConfig[];
     clock: ClockWidgetConfig | ClockWidgetConfig[];
     beszel: BeszelWidgetConfig | BeszelWidgetConfig[];
+    ibkr: IbkrWidgetConfig | IbkrWidgetConfig[];
   };
 }
 

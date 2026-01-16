@@ -26,6 +26,7 @@ import { SpeedtestTrackerWidget } from "@/components/dashboard/speedtest-tracker
 import { TasksWidget } from "@/components/dashboard/tasks-widget";
 import { ClockWidget } from "@/components/dashboard/clock-widget";
 import { BeszelWidget } from "@/components/dashboard/beszel-widget";
+import { IbkrWidget } from "@/components/dashboard/ibkr-widget";
 
 // Config Types
 import type {
@@ -45,6 +46,7 @@ import type {
   TasksWidgetConfig,
   ClockWidgetConfig,
   BeszelWidgetConfig,
+  IbkrWidgetConfig,
 } from "@/lib/config";
 
 // Props Types
@@ -64,6 +66,7 @@ import type {
   TasksWidgetProps,
   ClockWidgetProps,
   BeszelWidgetProps,
+  IbkrWidgetProps,
 } from "@/types";
 
 // =============================================================================
@@ -427,4 +430,24 @@ defineWidget<BeszelWidgetProps, BeszelWidgetConfig>({
   }),
   grid: { w: 3, h: 3, minW: 1, minH: 1 },
   defaults: { x: 0, y: 0, id: "beszel" },
+});
+
+// =============================================================================
+// Interactive Brokers
+// =============================================================================
+
+defineWidget<IbkrWidgetProps, IbkrWidgetConfig>({
+  type: "ibkr",
+  component: IbkrWidget,
+  getProps: (cfg) => ({
+    config: {
+      enabled: cfg.enabled,
+      refreshInterval: (cfg.refresh_interval || 3600) * 1000, // Convert seconds to ms (default: 1 hour)
+      showPositions: cfg.show_positions ?? true,
+      positionCount: cfg.position_count ?? 5,
+      url: cfg.url,
+    },
+  }),
+  grid: { w: 3, h: 3, minW: 1, minH: 1 },
+  defaults: { x: 0, y: 0, id: "ibkr" },
 });

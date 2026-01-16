@@ -83,6 +83,16 @@ const BeszelWidgetConfigSchema = z.object({
   compact_view: z.boolean().optional(), // If true, shows inline compact view with all metrics in a single row
 });
 
+const IbkrWidgetConfigSchema = z.object({
+  enabled: z.boolean(),
+  token: z.string().min(1), // Flex Web Service token from IB Client Portal
+  query_id: z.string().min(1), // Activity Flex Query ID from IB Client Portal
+  show_positions: z.boolean().optional(), // Show top holdings (default: true)
+  position_count: z.number().int().positive().optional(), // Number of positions to show (default: 5)
+  refresh_interval: z.number().int().positive().optional(), // Refresh interval in seconds (default: 3600)
+  url: z.string().url().optional(), // Optional: Link to IB Client Portal for "View" button
+});
+
 const AppConfigSchema = z.object({
   server: z.object({
     root_domain: z.string(),
@@ -137,10 +147,14 @@ const AppConfigSchema = z.object({
     service_status: z.union([
       ServiceStatusWidgetConfigSchema,
       z.array(ServiceStatusWidgetConfigSchema),
-    ]),
+    ]).optional(),
     beszel: z.union([
       BeszelWidgetConfigSchema,
       z.array(BeszelWidgetConfigSchema),
+    ]).optional(),
+    ibkr: z.union([
+      IbkrWidgetConfigSchema,
+      z.array(IbkrWidgetConfigSchema),
     ]).optional(),
   }).passthrough(), // Allow other widget configs
 });

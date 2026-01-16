@@ -28,7 +28,8 @@ export type WidgetType =
   | "rss"
   | "speedtest-tracker"
   | "tasks"
-  | "beszel";
+  | "beszel"
+  | "ibkr";
 
 export interface BaseWidgetConfig {
   id: string;
@@ -344,6 +345,17 @@ export interface BeszelWidgetProps extends BaseWidgetProps {
     compact_view?: boolean;
     disk_names?: Record<string, string>; // Map disk names to display names
     network_interface?: string; // Optional: specific network interface to use for network stats
+  };
+}
+
+// Interactive Brokers Widget
+export interface IbkrWidgetProps extends BaseWidgetProps {
+  config: {
+    enabled: boolean;
+    refreshInterval: number;
+    showPositions?: boolean;
+    positionCount?: number;
+    url?: string; // Link to IB Client Portal
   };
 }
 

@@ -48,3 +48,4 @@ config.yaml.backup.*
 
 # ideas folder
 /ideas/
+*.xml
